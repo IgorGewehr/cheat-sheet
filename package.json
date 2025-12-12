@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/generate-examples.js",
-    "build": "next build",
+    "generate-examples": "node scripts/generate-examples.js",
+    "build": "node scripts/generate-examples.js && next build",
     "start": "next start",
     "lint": "next lint"
   },
