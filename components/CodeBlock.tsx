@@ -16,28 +16,38 @@ export default function CodeBlock({ code, fileName }: CodeBlockProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Syntax highlighting simples e seguro
+  // Syntax highlighting simples e seguro usando inline styles
+  // para evitar conflitos com keywords como "class"
   const highlightCode = (code: string): string => {
     const lines = code.split('\n')
+
+    // Cores como inline styles para evitar conflitos
+    const colors = {
+      comment: 'color: #64748b; font-style: italic',
+      string: 'color: #4ade80',
+      keyword: 'color: #c084fc',
+      type: 'color: #facc15',
+      number: 'color: #fb923c',
+    }
 
     return lines.map(line => {
       // Linha de comentário completa
       if (line.trim().startsWith('//')) {
-        return `<span class="text-slate-500 italic">${escapeHtml(line)}</span>`
+        return `<span style="${colors.comment}">${escapeHtml(line)}</span>`
       }
 
       // Linha de comentário de bloco
       if (line.trim().startsWith('/*') || line.trim().startsWith('*')) {
-        return `<span class="text-slate-500 italic">${escapeHtml(line)}</span>`
+        return `<span style="${colors.comment}">${escapeHtml(line)}</span>`
       }
 
       // Escape HTML primeiro para segurança
       let escaped = escapeHtml(line)
 
       // Strings (ordem importa - template literals primeiro)
-      escaped = escaped.replace(/(`[^`]*`)/g, '<span class="text-green-400">$1</span>')
-      escaped = escaped.replace(/(&apos;[^&]*&apos;|&quot;[^&]*&quot;)/g, '<span class="text-green-400">$1</span>')
-      escaped = escaped.replace(/(&#39;[^&]*&#39;)/g, '<span class="text-green-400">$1</span>')
+      escaped = escaped.replace(/(`[^`]*`)/g, `<span style="${colors.string}">$1</span>`)
+      escaped = escaped.replace(/(&apos;[^&]*&apos;|&quot;[^&]*&quot;)/g, `<span style="${colors.string}">$1</span>`)
+      escaped = escaped.replace(/(&#39;[^&]*&#39;)/g, `<span style="${colors.string}">$1</span>`)
 
       // Keywords
       const keywords = [
@@ -48,18 +58,18 @@ export default function CodeBlock({ code, fileName }: CodeBlockProps) {
       ]
       keywords.forEach(kw => {
         const regex = new RegExp(`\\b(${kw})\\b`, 'g')
-        escaped = escaped.replace(regex, '<span class="text-purple-400">$1</span>')
+        escaped = escaped.replace(regex, `<span style="${colors.keyword}">$1</span>`)
       })
 
       // Types
       const types = ['string', 'number', 'boolean', 'null', 'undefined', 'void', 'any', 'Promise', 'Array', 'Record']
       types.forEach(t => {
         const regex = new RegExp(`\\b(${t})\\b`, 'g')
-        escaped = escaped.replace(regex, '<span class="text-yellow-400">$1</span>')
+        escaped = escaped.replace(regex, `<span style="${colors.type}">$1</span>`)
       })
 
-      // Números
-      escaped = escaped.replace(/\b(\d+)\b/g, '<span class="text-orange-400">$1</span>')
+      // Números (não match números em inline styles)
+      escaped = escaped.replace(/(?<![:;#\d])(\b\d+\b)(?![a-fA-F\d]*[;"])/g, `<span style="${colors.number}">$1</span>`)
 
       return escaped
     }).join('\n')
