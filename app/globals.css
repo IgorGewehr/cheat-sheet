@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --purple: #8b5cf6;
+  --code-bg: #020617;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Code syntax highlighting */
+.code-keyword { color: #c678dd; }
+.code-function { color: #61afef; }
+.code-string { color: #98c379; }
+.code-comment { color: #5c6370; font-style: italic; }
+.code-type { color: #e5c07b; }
+.code-number { color: #d19a66; }
+
+/* Selection */
+::selection {
+  background: var(--accent);
+  color: white;
+}
+
+/* Focus states */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Search Modal Backdrop */
+.search-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+/* Tag styles */
+.tag {
+  @apply px-2 py-1 rounded text-xs font-bold uppercase;
+}
+
+.tag-server {
+  @apply bg-success/20 text-success;
+}
+
+.tag-client {
+  @apply bg-accent/20 text-accent;
+}
+
+/* Table styles */
+.guide-table {
+  @apply w-full border-collapse bg-bg-secondary rounded-lg overflow-hidden;
+}
+
+.guide-table th {
+  @apply text-left p-4 bg-bg-primary text-accent uppercase text-sm border-b border-slate-700;
+}
+
+.guide-table td {
+  @apply p-4 border-b border-slate-700;
+}
+
+.guide-table tr:last-child td {
+  @apply border-b-0;
+}
+
+/* Grid layout for cards */
+.card-grid {
+  @apply grid gap-5;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
