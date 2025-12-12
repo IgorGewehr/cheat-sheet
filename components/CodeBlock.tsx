@@ -5,10 +5,9 @@ import { useState } from 'react'
 type CodeBlockProps = {
   code: string
   fileName?: string
-  language?: string
 }
 
-export default function CodeBlock({ code, fileName, language = 'typescript' }: CodeBlockProps) {
+export default function CodeBlock({ code, fileName }: CodeBlockProps) {
   const [copied, setCopied] = useState(false)
 
   const copyToClipboard = async () => {
@@ -17,55 +16,85 @@ export default function CodeBlock({ code, fileName, language = 'typescript' }: C
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Simple syntax highlighting
+  // Syntax highlighting simples e seguro
   const highlightCode = (code: string): string => {
-    return code
-      // Comments
-      .replace(/(\/\/.*$)/gm, '<span class="code-comment">$1</span>')
-      .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>')
-      // Strings
-      .replace(/('(?:[^'\\]|\\.)*')/g, '<span class="code-string">$1</span>')
-      .replace(/("(?:[^"\\]|\\.)*")/g, '<span class="code-string">$1</span>')
-      .replace(/(`(?:[^`\\]|\\.)*`)/g, '<span class="code-string">$1</span>')
+    const lines = code.split('\n')
+
+    return lines.map(line => {
+      // Linha de comentário completa
+      if (line.trim().startsWith('//')) {
+        return `<span class="text-slate-500 italic">${escapeHtml(line)}</span>`
+      }
+
+      // Linha de comentário de bloco
+      if (line.trim().startsWith('/*') || line.trim().startsWith('*')) {
+        return `<span class="text-slate-500 italic">${escapeHtml(line)}</span>`
+      }
+
+      // Escape HTML primeiro para segurança
+      let escaped = escapeHtml(line)
+
+      // Strings (ordem importa - template literals primeiro)
+      escaped = escaped.replace(/(`[^`]*`)/g, '<span class="text-green-400">$1</span>')
+      escaped = escaped.replace(/(&apos;[^&]*&apos;|&quot;[^&]*&quot;)/g, '<span class="text-green-400">$1</span>')
+      escaped = escaped.replace(/(&#39;[^&]*&#39;)/g, '<span class="text-green-400">$1</span>')
+
       // Keywords
-      .replace(/\b(import|export|from|const|let|var|function|async|await|return|if|else|try|catch|throw|new|class|extends|implements|interface|type|enum|public|private|protected|static|readonly|default|as|typeof|instanceof)\b/g, '<span class="code-keyword">$1</span>')
+      const keywords = [
+        'import', 'export', 'from', 'const', 'let', 'var', 'function',
+        'async', 'await', 'return', 'if', 'else', 'try', 'catch', 'throw',
+        'new', 'class', 'extends', 'interface', 'type', 'enum',
+        'default', 'as', 'typeof', 'instanceof', 'for', 'while', 'switch', 'case'
+      ]
+      keywords.forEach(kw => {
+        const regex = new RegExp(`\\b(${kw})\\b`, 'g')
+        escaped = escaped.replace(regex, '<span class="text-purple-400">$1</span>')
+      })
+
       // Types
-      .replace(/\b(string|number|boolean|null|undefined|void|any|never|unknown|Promise|Array|Record|Partial|Required|Pick|Omit)\b/g, '<span class="code-type">$1</span>')
-      // Numbers
-      .replace(/\b(\d+)\b/g, '<span class="code-number">$1</span>')
-      // Functions (before parenthesis)
-      .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '<span class="code-function">$1</span>(')
+      const types = ['string', 'number', 'boolean', 'null', 'undefined', 'void', 'any', 'Promise', 'Array', 'Record']
+      types.forEach(t => {
+        const regex = new RegExp(`\\b(${t})\\b`, 'g')
+        escaped = escaped.replace(regex, '<span class="text-yellow-400">$1</span>')
+      })
+
+      // Números
+      escaped = escaped.replace(/\b(\d+)\b/g, '<span class="text-orange-400">$1</span>')
+
+      return escaped
+    }).join('\n')
+  }
+
+  const escapeHtml = (text: string): string => {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
   }
 
   return (
     <div className="relative group my-4">
-      <pre className="bg-code-bg p-5 rounded-lg overflow-x-auto border border-slate-700 text-sm leading-relaxed">
-        {/* File name badge */}
-        {fileName && (
-          <span className="absolute top-0 right-0 bg-slate-700 text-white text-xs px-3 py-1 rounded-bl-lg font-mono">
-            {fileName}
-          </span>
-        )}
+      {/* File name badge */}
+      {fileName && (
+        <div className="bg-slate-800 text-slate-400 text-xs px-4 py-2 rounded-t-lg border border-b-0 border-slate-700 font-mono">
+          {fileName}
+        </div>
+      )}
 
+      <pre className={`bg-slate-900 p-4 overflow-x-auto border border-slate-700 text-sm leading-relaxed ${fileName ? 'rounded-b-lg rounded-t-none' : 'rounded-lg'}`}>
         {/* Copy button */}
         <button
           onClick={copyToClipboard}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-slate-700 hover:bg-slate-600 rounded text-xs"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-slate-700 hover:bg-slate-600 rounded text-xs text-white"
           aria-label="Copiar código"
         >
-          {copied ? (
-            <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          )}
+          {copied ? '✓ Copiado' : 'Copiar'}
         </button>
 
         <code
-          className="font-mono text-slate-200"
+          className="font-mono text-slate-300 text-sm"
           dangerouslySetInnerHTML={{ __html: highlightCode(code) }}
         />
       </pre>
