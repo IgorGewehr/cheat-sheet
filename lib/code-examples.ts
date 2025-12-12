@@ -1,15 +1,12 @@
-import fs from 'fs'
-import path from 'path'
-
-const EXAMPLES_DIR = path.join(process.cwd(), 'examples')
+import { codeExamples } from './generated-examples'
 
 export function getCodeExample(filePath: string): string {
-  const fullPath = path.join(EXAMPLES_DIR, filePath)
+  const code = codeExamples[filePath]
 
-  try {
-    return fs.readFileSync(fullPath, 'utf-8')
-  } catch (error) {
-    console.error(`Failed to read example file: ${filePath}`)
+  if (!code) {
+    console.error(`Example file not found: ${filePath}`)
     return `// Example file not found: ${filePath}`
   }
+
+  return code
 }
