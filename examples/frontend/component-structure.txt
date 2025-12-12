@@ -1,0 +1,27 @@
+components/
+├── ui/                    # Atoms - Componentes básicos
+│   ├── Button.tsx
+│   ├── Input.tsx
+│   ├── Badge.tsx
+│   └── Spinner.tsx
+│
+├── shared/                # Molecules - Composições simples
+│   ├── SearchInput.tsx    # Input + ícone + botão limpar
+│   ├── FormField.tsx      # Label + Input + erro
+│   └── UserAvatar.tsx     # Avatar + nome + badge online
+│
+└── organisms/             # Organisms - Seções completas
+    ├── Header/
+    │   ├── index.tsx
+    │   ├── NavLinks.tsx
+    │   └── UserMenu.tsx
+    │
+    └── Onboarding/
+        ├── index.tsx
+        ├── StepIndicator.tsx
+        ├── steps/
+        │   ├── WelcomeStep.tsx
+        │   ├── ProfileStep.tsx
+        │   └── CompanyStep.tsx
+        └── hooks/
+            └── useOnboarding.ts

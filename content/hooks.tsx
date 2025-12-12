@@ -1,4 +1,4 @@
-import CodeBlock from '@/components/CodeBlock'
+import CodeBlockFile from '@/components/CodeBlockFile'
 import NoteBox from '@/components/NoteBox'
 
 export function HooksCheatSheet() {
@@ -19,16 +19,7 @@ export function HooksCheatSheet() {
           <h3 className="text-xl font-bold text-accent mb-4">📦 useState</h3>
           <p className="text-text-secondary mb-4">Estado local do componente.</p>
 
-          <CodeBlock
-            code={`const [count, setCount] = useState(0)
-const [user, setUser] = useState<User | null>(null)
-
-// Atualização baseada no valor anterior
-setCount(prev => prev + 1)
-
-// Lazy initialization (só executa uma vez)
-const [data, setData] = useState(() => expensiveComputation())`}
-          />
+          <CodeBlockFile file="hooks/useState.ts" />
         </div>
 
         {/* useEffect */}
@@ -36,28 +27,7 @@ const [data, setData] = useState(() => expensiveComputation())`}
           <h3 className="text-xl font-bold text-accent mb-4">⚡ useEffect</h3>
           <p className="text-text-secondary mb-4">Sincronização com sistemas externos (APIs, DOM, timers).</p>
 
-          <CodeBlock
-            code={`// Executa em toda renderização
-useEffect(() => {
-  console.log('rendered')
-})
-
-// Executa apenas na montagem
-useEffect(() => {
-  console.log('mounted')
-}, [])
-
-// Executa quando 'id' muda + cleanup
-useEffect(() => {
-  const controller = new AbortController()
-
-  fetch(\`/api/user/\${id}\`, { signal: controller.signal })
-    .then(res => res.json())
-    .then(setUser)
-
-  return () => controller.abort() // Cleanup!
-}, [id])`}
-          />
+          <CodeBlockFile file="hooks/useEffect.ts" />
 
           <NoteBox type="warning" title="Quando NÃO usar useEffect">
             <ul className="list-disc list-inside space-y-1">
@@ -73,21 +43,7 @@ useEffect(() => {
           <h3 className="text-xl font-bold text-accent mb-4">📌 useRef</h3>
           <p className="text-text-secondary mb-4">Referência mutável que persiste entre renders (não causa re-render).</p>
 
-          <CodeBlock
-            code={`// Referência ao DOM
-const inputRef = useRef<HTMLInputElement>(null)
-inputRef.current?.focus()
-
-// Valor mutável que persiste
-const renderCount = useRef(0)
-renderCount.current++ // Não causa re-render!
-
-// Guardar valor anterior
-const prevValue = useRef(value)
-useEffect(() => {
-  prevValue.current = value
-}, [value])`}
-          />
+          <CodeBlockFile file="hooks/useRef.ts" />
         </div>
 
         {/* useMemo / useCallback */}
@@ -97,19 +53,7 @@ useEffect(() => {
             Memoização. <strong>Use apenas quando necessário!</strong>
           </p>
 
-          <CodeBlock
-            code={`// useMemo - memoriza VALOR
-const expensiveValue = useMemo(
-  () => computeExpensive(data),
-  [data]
-)
-
-// useCallback - memoriza FUNÇÃO
-const handleClick = useCallback(
-  () => doSomething(id),
-  [id]
-)`}
-          />
+          <CodeBlockFile file="hooks/useMemo-useCallback.ts" />
 
           <NoteBox type="danger" title="Quando usar?">
             <ul className="list-disc list-inside space-y-1">
@@ -126,26 +70,7 @@ const handleClick = useCallback(
           <h3 className="text-xl font-bold text-purple mb-4">🔄 useTransition (React 18+)</h3>
           <p className="text-text-secondary mb-4">Marca updates como não-urgentes, mantendo UI responsiva.</p>
 
-          <CodeBlock
-            code={`const [isPending, startTransition] = useTransition()
-
-function handleSearch(query: string) {
-  // Update urgente - input responsivo
-  setQuery(query)
-
-  // Update não-urgente - pode "atrasar"
-  startTransition(() => {
-    setFilteredResults(heavyFilter(data, query))
-  })
-}
-
-return (
-  <>
-    <input value={query} onChange={e => handleSearch(e.target.value)} />
-    {isPending ? <Spinner /> : <Results data={filteredResults} />}
-  </>
-)`}
-          />
+          <CodeBlockFile file="hooks/useTransition.tsx" />
         </div>
 
         {/* useActionState */}
@@ -153,26 +78,7 @@ return (
           <h3 className="text-xl font-bold text-success mb-4">📝 useActionState (React 19)</h3>
           <p className="text-text-secondary mb-4">Para Server Actions com estado de formulário.</p>
 
-          <CodeBlock
-            code={`'use client'
-import { useActionState } from 'react'
-import { createUser } from './actions'
-
-export function Form() {
-  const [state, action, isPending] = useActionState(createUser, null)
-
-  return (
-    <form action={action}>
-      <input name="email" />
-      {state?.errors?.email && <p>{state.errors.email}</p>}
-
-      <button disabled={isPending}>
-        {isPending ? 'Salvando...' : 'Salvar'}
-      </button>
-    </form>
-  )
-}`}
-          />
+          <CodeBlockFile file="hooks/useActionState.tsx" />
         </div>
       </div>
     </div>
@@ -202,48 +108,9 @@ export function StateManagement() {
             Filtros, paginação, modais, tabs. Compartilhável via URL.
           </p>
 
-          <CodeBlock
-            fileName="app/products/page.tsx"
-            code={`// Server Component - lê direto dos params
-export default function ProductsPage({
-  searchParams
-}: {
-  searchParams: { page?: string; filter?: string }
-}) {
-  const page = Number(searchParams.page) || 1
-  const filter = searchParams.filter || 'all'
+          <CodeBlockFile file="hooks/url-state-server.tsx" fileName="app/products/page.tsx" />
 
-  return <ProductList page={page} filter={filter} />
-}`}
-          />
-
-          <CodeBlock
-            fileName="components/Filters.tsx"
-            code={`'use client'
-import { useRouter, useSearchParams } from 'next/navigation'
-
-export function Filters() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  function setFilter(filter: string) {
-    const params = new URLSearchParams(searchParams)
-    params.set('filter', filter)
-    params.set('page', '1') // Reset page
-    router.push(\`?\${params.toString()}\`)
-  }
-
-  return (
-    <select
-      value={searchParams.get('filter') || 'all'}
-      onChange={(e) => setFilter(e.target.value)}
-    >
-      <option value="all">Todos</option>
-      <option value="active">Ativos</option>
-    </select>
-  )
-}`}
-          />
+          <CodeBlockFile file="hooks/url-state-client.tsx" fileName="components/Filters.tsx" />
         </div>
 
         {/* Server State */}
@@ -253,22 +120,7 @@ export function Filters() {
             Dados do banco/API. NÃO use useState para isso!
           </p>
 
-          <CodeBlock
-            code={`// O próprio fetch já é cacheado no Next.js
-async function getProducts() {
-  const res = await fetch('https://api.example.com/products', {
-    next: {
-      revalidate: 60, // Revalida a cada 60s
-      tags: ['products'] // Tag para revalidação manual
-    }
-  })
-  return res.json()
-}
-
-// Para invalidar o cache:
-import { revalidateTag } from 'next/cache'
-revalidateTag('products')`}
-          />
+          <CodeBlockFile file="hooks/server-state.ts" />
 
           <NoteBox type="success">
             Para casos complexos de server state no client (mutations, optimistic updates),
@@ -283,48 +135,9 @@ revalidateTag('products')`}
             Carrinho, player, notificações. Estado que persiste entre páginas.
           </p>
 
-          <CodeBlock
-            fileName="stores/cart.ts"
-            code={`import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+          <CodeBlockFile file="hooks/zustand-cart-store.ts" fileName="stores/cart.ts" />
 
-type CartStore = {
-  items: CartItem[]
-  addItem: (item: CartItem) => void
-  removeItem: (id: string) => void
-  total: () => number
-}
-
-export const useCart = create<CartStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
-
-      addItem: (item) => set((state) => ({
-        items: [...state.items, item]
-      })),
-
-      removeItem: (id) => set((state) => ({
-        items: state.items.filter(i => i.id !== id)
-      })),
-
-      total: () => get().items.reduce((sum, i) => sum + i.price, 0)
-    }),
-    { name: 'cart-storage' } // Persiste no localStorage
-  )
-)`}
-          />
-
-          <CodeBlock
-            fileName="components/CartButton.tsx"
-            code={`'use client'
-import { useCart } from '@/stores/cart'
-
-export function CartButton() {
-  const itemCount = useCart(state => state.items.length)
-  return <button>Carrinho ({itemCount})</button>
-}`}
-          />
+          <CodeBlockFile file="hooks/zustand-cart-button.tsx" fileName="components/CartButton.tsx" />
         </div>
 
         {/* Client Local */}
@@ -334,23 +147,7 @@ export function CartButton() {
             Inputs, accordions, dropdowns. Estado que morre com o componente.
           </p>
 
-          <CodeBlock
-            code={`'use client'
-import { useState } from 'react'
-
-function Accordion({ title, children }) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  return (
-    <div>
-      <button onClick={() => setIsOpen(!isOpen)}>
-        {title} {isOpen ? '▼' : '▶'}
-      </button>
-      {isOpen && <div>{children}</div>}
-    </div>
-  )
-}`}
-          />
+          <CodeBlockFile file="hooks/useState-local.tsx" />
         </div>
       </div>
 

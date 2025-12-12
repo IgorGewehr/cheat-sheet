@@ -1,0 +1,51 @@
+app/
+├── (auth)/                   # Route Group - Rotas de Autenticação
+│   ├── login/
+│   │   ├── page.tsx
+│   │   └── LoginForm.tsx     # Componente específico
+│   ├── register/
+│   │   └── page.tsx
+│   └── layout.tsx            # Layout sem sidebar
+│
+├── (app)/                    # Route Group - App Principal
+│   ├── dashboard/
+│   │   ├── page.tsx
+│   │   ├── loading.tsx       # Skeleton loading
+│   │   └── DashboardCards.tsx
+│   │
+│   ├── [tenantId]/           # Multi-tenancy via URL
+│   │   ├── settings/
+│   │   │   ├── page.tsx
+│   │   │   └── actions.ts    # Server Actions da feature
+│   │   └── users/
+│   │       ├── page.tsx
+│   │       ├── [userId]/
+│   │       │   └── page.tsx
+│   │       └── components/
+│   │           ├── UserTable.tsx
+│   │           └── UserFilters.tsx
+│   └── layout.tsx            # Layout com sidebar
+│
+├── api/                      # Route Handlers (quando necessário)
+│   └── webhooks/
+│       └── stripe/
+│           └── route.ts
+│
+lib/                          # Código compartilhado global
+├── db.ts                     # Conexão Prisma/Drizzle
+├── auth.ts                   # Configuração Auth
+├── utils.ts                  # Funções utilitárias
+└── validations/              # Schemas Zod compartilhados
+    ├── user.ts
+    └── tenant.ts
+
+components/                   # Componentes UI reutilizáveis
+├── ui/                       # Primitivos (Button, Input, Modal)
+│   ├── Button.tsx
+│   ├── Input.tsx
+│   └── Modal.tsx
+└── shared/                   # Compostos (DataTable, Charts)
+    ├── DataTable.tsx
+    └── Pagination.tsx
+
+middleware.ts                 # Proteção de rotas

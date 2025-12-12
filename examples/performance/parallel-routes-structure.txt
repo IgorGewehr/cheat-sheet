@@ -1,0 +1,14 @@
+// Estrutura de pastas
+app/
+├── dashboard/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── @stats/
+│   │   ├── page.tsx
+│   │   └── loading.tsx
+│   ├── @orders/
+│   │   ├── page.tsx
+│   │   └── loading.tsx
+│   └── @chart/
+│       ├── page.tsx
+│       └── loading.tsx

@@ -1,4 +1,4 @@
-import CodeBlock from '@/components/CodeBlock'
+import CodeBlockFile from '@/components/CodeBlockFile'
 import NoteBox from '@/components/NoteBox'
 
 export function PerformanceChecklist() {
@@ -124,84 +124,15 @@ export function PerformanceChecklist() {
         next/image Otimizado
       </h3>
 
-      <CodeBlock
-        code={`import Image from 'next/image'
-
-// Imagem responsiva com sizes correto
-<Image
-  src="/hero.jpg"
-  alt="Hero image"
-  width={1200}
-  height={600}
-  priority // Acima do fold - carrega imediatamente
-  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-/>
-
-// Imagem de avatar (tamanho fixo)
-<Image
-  src={user.avatar}
-  alt={user.name}
-  width={40}
-  height={40}
-  className="rounded-full"
-/>
-
-// Imagem que preenche o container
-<div className="relative h-64">
-  <Image
-    src="/bg.jpg"
-    alt="Background"
-    fill
-    className="object-cover"
-    sizes="100vw"
-  />
-</div>`}
-      />
+      <CodeBlockFile file="performance/next-image-optimized.tsx" />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">
         next/font Setup
       </h3>
 
-      <CodeBlock
-        fileName="app/layout.tsx"
-        code={`import { Inter, JetBrains_Mono } from 'next/font/google'
+      <CodeBlockFile file="performance/next-font-layout.tsx" fileName="app/layout.tsx" />
 
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-mono',
-})
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="pt-BR" className={\`\${inter.variable} \${jetbrainsMono.variable}\`}>
-      <body className="font-sans">
-        {children}
-      </body>
-    </html>
-  )
-}`}
-      />
-
-      <CodeBlock
-        fileName="tailwind.config.ts"
-        code={`module.exports = {
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ['var(--font-inter)'],
-        mono: ['var(--font-mono)'],
-      },
-    },
-  },
-}`}
-      />
+      <CodeBlockFile file="performance/tailwind-config-fonts.ts" fileName="tailwind.config.ts" />
     </div>
   )
 }
@@ -222,120 +153,21 @@ export function StreamingSuspense() {
         loading.tsx (Automático)
       </h3>
 
-      <CodeBlock
-        fileName="app/dashboard/loading.tsx"
-        code={`export default function Loading() {
-  return (
-    <div className="animate-pulse space-y-4">
-      <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="h-32 bg-gray-200 rounded"></div>
-        <div className="h-32 bg-gray-200 rounded"></div>
-        <div className="h-32 bg-gray-200 rounded"></div>
-      </div>
-      <div className="h-64 bg-gray-200 rounded"></div>
-    </div>
-  )
-}`}
-      />
+      <CodeBlockFile file="performance/loading-tsx.tsx" fileName="app/dashboard/loading.tsx" />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">
         Suspense Manual (Granular)
       </h3>
 
-      <CodeBlock
-        fileName="app/dashboard/page.tsx"
-        code={`import { Suspense } from 'react'
-
-// Componentes async que fazem fetch
-async function RevenueChart() {
-  const data = await getRevenueData() // Lento - 2s
-  return <Chart data={data} />
-}
-
-async function RecentOrders() {
-  const orders = await getRecentOrders() // Médio - 500ms
-  return <OrderList orders={orders} />
-}
-
-async function QuickStats() {
-  const stats = await getStats() // Rápido - 100ms
-  return <StatsCards stats={stats} />
-}
-
-// Page com streaming
-export default function DashboardPage() {
-  return (
-    <div className="space-y-6">
-      <h1>Dashboard</h1>
-
-      {/* Stats carrega primeiro (mais rápido) */}
-      <Suspense fallback={<StatsLoading />}>
-        <QuickStats />
-      </Suspense>
-
-      {/* Orders carrega depois */}
-      <Suspense fallback={<OrdersLoading />}>
-        <RecentOrders />
-      </Suspense>
-
-      {/* Chart carrega por último (mais lento) */}
-      <Suspense fallback={<ChartLoading />}>
-        <RevenueChart />
-      </Suspense>
-    </div>
-  )
-}`}
-      />
+      <CodeBlockFile file="performance/suspense-manual.tsx" fileName="app/dashboard/page.tsx" />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">
         Parallel Routes para Loading Independente
       </h3>
 
-      <CodeBlock
-        code={`// Estrutura de pastas
-app/
-├── dashboard/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── @stats/
-│   │   ├── page.tsx
-│   │   └── loading.tsx
-│   ├── @orders/
-│   │   ├── page.tsx
-│   │   └── loading.tsx
-│   └── @chart/
-│       ├── page.tsx
-│       └── loading.tsx`}
-      />
+      <CodeBlockFile file="performance/parallel-routes-structure.txt" />
 
-      <CodeBlock
-        fileName="app/dashboard/layout.tsx"
-        code={`export default function Layout({
-  children,
-  stats,
-  orders,
-  chart,
-}: {
-  children: React.ReactNode
-  stats: React.ReactNode
-  orders: React.ReactNode
-  chart: React.ReactNode
-}) {
-  return (
-    <div className="space-y-6">
-      {children}
-      <div className="grid grid-cols-3 gap-4">
-        {stats}
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        {orders}
-        {chart}
-      </div>
-    </div>
-  )
-}`}
-      />
+      <CodeBlockFile file="performance/parallel-routes-layout.tsx" fileName="app/dashboard/layout.tsx" />
 
       <NoteBox type="success" title="Benefícios do Streaming">
         <ul className="list-disc list-inside space-y-1">
@@ -360,88 +192,19 @@ export function BundleOptimization() {
         Dynamic Imports
       </h3>
 
-      <CodeBlock
-        code={`import dynamic from 'next/dynamic'
-
-// Componente pesado carregado sob demanda
-const HeavyChart = dynamic(() => import('./HeavyChart'), {
-  loading: () => <ChartSkeleton />,
-  ssr: false, // Se não precisa de SSR
-})
-
-// Múltiplos componentes do mesmo módulo
-const { Modal, Dialog } = dynamic(() => import('./ui'), {
-  loading: () => <Spinner />,
-})
-
-// Carrega apenas quando visível (intersection observer)
-const LazySection = dynamic(() => import('./LazySection'), {
-  loading: () => <SectionSkeleton />,
-})
-
-export default function Page() {
-  const [showModal, setShowModal] = useState(false)
-
-  return (
-    <div>
-      {/* Chart só carrega quando a página renderiza */}
-      <HeavyChart data={data} />
-
-      {/* Modal só carrega quando abre */}
-      {showModal && <Modal onClose={() => setShowModal(false)} />}
-    </div>
-  )
-}`}
-      />
+      <CodeBlockFile file="performance/dynamic-imports.tsx" />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">
         Imports Específicos (Tree Shaking)
       </h3>
 
-      <CodeBlock
-        code={`// ❌ RUIM: Importa a biblioteca inteira
-import _ from 'lodash'
-_.debounce(fn, 300)
-
-// ✅ BOM: Importa apenas a função
-import debounce from 'lodash/debounce'
-debounce(fn, 300)
-
-// ❌ RUIM: Importa todos os ícones
-import * as Icons from 'lucide-react'
-<Icons.Search />
-
-// ✅ BOM: Importa apenas o ícone usado
-import { Search } from 'lucide-react'
-<Search />
-
-// ❌ RUIM: date-fns inteiro
-import { format } from 'date-fns'
-
-// ✅ BOM: apenas a função
-import format from 'date-fns/format'`}
-      />
+      <CodeBlockFile file="performance/tree-shaking.ts" />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">
         Bundle Analyzer
       </h3>
 
-      <CodeBlock
-        code={`# Instalar
-npm install @next/bundle-analyzer
-
-# next.config.ts
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
-
-module.exports = withBundleAnalyzer({
-  // suas configs
-})
-
-# Executar análise
-ANALYZE=true npm run build`}
-      />
+      <CodeBlockFile file="performance/bundle-analyzer.sh" />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">
         Alternativas Leves

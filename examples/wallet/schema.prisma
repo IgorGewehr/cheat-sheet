@@ -1,0 +1,50 @@
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  // Saldo em centavos (evita problemas com decimal)
+  balance   Int      @default(0)
+
+  // Controle
+  lockedAt  DateTime? // Se não null, carteira bloqueada
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+
+  // Valores em centavos
+  amount      Int      // Positivo = entrada, Negativo = saída
+  balanceAfter Int     // Saldo após esta transação
+
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  description String?
+
+  // Referência externa (ID do pagamento, saque, etc)
+  externalId  String?
+
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+}
+
+enum TransactionType {
+  DEPOSIT     // Dinheiro entrou
+  WITHDRAWAL  // Saque solicitado
+  PAYMENT     // Pagamento recebido (ex: AbacatePay)
+  REFUND      // Estorno
+  FEE         // Taxa cobrada
+}
+
+enum TransactionStatus {
+  PENDING     // Aguardando processamento
+  COMPLETED   // Concluído
+  FAILED      // Falhou
+  CANCELLED   // Cancelado
+}

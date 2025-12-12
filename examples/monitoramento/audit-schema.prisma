@@ -1,0 +1,19 @@
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  targetId    String?
+  targetType  String?
+  metadata    Json     @default("{}")
+
+  ip          String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

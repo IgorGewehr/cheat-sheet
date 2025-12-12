@@ -1,4 +1,4 @@
-import CodeBlock from '@/components/CodeBlock'
+import CodeBlockFile from '@/components/CodeBlockFile'
 import NoteBox from '@/components/NoteBox'
 
 export function ServerVsClient() {
@@ -68,48 +68,14 @@ export function ServerVsClient() {
         Padrão: Server Component com Island de Interatividade
       </h3>
 
-      <CodeBlock
+      <CodeBlockFile
+        file="fundamentos/dashboard-page.tsx"
         fileName="app/dashboard/page.tsx"
-        code={`// Server Component (padrão)
-import { getUserData } from '@/lib/db'
-import InteractiveChart from './InteractiveChart' // Client
-
-export default async function DashboardPage() {
-  // Pode acessar DB diretamente - é server!
-  const data = await getUserData()
-
-  return (
-    <div>
-      {/* Parte estática - zero JS */}
-      <h1>{data.name}</h1>
-      <p>Último acesso: {data.lastLogin}</p>
-
-      {/* Island de interatividade - só esse componente vai pro browser */}
-      <InteractiveChart data={data.metrics} />
-    </div>
-  )
-}`}
       />
 
-      <CodeBlock
+      <CodeBlockFile
+        file="fundamentos/interactive-chart.tsx"
         fileName="app/dashboard/InteractiveChart.tsx"
-        code={`'use client' // Marca como Client Component
-
-import { useState } from 'react'
-
-export default function InteractiveChart({ data }) {
-  const [filter, setFilter] = useState('all')
-
-  return (
-    <div>
-      <select onChange={(e) => setFilter(e.target.value)}>
-        <option value="all">Todos</option>
-        <option value="week">Última Semana</option>
-      </select>
-      {/* Chart interativo aqui */}
-    </div>
-  )
-}`}
       />
 
       <NoteBox type="warning" title="Erro Comum">
@@ -136,58 +102,8 @@ export function EstruturaPastas() {
         Estrutura Recomendada para SaaS
       </h3>
 
-      <CodeBlock
-        code={`app/
-├── (auth)/                   # Route Group - Rotas de Autenticação
-│   ├── login/
-│   │   ├── page.tsx
-│   │   └── LoginForm.tsx     # Componente específico
-│   ├── register/
-│   │   └── page.tsx
-│   └── layout.tsx            # Layout sem sidebar
-│
-├── (app)/                    # Route Group - App Principal
-│   ├── dashboard/
-│   │   ├── page.tsx
-│   │   ├── loading.tsx       # Skeleton loading
-│   │   └── DashboardCards.tsx
-│   │
-│   ├── [tenantId]/           # Multi-tenancy via URL
-│   │   ├── settings/
-│   │   │   ├── page.tsx
-│   │   │   └── actions.ts    # Server Actions da feature
-│   │   └── users/
-│   │       ├── page.tsx
-│   │       ├── [userId]/
-│   │       │   └── page.tsx
-│   │       └── components/
-│   │           ├── UserTable.tsx
-│   │           └── UserFilters.tsx
-│   └── layout.tsx            # Layout com sidebar
-│
-├── api/                      # Route Handlers (quando necessário)
-│   └── webhooks/
-│       └── stripe/
-│           └── route.ts
-│
-lib/                          # Código compartilhado global
-├── db.ts                     # Conexão Prisma/Drizzle
-├── auth.ts                   # Configuração Auth
-├── utils.ts                  # Funções utilitárias
-└── validations/              # Schemas Zod compartilhados
-    ├── user.ts
-    └── tenant.ts
-
-components/                   # Componentes UI reutilizáveis
-├── ui/                       # Primitivos (Button, Input, Modal)
-│   ├── Button.tsx
-│   ├── Input.tsx
-│   └── Modal.tsx
-└── shared/                   # Compostos (DataTable, Charts)
-    ├── DataTable.tsx
-    └── Pagination.tsx
-
-middleware.ts                 # Proteção de rotas`}
+      <CodeBlockFile
+        file="fundamentos/estrutura-pastas.txt"
       />
 
       <h3 className="text-xl font-semibold mt-8 mb-4 border-l-4 border-accent pl-3">

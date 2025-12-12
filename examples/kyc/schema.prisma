@@ -1,0 +1,60 @@
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+
+  // KYC
+  kyc           KYC?
+  kycStatus     KYCStatus @default(PENDING)
+}
+
+model KYC {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+
+  // Dados pessoais
+  cpf           String?  // Criptografado
+  birthDate     DateTime?
+  fullName      String?
+
+  // Endereço
+  zipCode       String?
+  street        String?
+  number        String?
+  city          String?
+  state         String?
+
+  // Documentos (referência ao storage, não o arquivo)
+  documentType  DocumentType?
+  documentFrontKey String?  // Chave no S3
+  documentBackKey  String?
+  selfieKey        String?
+
+  // Verificação
+  verifiedAt    DateTime?
+  verifiedBy    String?   // ID do admin ou serviço
+  rejectedAt    DateTime?
+  rejectionReason String?
+
+  // Histórico
+  attempts      Int      @default(0)
+  lastAttemptAt DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum KYCStatus {
+  PENDING       // Não iniciou
+  SUBMITTED     // Enviou documentos
+  IN_REVIEW     // Em análise
+  VERIFIED      // Aprovado
+  REJECTED      // Rejeitado
+}
+
+enum DocumentType {
+  RG
+  CNH
+  PASSPORT
+}

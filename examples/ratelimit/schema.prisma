@@ -1,0 +1,25 @@
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String   // "Production", "Development"
+  key         String   @unique // Prefixo + hash
+  keyPrefix   String   // Primeiros 8 chars para identificação
+
+  // Permissões
+  scopes      String[] // ["read:users", "write:orders"]
+
+  // Limites
+  rateLimit   Int      @default(1000) // req/min
+
+  // Dono
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  // Metadata
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([keyPrefix])
+}

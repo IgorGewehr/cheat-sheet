@@ -1,0 +1,19 @@
+model Certificate {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+
+  // Dados do certificado (NÃO armazenar o arquivo aqui!)
+  name        String    // "Certificado Empresa X"
+  cnpj        String    // CNPJ vinculado
+  expiresAt   DateTime  // Data de expiração
+  isActive    Boolean   @default(true)
+
+  // Referência ao storage seguro
+  storageKey  String    // Chave no S3/Vault
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, cnpj])
+}

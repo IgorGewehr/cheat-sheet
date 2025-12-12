@@ -1,0 +1,68 @@
+model File {
+  id          String   @id @default(cuid())
+  key         String   @unique // S3 key
+  name        String   // Nome original
+  size        Int      // Bytes
+  mimeType    String?
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  // Organização
+  folderId    String?
+  folder      Folder?  @relation(fields: [folderId], references: [id])
+
+  // Acesso
+  isPublic    Boolean  @default(false)
+  sharedWith  FileShare[]
+
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime? // Soft delete
+
+  @@index([userId])
+  @@index([folderId])
+}
+
+model Folder {
+  id          String   @id @default(cuid())
+  name        String
+  parentId    String?
+  parent      Folder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children    Folder[] @relation("FolderTree")
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  files       File[]
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId, parentId])
+}
+
+model FileShare {
+  id          String   @id @default(cuid())
+  fileId      String
+  file        File     @relation(fields: [fileId], references: [id])
+
+  // Compartilhar com usuário ou link público
+  sharedWithId String?
+  sharedWith  User?    @relation(fields: [sharedWithId], references: [id])
+
+  // Link público com token
+  token       String?  @unique
+  expiresAt   DateTime?
+
+  permission  Permission @default(VIEW)
+
+  createdAt   DateTime @default(now())
+
+  @@index([fileId])
+  @@index([token])
+}
+
+enum Permission {
+  VIEW
+  DOWNLOAD
+  EDIT
+}

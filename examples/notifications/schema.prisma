@@ -1,0 +1,95 @@
+model Notification {
+  id          String   @id @default(cuid())
+
+  // Destinatário
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  // Conteúdo
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?    // Dados extras (orderId, etc)
+
+  // Link de ação
+  actionUrl   String?
+  actionLabel String?
+
+  // Status
+  readAt      DateTime?
+  archivedAt  DateTime?
+
+  // Canais enviados
+  channels    NotificationChannel[]
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model NotificationChannel {
+  id             String       @id @default(cuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+
+  channel        Channel      // EMAIL, PUSH, SMS
+  status         DeliveryStatus @default(PENDING)
+  sentAt         DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+
+  @@index([notificationId])
+}
+
+model NotificationPreference {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  // Preferências por tipo
+  type        NotificationType
+  email       Boolean  @default(true)
+  push        Boolean  @default(true)
+  sms         Boolean  @default(false)
+  inApp       Boolean  @default(true)
+
+  @@unique([userId, type])
+}
+
+enum NotificationType {
+  // Transacionais
+  ORDER_CREATED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+
+  // Social
+  NEW_FOLLOWER
+  NEW_COMMENT
+  MENTION
+
+  // Sistema
+  SECURITY_ALERT
+  ACCOUNT_UPDATE
+  FEATURE_ANNOUNCEMENT
+
+  // Marketing
+  PROMOTION
+  WEEKLY_DIGEST
+}
+
+enum Channel {
+  EMAIL
+  PUSH
+  SMS
+  WEBHOOK
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
