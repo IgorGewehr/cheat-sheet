@@ -40,6 +40,18 @@ export { FrontendReact } from './frontend'
 // KYC
 export { KYCVerificacao } from './kyc'
 
+// Rate Limiting
+export { RateLimitingAPI } from './ratelimit'
+
+// Monitoramento
+export { MonitoramentoLogs } from './monitoramento'
+
+// Upload
+export { FileUpload } from './upload'
+
+// Notificações
+export { SistemaNotificacoes } from './notificacoes'
+
 // Navigation structure
 export const navigation = [
   {
@@ -87,6 +99,7 @@ export const navigation = [
       { id: 'route-handlers', label: 'Route Handlers', icon: '🔌' },
       { id: 'external-apis', label: 'External APIs', icon: '🌐' },
       { id: 'webhooks', label: 'Webhooks', icon: '📡' },
+      { id: 'rate-limiting', label: 'Rate Limiting & API', icon: '🚦' },
     ],
   },
   {
@@ -94,6 +107,7 @@ export const navigation = [
     items: [
       { id: 'realtime-chat', label: 'Chat em Tempo Real', icon: '💬' },
       { id: 'cron-jobs', label: 'Jobs Agendados', icon: '⏰' },
+      { id: 'notificacoes', label: 'Sistema de Notificações', icon: '🔔' },
     ],
   },
   {
@@ -102,6 +116,7 @@ export const navigation = [
       { id: 'performance-checklist', label: 'Performance Checklist', icon: '🚀' },
       { id: 'streaming-suspense', label: 'Streaming & Suspense', icon: '⏳' },
       { id: 'bundle-optimization', label: 'Bundle Optimization', icon: '📦' },
+      { id: 'monitoramento', label: 'Monitoramento & Logs', icon: '📊' },
     ],
   },
   {
@@ -118,6 +133,12 @@ export const navigation = [
       { id: 'wallet-segura', label: 'Carteira Digital', icon: '💰' },
       { id: 'kyc-verificacao', label: 'KYC & Identidade', icon: '🪪' },
       { id: 'certificados-digitais', label: 'Certificados Digitais', icon: '📜' },
+    ],
+  },
+  {
+    title: 'Infraestrutura',
+    items: [
+      { id: 'file-upload', label: 'File Upload', icon: '📁' },
     ],
   },
 ]

@@ -28,13 +28,16 @@ import {
   RouteHandlers,
   ExternalAPIs,
   Webhooks,
+  RateLimitingAPI,
   // Real-time
   RealtimeChat,
   CronJobs,
+  SistemaNotificacoes,
   // Performance
   PerformanceChecklist,
   StreamingSuspense,
   BundleOptimization,
+  MonitoramentoLogs,
   // SaaS
   MultiTenancy,
   SubscriptionBilling,
@@ -43,6 +46,8 @@ import {
   WalletSegura,
   KYCVerificacao,
   CertificadosDigitais,
+  // Infraestrutura
+  FileUpload,
 } from '@/content'
 
 // Mapeamento de IDs para componentes
@@ -70,13 +75,16 @@ const sections: Record<string, React.ComponentType> = {
   'route-handlers': RouteHandlers,
   'external-apis': ExternalAPIs,
   'webhooks': Webhooks,
+  'rate-limiting': RateLimitingAPI,
   // Real-time
   'realtime-chat': RealtimeChat,
   'cron-jobs': CronJobs,
+  'notificacoes': SistemaNotificacoes,
   // Performance
   'performance-checklist': PerformanceChecklist,
   'streaming-suspense': StreamingSuspense,
   'bundle-optimization': BundleOptimization,
+  'monitoramento': MonitoramentoLogs,
   // SaaS
   'multi-tenancy': MultiTenancy,
   'subscription-billing': SubscriptionBilling,
@@ -85,6 +93,8 @@ const sections: Record<string, React.ComponentType> = {
   'wallet-segura': WalletSegura,
   'kyc-verificacao': KYCVerificacao,
   'certificados-digitais': CertificadosDigitais,
+  // Infraestrutura
+  'file-upload': FileUpload,
 }
 
 export default function Home() {
