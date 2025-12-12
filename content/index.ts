@@ -22,6 +22,24 @@ export { PerformanceChecklist, StreamingSuspense, BundleOptimization } from './p
 // SaaS
 export { MultiTenancy, SubscriptionBilling, FeatureFlags } from './saas'
 
+// Real-time & Jobs
+export { RealtimeChat, CronJobs } from './realtime'
+
+// Wallet
+export { WalletSegura } from './wallet'
+
+// CI/CD
+export { SegurancaCICD } from './cicd'
+
+// Certificados
+export { CertificadosDigitais } from './certificados'
+
+// Frontend
+export { FrontendReact } from './frontend'
+
+// KYC
+export { KYCVerificacao } from './kyc'
+
 // Navigation structure
 export const navigation = [
   {
@@ -32,10 +50,11 @@ export const navigation = [
     ],
   },
   {
-    title: 'React & Hooks',
+    title: 'React & Frontend',
     items: [
       { id: 'hooks-cheatsheet', label: 'Hooks Cheat Sheet', icon: '🪝' },
       { id: 'state-management', label: 'State Management', icon: '🧠' },
+      { id: 'frontend-react', label: 'Componentes & UI', icon: '🎨' },
     ],
   },
   {
@@ -44,6 +63,7 @@ export const navigation = [
       { id: 'middleware-auth', label: 'Middleware & Auth', icon: '🛡️' },
       { id: 'zod-server-actions', label: 'Zod & Server Actions', icon: '✅' },
       { id: 'rbac-multitenancy', label: 'RBAC & Multi-tenancy', icon: '👥' },
+      { id: 'seguranca-cicd', label: 'Testes & CI/CD', icon: '🧪' },
     ],
   },
   {
@@ -70,6 +90,13 @@ export const navigation = [
     ],
   },
   {
+    title: 'Real-time & Jobs',
+    items: [
+      { id: 'realtime-chat', label: 'Chat em Tempo Real', icon: '💬' },
+      { id: 'cron-jobs', label: 'Jobs Agendados', icon: '⏰' },
+    ],
+  },
+  {
     title: 'Performance',
     items: [
       { id: 'performance-checklist', label: 'Performance Checklist', icon: '🚀' },
@@ -83,6 +110,14 @@ export const navigation = [
       { id: 'multi-tenancy', label: 'Multi-tenancy', icon: '🏢' },
       { id: 'subscription-billing', label: 'Subscription & Billing', icon: '💳' },
       { id: 'feature-flags', label: 'Feature Flags', icon: '🚩' },
+    ],
+  },
+  {
+    title: 'Financeiro & Compliance',
+    items: [
+      { id: 'wallet-segura', label: 'Carteira Digital', icon: '💰' },
+      { id: 'kyc-verificacao', label: 'KYC & Identidade', icon: '🪪' },
+      { id: 'certificados-digitais', label: 'Certificados Digitais', icon: '📜' },
     ],
   },
 ]

@@ -5,52 +5,86 @@ import Sidebar from '@/components/Sidebar'
 import SearchModal from '@/components/SearchModal'
 import {
   navigation,
+  // Fundamentos
   ServerVsClient,
   EstruturaPastas,
+  // React & Frontend
   HooksCheatSheet,
   StateManagement,
+  FrontendReact,
+  // Segurança
   MiddlewareAuth,
   ZodServerActions,
   RBACMultitenancy,
+  SegurancaCICD,
+  // Data Fetching
   FetchingPatterns,
   CachingRevalidation,
   ErrorHandling,
+  // Database
   PrismaDrizzle,
   MigrationsSeeds,
+  // API
   RouteHandlers,
   ExternalAPIs,
   Webhooks,
+  // Real-time
+  RealtimeChat,
+  CronJobs,
+  // Performance
   PerformanceChecklist,
   StreamingSuspense,
   BundleOptimization,
+  // SaaS
   MultiTenancy,
   SubscriptionBilling,
   FeatureFlags,
+  // Financeiro
+  WalletSegura,
+  KYCVerificacao,
+  CertificadosDigitais,
 } from '@/content'
 
 // Mapeamento de IDs para componentes
 const sections: Record<string, React.ComponentType> = {
+  // Fundamentos
   'server-vs-client': ServerVsClient,
   'estrutura-pastas': EstruturaPastas,
+  // React & Frontend
   'hooks-cheatsheet': HooksCheatSheet,
   'state-management': StateManagement,
+  'frontend-react': FrontendReact,
+  // Segurança
   'middleware-auth': MiddlewareAuth,
   'zod-server-actions': ZodServerActions,
   'rbac-multitenancy': RBACMultitenancy,
+  'seguranca-cicd': SegurancaCICD,
+  // Data Fetching
   'fetching-patterns': FetchingPatterns,
   'caching-revalidation': CachingRevalidation,
   'error-handling': ErrorHandling,
+  // Database
   'prisma-drizzle': PrismaDrizzle,
   'migrations-seeds': MigrationsSeeds,
+  // API
   'route-handlers': RouteHandlers,
   'external-apis': ExternalAPIs,
   'webhooks': Webhooks,
+  // Real-time
+  'realtime-chat': RealtimeChat,
+  'cron-jobs': CronJobs,
+  // Performance
   'performance-checklist': PerformanceChecklist,
   'streaming-suspense': StreamingSuspense,
   'bundle-optimization': BundleOptimization,
+  // SaaS
   'multi-tenancy': MultiTenancy,
   'subscription-billing': SubscriptionBilling,
   'feature-flags': FeatureFlags,
+  // Financeiro
+  'wallet-segura': WalletSegura,
+  'kyc-verificacao': KYCVerificacao,
+  'certificados-digitais': CertificadosDigitais,
 }
 
 export default function Home() {
