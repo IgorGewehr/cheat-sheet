@@ -1,20 +1,20 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { ensureSignedIn, subscribeAuth, type User } from "./firebase";
+import { subscribeAuth, type User } from "./firebase";
 import { getWorkspaceId, setWorkspaceId } from "./workspace";
 
 type AuthState = {
   user: User | null;
   loading: boolean;
-  isAnonymous: boolean;
+  signedIn: boolean;
   workspaceId: string;
 };
 
 const Ctx = createContext<AuthState>({
   user: null,
   loading: true,
-  isAnonymous: true,
+  signedIn: false,
   workspaceId: "",
 });
 
@@ -24,31 +24,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [workspaceId, setWsId] = useState("");
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
-    ensureSignedIn().then(() => {
-      unsub = subscribeAuth((u) => {
-        setUser(u);
-        setLoading(false);
-        // workspace ID:
-        // - se usuário tem email (não-anônimo) e localStorage não foi setado manualmente,
-        //   usar o UID como workspace
-        const current = getWorkspaceId();
-        if (u && !u.isAnonymous && current !== u.uid) {
-          // só promove se localStorage ainda é o anônimo default (UUID)
-          // para não quebrar quem trocou de workspace manualmente
-          const wasManuallySet = window.localStorage.getItem("brain.workspaceManual") === "1";
-          if (!wasManuallySet) {
-            setWorkspaceId(u.uid);
-            setWsId(u.uid);
-            return;
-          }
-        }
-        setWsId(current);
-      });
+    const unsub = subscribeAuth((u) => {
+      setUser(u);
+      setLoading(false);
+
+      // Sem usuário: workspace fica vazio (DB calls vão falhar com AuthRequiredError).
+      if (!u) {
+        setWsId("");
+        return;
+      }
+
+      // Usuário logado: workspace = UID, a menos que user tenha trocado manualmente.
+      const wasManuallySet =
+        typeof window !== "undefined" &&
+        window.localStorage.getItem("brain.workspaceManual") === "1";
+
+      if (wasManuallySet) {
+        setWsId(getWorkspaceId());
+      } else {
+        setWorkspaceId(u.uid);
+        setWsId(u.uid);
+      }
     });
-    return () => {
-      if (unsub) unsub();
-    };
+    return () => unsub();
   }, []);
 
   return (
@@ -56,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
-        isAnonymous: user?.isAnonymous ?? true,
+        signedIn: !!user,
         workspaceId,
       }}
     >

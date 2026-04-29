@@ -3,7 +3,6 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
-  signInAnonymously,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -49,21 +48,48 @@ export function getFirebase(): { app: FirebaseApp; auth: Auth; db: Firestore } {
   return { app, auth: authInstance!, db: dbInstance! };
 }
 
-let signInPromise: Promise<void> | null = null;
+let authReadyPromise: Promise<void> | null = null;
 
-export function ensureSignedIn(): Promise<void> {
+/**
+ * Aguarda Firebase resolver o auth state inicial (de cache local).
+ * NÃO faz login automático. Se usuário não estiver logado, currentUser fica null.
+ */
+export function waitForAuth(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  const { auth } = getFirebase();
-  if (auth.currentUser) return Promise.resolve();
-  if (!signInPromise) {
-    signInPromise = signInAnonymously(auth)
-      .then(() => undefined)
-      .catch((err) => {
-        console.error("Anonymous sign-in failed:", err);
-        signInPromise = null;
+  if (!authReadyPromise) {
+    const { auth } = getFirebase();
+    authReadyPromise = new Promise<void>((resolve) => {
+      const unsub = onAuthStateChanged(auth, () => {
+        unsub();
+        resolve();
       });
+    });
   }
-  return signInPromise;
+  return authReadyPromise;
+}
+
+/**
+ * Garante que existe um usuário autenticado.
+ * Lança AuthRequiredError se não houver — UI deve abrir login.
+ */
+export async function ensureSignedIn(): Promise<void> {
+  if (typeof window === "undefined") return;
+  await waitForAuth();
+  const { auth } = getFirebase();
+  if (!auth.currentUser) {
+    throw new AuthRequiredError();
+  }
+}
+
+export class AuthRequiredError extends Error {
+  constructor() {
+    super("Login obrigatório.");
+    this.name = "AuthRequiredError";
+  }
+}
+
+export function isAuthRequiredError(err: unknown): err is AuthRequiredError {
+  return err instanceof AuthRequiredError || (err as { name?: string })?.name === "AuthRequiredError";
 }
 
 export async function signUpEmail(email: string, password: string, displayName?: string): Promise<User> {
@@ -92,7 +118,6 @@ export async function resetPassword(email: string): Promise<void> {
 export async function signOutUser(): Promise<void> {
   const { auth } = getFirebase();
   await signOut(auth);
-  signInPromise = null;
 }
 
 export function subscribeAuth(callback: (user: User | null) => void): () => void {

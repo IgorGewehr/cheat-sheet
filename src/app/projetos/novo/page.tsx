@@ -26,6 +26,7 @@ export default function NovoProjetoPage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [stack, setStack] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggle(s: string) {
     setStack((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -34,6 +35,7 @@ export default function NovoProjetoPage() {
   async function salvar() {
     if (!nome.trim()) return;
     setSaving(true);
+    setError(null);
     try {
       const p = await createProject({
         nome: nome.trim(),
@@ -44,7 +46,8 @@ export default function NovoProjetoPage() {
         repoUrl: repoUrl.trim() || undefined,
       });
       router.push(`/projetos/${p.id}`);
-    } finally {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao criar projeto.");
       setSaving(false);
     }
   }
@@ -106,6 +109,9 @@ export default function NovoProjetoPage() {
               ))}
             </div>
           </div>
+          {error && (
+            <p className="text-sm text-red-500">{error}</p>
+          )}
           <div className="flex gap-2 justify-end pt-2">
             <Button variant="ghost" onClick={() => history.back()}>Cancelar</Button>
             <Button onClick={salvar} disabled={!nome.trim() || saving}>

@@ -73,12 +73,8 @@ export async function createProject(
   input: Omit<Project, "id" | "criadoEm">,
 ): Promise<Project> {
   await ready();
-  const project: Project = {
-    ...input,
-    id: uuidv4(),
-    criadoEm: Date.now(),
-  };
-  await setDoc(docRef("projetos", project.id), clean(project) as DocumentData);
+  const { db } = getFirebase();
+  const project: Project = { ...input, id: uuidv4(), criadoEm: Date.now() };
   const core: Modulo = {
     id: uuidv4(),
     projetoId: project.id,
@@ -87,7 +83,10 @@ export async function createProject(
     status: "planejando",
     criadoEm: Date.now() + 1,
   };
-  await setDoc(docRef("modulos", core.id), clean(core) as DocumentData);
+  const batch = writeBatch(db);
+  batch.set(docRef("projetos", project.id), clean(project) as DocumentData);
+  batch.set(docRef("modulos", core.id), clean(core) as DocumentData);
+  await batch.commit();
   return project;
 }
 
@@ -112,7 +111,11 @@ export async function deleteProject(id: string): Promise<void> {
 // ───── Projetos — Real-time subscriptions ───────────────────
 
 export function subscribeProjects(callback: (projects: Project[]) => void): Unsubscribe {
-  ensureSignedIn();
+  const { auth } = getFirebase();
+  if (!auth.currentUser) {
+    callback([]);
+    return () => {};
+  }
   const q = query(col("projetos"), orderBy("criadoEm", "desc"));
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => d.data() as Project));
@@ -144,26 +147,28 @@ export async function createModulo(
 
 export async function updateModuloStatus(id: string, status: ModuloStatus): Promise<void> {
   await ready();
-  const ref = docRef("modulos", id);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-  await setDoc(ref, { ...snap.data(), status }, { merge: true });
+  await setDoc(docRef("modulos", id), { status }, { merge: true });
 }
 
 export async function deleteModulo(id: string): Promise<void> {
   await ready();
+  const { db } = getFirebase();
   const adocoes = await getDocs(query(col("adocoes"), where("moduloId", "==", id)));
-  await Promise.all([
-    ...adocoes.docs.map((d) => deleteDoc(d.ref)),
-    deleteDoc(docRef("modulos", id)),
-  ]);
+  const batch = writeBatch(db);
+  for (const d of adocoes.docs) batch.delete(d.ref);
+  batch.delete(docRef("modulos", id));
+  await batch.commit();
 }
 
 export function subscribeModulos(
   projetoId: string,
   callback: (modulos: Modulo[]) => void,
 ): Unsubscribe {
-  ensureSignedIn();
+  const { auth } = getFirebase();
+  if (!auth.currentUser) {
+    callback([]);
+    return () => {};
+  }
   const q = query(
     col("modulos"),
     where("projetoId", "==", projetoId),
@@ -244,7 +249,11 @@ export function subscribeAdocoes(
   projetoId: string,
   callback: (adocoes: Adocao[]) => void,
 ): Unsubscribe {
-  ensureSignedIn();
+  const { auth } = getFirebase();
+  if (!auth.currentUser) {
+    callback([]);
+    return () => {};
+  }
   const q = query(col("adocoes"), where("projetoId", "==", projetoId));
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => d.data() as Adocao));
@@ -386,10 +395,20 @@ export async function importWorkspace(payload: {
   decisoes?: Decisao[];
 }): Promise<void> {
   await ready();
-  const writes: Promise<unknown>[] = [];
-  for (const p of payload.projetos ?? []) writes.push(setDoc(docRef("projetos", p.id), clean(p) as DocumentData));
-  for (const m of payload.modulos ?? []) writes.push(setDoc(docRef("modulos", m.id), clean(m) as DocumentData));
-  for (const a of payload.adocoes ?? []) writes.push(setDoc(docRef("adocoes", a.id), clean(a) as DocumentData));
-  for (const d of payload.decisoes ?? []) writes.push(setDoc(docRef("decisoes", d.id), clean(d) as DocumentData));
-  await Promise.all(writes);
+  const { db } = getFirebase();
+  type Entry = [ColName, string, object];
+  const entries: Entry[] = [
+    ...(payload.projetos ?? []).map((p): Entry => ["projetos", p.id, clean(p)]),
+    ...(payload.modulos ?? []).map((m): Entry => ["modulos", m.id, clean(m)]),
+    ...(payload.adocoes ?? []).map((a): Entry => ["adocoes", a.id, clean(a)]),
+    ...(payload.decisoes ?? []).map((d): Entry => ["decisoes", d.id, clean(d)]),
+  ];
+  // Firestore batches are limited to 500 ops
+  for (let i = 0; i < entries.length; i += 500) {
+    const batch = writeBatch(db);
+    for (const [col, id, data] of entries.slice(i, i + 500)) {
+      batch.set(docRef(col, id), data as DocumentData);
+    }
+    await batch.commit();
+  }
 }

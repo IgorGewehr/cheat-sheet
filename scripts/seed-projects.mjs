@@ -6,7 +6,8 @@
 //
 // Preserva docs existentes — adiciona com IDs novos. Pra zerar, apague na UI antes.
 
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
+const { loadEnvConfig } = nextEnv;
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { getFirestore, doc, setDoc, writeBatch } from "firebase/firestore";

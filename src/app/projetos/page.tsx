@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, LinkButton, Tag } from "@/components/ui";
+import { SignedOutBanner } from "@/components/signed-out-banner";
+import { useAuth } from "@/lib/auth-context";
 import { listProjects } from "@/lib/db";
 import {
   PROJECT_STATUS_LABEL,
@@ -15,15 +17,20 @@ import {
 const TIPOS: (ProjectType | "todos")[] = ["todos", "fullstack", "frontend", "backend", "microsservico"];
 
 export default function ProjetosPage() {
+  const { signedIn } = useAuth();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [filter, setFilter] = useState<ProjectType | "todos">("todos");
 
   useEffect(() => {
+    if (!signedIn) {
+      setProjects([]);
+      return;
+    }
     listProjects().then(setProjects).catch((e) => {
       console.error(e);
       setProjects([]);
     });
-  }, []);
+  }, [signedIn]);
 
   const filtered = useMemo(() => {
     if (!projects) return null;
@@ -49,8 +56,10 @@ export default function ProjetosPage() {
             Cada projeto guarda seus módulos, padrões adotados e ADRs.
           </p>
         </div>
-        <LinkButton href="/projetos/novo">+ Novo projeto</LinkButton>
+        {signedIn && <LinkButton href="/projetos/novo">+ Novo projeto</LinkButton>}
       </header>
+
+      <SignedOutBanner />
 
       <div className="flex flex-wrap gap-2">
         {TIPOS.map((t) => {

@@ -7,7 +7,7 @@ import { getWorkspaceId, resetWorkspaceId, setWorkspaceId } from "@/lib/workspac
 import { useAuth } from "@/lib/auth-context";
 
 export default function WorkspacePage() {
-  const { user, isAnonymous } = useAuth();
+  const { user, signedIn } = useAuth();
   const [wsId, setWsId] = useState("");
   const [novoId, setNovoId] = useState("");
   const [msg, setMsg] = useState("");
@@ -70,7 +70,7 @@ export default function WorkspacePage() {
   }
 
   async function migrarParaUid() {
-    if (!user || isAnonymous) return;
+    if (!user || !signedIn) return;
     if (wsId === user.uid) {
       setMsg("Você já está usando seu UID como workspace.");
       return;
@@ -103,7 +103,7 @@ export default function WorkspacePage() {
 
       <Card>
         <Label>Conta</Label>
-        {user && !isAnonymous ? (
+        {signedIn && user ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-9 h-9 rounded-full bg-amber-500 text-zinc-950 text-sm font-bold flex items-center justify-center">
@@ -120,10 +120,10 @@ export default function WorkspacePage() {
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-muted">
-              Você está em modo anônimo. Crie uma conta no botão <strong>Entrar</strong> no topo
-              pra ter um workspace fixo ligado ao seu UID.
+              Você não está logado. Clique <strong>Entrar</strong> no rodapé da sidebar
+              pra criar conta ou logar com email/senha.
             </p>
-            <Tag color="amber">anônimo</Tag>
+            <Tag color="amber">deslogado</Tag>
           </div>
         )}
       </Card>
@@ -136,7 +136,7 @@ export default function WorkspacePage() {
             Copiar
           </Button>
         </div>
-        {user && !isAnonymous && wsId !== user.uid && (
+        {signedIn && user && wsId !== user.uid && (
           <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-sm space-y-2">
             <p>
               Seu workspace ainda não está ligado à sua conta. Clique pra copiar todos os dados
@@ -147,7 +147,7 @@ export default function WorkspacePage() {
             </Button>
           </div>
         )}
-        {user && !isAnonymous && wsId === user.uid && (
+        {signedIn && user && wsId === user.uid && (
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
             ✓ Workspace ligado ao seu UID
           </p>

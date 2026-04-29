@@ -7,7 +7,7 @@ import { signOutUser } from "@/lib/firebase";
 import { LoginModal } from "./login-modal";
 
 export function AuthWidget() {
-  const { user, isAnonymous, loading } = useAuth();
+  const { user, signedIn, loading } = useAuth();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export function AuthWidget() {
     );
   }
 
-  if (!user || isAnonymous) {
+  if (!signedIn || !user) {
     return (
       <>
         <button

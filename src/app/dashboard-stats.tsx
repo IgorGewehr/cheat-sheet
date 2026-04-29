@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listAllAdocoes, listProjects } from "@/lib/db";
 import { Card, LinkButton, Tag } from "@/components/ui";
+import { SignedOutBanner } from "@/components/signed-out-banner";
+import { useAuth } from "@/lib/auth-context";
 import type { Adocao, Project } from "@/lib/types";
 
 const STEPS = [
@@ -14,11 +16,18 @@ const STEPS = [
 ];
 
 export function DashboardStats({ totalCards }: { totalCards: number }) {
+  const { signedIn } = useAuth();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [adocoes, setAdocoes] = useState<Adocao[] | null>(null);
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
+    if (!signedIn) {
+      setProjects([]);
+      setAdocoes([]);
+      setIsNew(false);
+      return;
+    }
     (async () => {
       try {
         const [ps, ads] = await Promise.all([listProjects(), listAllAdocoes()]);
@@ -31,7 +40,7 @@ export function DashboardStats({ totalCards }: { totalCards: number }) {
         setAdocoes([]);
       }
     })();
-  }, []);
+  }, [signedIn]);
 
   const pCount = projects?.length ?? 0;
   const aCount = adocoes?.length ?? 0;
@@ -39,8 +48,10 @@ export function DashboardStats({ totalCards }: { totalCards: number }) {
 
   return (
     <div className="space-y-5">
+      <SignedOutBanner />
+
       {/* Welcome banner para novos usuários */}
-      {isNew && (
+      {isNew && signedIn && (
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
           <h2 className="font-semibold text-amber-600 dark:text-amber-400 mb-1">
             Bem-vindo ao brain!
