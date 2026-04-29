@@ -6,6 +6,7 @@ import {
   signInAnonymously,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -66,6 +67,14 @@ export async function signInEmail(email: string, password: string): Promise<User
   const { auth } = getFirebase();
   const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
   return cred.user;
+}
+
+export async function resetPassword(email: string): Promise<void> {
+  const { auth } = getFirebase();
+  await sendPasswordResetEmail(auth, email.trim(), {
+    url: typeof window !== "undefined" ? window.location.origin : "https://brain.app",
+    handleCodeInApp: false,
+  });
 }
 
 export async function signOutUser(): Promise<void> {
