@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Mail, Lock, User as UserIcon } from "lucide-react";
 import { Button } from "./ui";
 import { signInEmail, signUpEmail } from "@/lib/firebase";
@@ -25,6 +26,18 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
 
   async function submit() {
     if (!email.trim() || !password) return;
@@ -46,7 +59,9 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  const modal = (
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
@@ -122,7 +137,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
                 placeholder={mode === "signup" ? "mínimo 6 caracteres" : "sua senha"}
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 required
-                minLength={6}
+                minLength={mode === "signup" ? 6 : undefined}
               />
             </div>
           </div>
@@ -178,4 +193,6 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

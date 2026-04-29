@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Nav } from "@/components/nav";
 import { AuthProvider } from "@/lib/auth-context";
-import { CommandPaletteWrapper } from "@/components/command-palette-wrapper";
+import { SidebarWrapper } from "@/components/sidebar-wrapper";
 
 export const metadata: Metadata = {
   title: "brain — cheat sheet de engenharia",
@@ -39,8 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AuthProvider>
-          <Nav commandPalette={<CommandPaletteWrapper />} />
-          <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+          <SidebarWrapper />
+          <main className="lg:pl-64 min-h-screen">
+            <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8 pt-16 lg:pt-8">
+              {children}
+            </div>
+          </main>
         </AuthProvider>
       </body>
     </html>
