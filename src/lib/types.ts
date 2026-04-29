@@ -76,9 +76,10 @@ export interface Project {
   status?: ProjectStatus;
   repoUrl?: string;
   criadoEm: number;
+  origemModulo?: { projetoId: string; projetoNome: string; moduloId: string; moduloNome: string };
 }
 
-export type ModuloStatus = "planejando" | "em-desenvolvimento" | "concluido";
+export type ModuloStatus = "planejando" | "em-desenvolvimento" | "concluido" | "extraido";
 
 export interface Modulo {
   id: string;
@@ -88,6 +89,7 @@ export interface Modulo {
   status: ModuloStatus;
   descricao?: string;
   criadoEm: number;
+  projetoExtraidoId?: string;
 }
 
 export type AdocaoStatus = "adotado" | "revisar" | "dificuldade" | "outra-abordagem";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, LinkButton, Tag } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
 import { useAuth } from "@/lib/auth-context";
-import { listProjects } from "@/lib/db";
+import { subscribeProjects } from "@/lib/db";
 import {
   PROJECT_STATUS_LABEL,
   PROJECT_TYPE_COLOR,
@@ -26,10 +26,8 @@ export default function ProjetosPage() {
       setProjects([]);
       return;
     }
-    listProjects().then(setProjects).catch((e) => {
-      console.error(e);
-      setProjects([]);
-    });
+    const unsub = subscribeProjects(setProjects);
+    return () => unsub();
   }, [signedIn]);
 
   const filtered = useMemo(() => {

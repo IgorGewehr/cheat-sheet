@@ -287,6 +287,124 @@ export async function deleteDecisao(id: string): Promise<void> {
   await deleteDoc(docRef("decisoes", id));
 }
 
+export function subscribeDecisoes(
+  projetoId: string,
+  callback: (decisoes: Decisao[]) => void,
+): Unsubscribe {
+  const { auth } = getFirebase();
+  if (!auth.currentUser) {
+    callback([]);
+    return () => {};
+  }
+  const q = query(
+    col("decisoes"),
+    where("projetoId", "==", projetoId),
+    orderBy("data", "desc"),
+  );
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => d.data() as Decisao));
+  });
+}
+
+// ───── Extração de módulo como microsserviço ─────────────────
+
+export async function extractModuloAsProject(params: {
+  sourceProjectId: string;
+  sourceProjectNome: string;
+  moduloId: string;
+  moduloNome: string;
+  moduloAdocoes: Adocao[];
+  newProject: { nome: string; descricao?: string; stack: string[] };
+  createADR: boolean;
+}): Promise<Project> {
+  await ready();
+  const { db } = getFirebase();
+  const {
+    sourceProjectId, sourceProjectNome,
+    moduloId, moduloNome, moduloAdocoes,
+    newProject: newProjInput, createADR,
+  } = params;
+
+  const project: Project = {
+    ...newProjInput,
+    id: uuidv4(),
+    tipo: "microsservico",
+    status: "planejando",
+    criadoEm: Date.now(),
+    origemModulo: {
+      projetoId: sourceProjectId,
+      projetoNome: sourceProjectNome,
+      moduloId,
+      moduloNome,
+    },
+  };
+
+  const coreModulo: Modulo = {
+    id: uuidv4(),
+    projetoId: project.id,
+    nome: "Core",
+    tipo: "core",
+    status: "planejando",
+    criadoEm: Date.now() + 1,
+  };
+
+  type SetOp = { kind: "set"; col: ColName; id: string; data: object };
+  type UpdateOp = { kind: "update"; col: ColName; id: string; data: object };
+  const ops: (SetOp | UpdateOp)[] = [
+    { kind: "set", col: "projetos", id: project.id, data: clean(project) },
+    { kind: "set", col: "modulos", id: coreModulo.id, data: clean(coreModulo) },
+  ];
+
+  for (const a of moduloAdocoes) {
+    const copy: Adocao = {
+      id: uuidv4(),
+      projetoId: project.id,
+      moduloId: coreModulo.id,
+      cardSlug: a.cardSlug,
+      status: a.status ?? "adotado",
+      notas: a.notas,
+      dataDecisao: Date.now(),
+    };
+    ops.push({ kind: "set", col: "adocoes", id: copy.id, data: clean(copy) });
+  }
+
+  if (createADR) {
+    const adr: Decisao = {
+      id: uuidv4(),
+      projetoId: sourceProjectId,
+      titulo: `Extrair módulo "${moduloNome}" como microsserviço "${newProjInput.nome}"`,
+      contexto: `O módulo "${moduloNome}" cresceu em responsabilidades a ponto de justificar extração como serviço independente, com deploy, escala e ciclo de vida próprios.`,
+      decisao: `Criar o projeto "${newProjInput.nome}" como microsserviço separado, migrando os padrões e responsabilidades do módulo "${moduloNome}". O módulo original permanece no projeto atual marcado como "extraído" para rastreabilidade.`,
+      consequencias: `Melhor isolamento, escalabilidade e deployabilidade independente. Adicionada complexidade de comunicação entre serviços (contratos de API, autenticação service-to-service, eventual consistency).`,
+      status: "aceita",
+      data: Date.now(),
+    };
+    ops.push({ kind: "set", col: "decisoes", id: adr.id, data: clean(adr) });
+  }
+
+  ops.push({
+    kind: "update",
+    col: "modulos",
+    id: moduloId,
+    data: { status: "extraido", projetoExtraidoId: project.id },
+  });
+
+  for (let i = 0; i < ops.length; i += 500) {
+    const batch = writeBatch(db);
+    for (const op of ops.slice(i, i + 500)) {
+      const ref = docRef(op.col, op.id);
+      if (op.kind === "update") {
+        batch.update(ref, op.data as DocumentData);
+      } else {
+        batch.set(ref, op.data as DocumentData);
+      }
+    }
+    await batch.commit();
+  }
+
+  return project;
+}
+
 // ───── Checklist Sessions ────────────────────────────────────
 
 export async function listChecklistSessions(cardSlug: string): Promise<ChecklistSession[]> {

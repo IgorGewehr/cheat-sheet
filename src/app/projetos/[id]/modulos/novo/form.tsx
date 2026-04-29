@@ -25,6 +25,7 @@ export function NovoModuloForm({
   const [descricao, setDescricao] = useState("");
   const [adotar, setAdotar] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const recomendados = useMemo(() => {
     const slugs = recomendacoesPorTipo[tipo] ?? [];
@@ -45,6 +46,7 @@ export function NovoModuloForm({
   async function salvar() {
     if (!nome.trim()) return;
     setSaving(true);
+    setError(null);
     try {
       const m = await createModulo({
         projetoId,
@@ -53,11 +55,12 @@ export function NovoModuloForm({
         descricao: descricao.trim() || undefined,
         status: "planejando",
       });
-      for (const slug of adotar) {
-        await createAdocao({ projetoId, moduloId: m.id, cardSlug: slug });
-      }
+      await Promise.all(
+        [...adotar].map((slug) => createAdocao({ projetoId, moduloId: m.id, cardSlug: slug })),
+      );
       router.push(`/projetos/${projetoId}`);
-    } finally {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao criar módulo.");
       setSaving(false);
     }
   }
@@ -118,6 +121,7 @@ export function NovoModuloForm({
         </Card>
       )}
 
+      {error && <p className="text-sm text-red-500 text-right">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={() => history.back()}>Cancelar</Button>
         <Button onClick={salvar} disabled={!nome.trim() || saving}>

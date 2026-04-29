@@ -7,7 +7,7 @@ import { Button, Card, Input, Label, Tag, Textarea } from "@/components/ui";
 import {
   createDecisao,
   deleteDecisao,
-  listDecisoes,
+  subscribeDecisoes,
   updateDecisaoStatus,
 } from "@/lib/db";
 import type { Decisao } from "@/lib/types";
@@ -41,15 +41,18 @@ const emptyForm = {
 export function DecisoesSection({
   projetoId,
   cards = [],
+  projetoStack = [],
 }: {
   projetoId: string;
   cards?: CardLite[];
+  projetoStack?: string[];
 }) {
   const [decisoes, setDecisoes] = useState<Decisao[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [cardSearch, setCardSearch] = useState("");
 
@@ -61,27 +64,25 @@ export function DecisoesSection({
   const [showAI, setShowAI] = useState(false);
 
   useEffect(() => {
-    loadDecisoes();
-  }, [projetoId]); // eslint-disable-line
-
-  async function loadDecisoes() {
     setLoading(true);
-    try {
-      setDecisoes(await listDecisoes(projetoId));
-    } finally {
+    const unsub = subscribeDecisoes(projetoId, (d) => {
+      setDecisoes(d);
       setLoading(false);
-    }
-  }
+    });
+    return () => unsub();
+  }, [projetoId]);
 
   async function salvar() {
     if (!form.titulo.trim() || !form.decisao.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      const nova = await createDecisao({ ...form, projetoId });
-      setDecisoes((prev) => [nova, ...prev]);
+      await createDecisao({ ...form, projetoId });
       setForm(emptyForm);
       setCardSearch("");
       setShowForm(false);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Erro ao salvar decisão.");
     } finally {
       setSaving(false);
     }
@@ -97,7 +98,7 @@ export function DecisoesSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           problema: aiProblema,
-          stack: cards.length > 0 ? undefined : undefined,
+          stack: projetoStack.length > 0 ? projetoStack : undefined,
           contextoAdicional: aiContexto || undefined,
         }),
       });
@@ -129,14 +130,14 @@ export function DecisoesSection({
 
   async function cycleStatus(d: Decisao) {
     const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(d.status) + 1) % STATUS_CYCLE.length];
-    await updateDecisaoStatus(d.id, next);
+    // Optimistic update — subscription will confirm
     setDecisoes((prev) => prev.map((x) => (x.id === d.id ? { ...x, status: next } : x)));
+    await updateDecisaoStatus(d.id, next);
   }
 
   async function remover(id: string) {
     if (!confirm("Apagar esta decisão?")) return;
     await deleteDecisao(id);
-    setDecisoes((prev) => prev.filter((d) => d.id !== id));
   }
 
   function toggleCardSlug(slug: string) {
@@ -310,8 +311,9 @@ export function DecisoesSection({
                 ))}
               </select>
             </div>
+            {saveError && <p className="text-sm text-red-500">{saveError}</p>}
             <div className="flex gap-2 justify-end pt-1">
-              <Button variant="ghost" onClick={() => { setShowForm(false); setForm(emptyForm); setCardSearch(""); }}>
+              <Button variant="ghost" onClick={() => { setShowForm(false); setForm(emptyForm); setCardSearch(""); setSaveError(null); }}>
                 Cancelar
               </Button>
               <Button onClick={salvar} disabled={!form.titulo.trim() || !form.decisao.trim() || saving}>

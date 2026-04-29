@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import {
   Plus, Trash2, BookOpen, ChevronRight, Circle,
-  CheckCircle2, AlertTriangle, XCircle, GitBranch, Sparkles,
+  CheckCircle2, AlertTriangle, XCircle, GitBranch, Sparkles, Boxes, ArrowUpRight,
 } from "lucide-react";
 import { Button, Card, LinkButton, Tag } from "@/components/ui";
 import {
@@ -21,6 +21,7 @@ import {
   updateModuloStatus,
 } from "@/lib/db";
 import { DecisoesSection } from "./decisoes-section";
+import { ExtractModal } from "./extract-modal";
 import type { Adocao, AdocaoStatus, Modulo, ModuloStatus, Project } from "@/lib/types";
 import {
   ADOCAO_STATUS_COLOR,
@@ -33,11 +34,13 @@ const STATUS_MOD_LABEL: Record<ModuloStatus, string> = {
   planejando: "Planejando",
   "em-desenvolvimento": "Em desenvolvimento",
   concluido: "Concluído",
+  extraido: "Extraído",
 };
 const STATUS_MOD_DOT: Record<ModuloStatus, string> = {
   planejando: "bg-zinc-400",
   "em-desenvolvimento": "bg-amber-400",
   concluido: "bg-emerald-400",
+  extraido: "bg-violet-400",
 };
 const ADOCAO_ICON: Record<AdocaoStatus, React.ReactNode> = {
   adotado: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
@@ -60,6 +63,7 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
   const [addingSlug, setAddingSlug] = useState<string | null>(null);
   const [suggesting, setSuggesting] = useState(false);
   const [aiSuggested, setAiSuggested] = useState<string[]>([]);
+  const [extractingModulo, setExtractingModulo] = useState<Modulo | null>(null);
 
   // Load project once, then subscribe to real-time modulos + adocoes
   useEffect(() => {
@@ -187,6 +191,15 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
             <ChevronRight className="w-3 h-3 rotate-180" /> projetos
           </Link>
           <h1 className="text-2xl font-semibold">{projeto.nome}</h1>
+          {projeto.origemModulo && (
+            <Link
+              href={`/projetos/${projeto.origemModulo.projetoId}`}
+              className="inline-flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition mt-0.5"
+            >
+              <ArrowUpRight className="w-3 h-3" />
+              Extraído de {projeto.origemModulo.projetoNome} / {projeto.origemModulo.moduloNome}
+            </Link>
+          )}
           {projeto.descricao && <p className="text-muted mt-1 text-sm">{projeto.descricao}</p>}
           <div className="flex flex-wrap gap-1.5 mt-2">
             {projeto.stack.map((s) => <Tag key={s} color="sky">{s}</Tag>)}
@@ -239,7 +252,7 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
       </div>
 
       {activeTab === "decisoes" ? (
-        <DecisoesSection projetoId={projetoId} cards={cards} />
+        <DecisoesSection projetoId={projetoId} cards={cards} projetoStack={projeto.stack} />
       ) : (
         <div className="flex gap-5 items-start">
 
@@ -255,6 +268,7 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
                   onClick={() => setActiveId(m.id)}
                   className={clsx(
                     "w-full text-left px-2.5 py-2 rounded-lg transition flex items-start gap-2 border text-sm",
+                    m.status === "extraido" && "opacity-60",
                     m.id === activeId
                       ? "border-amber-500/50 bg-amber-500/10 text-fg"
                       : "border-transparent text-muted hover:bg-card-hover hover:text-fg",
@@ -263,9 +277,14 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
                   <span className={clsx("w-2 h-2 rounded-full shrink-0 mt-1.5", STATUS_MOD_DOT[m.status])} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium leading-snug">{m.nome}</p>
-                    <p className="text-[11px] text-muted">{m.tipo}</p>
+                    <p className="text-[11px] text-muted">
+                      {m.status === "extraido" ? "microsserviço" : m.tipo}
+                    </p>
                   </div>
-                  {m.id === activeId && <ChevronRight className="w-3 h-3 text-amber-500 mt-1 shrink-0" />}
+                  {m.status === "extraido"
+                    ? <ArrowUpRight className="w-3 h-3 text-violet-400 mt-1 shrink-0" />
+                    : m.id === activeId && <ChevronRight className="w-3 h-3 text-amber-500 mt-1 shrink-0" />
+                  }
                 </button>
               ))}
             </div>
@@ -291,15 +310,26 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
                     {activeModulo.descricao && <p className="text-sm text-muted">{activeModulo.descricao}</p>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <select
-                      value={activeModulo.status}
-                      onChange={(e) => changeModuloStatus(activeModulo.id, e.target.value as ModuloStatus)}
-                      className="text-xs rounded-md bg-card border border-line px-2 py-1.5 text-fg"
-                    >
-                      {(Object.entries(STATUS_MOD_LABEL) as [ModuloStatus, string][]).map(([v, l]) => (
-                        <option key={v} value={v}>{l}</option>
-                      ))}
-                    </select>
+                    {activeModulo.status !== "extraido" && (
+                      <>
+                        <select
+                          value={activeModulo.status}
+                          onChange={(e) => changeModuloStatus(activeModulo.id, e.target.value as ModuloStatus)}
+                          className="text-xs rounded-md bg-card border border-line px-2 py-1.5 text-fg"
+                        >
+                          {(["planejando", "em-desenvolvimento", "concluido"] as ModuloStatus[]).map((v) => (
+                            <option key={v} value={v}>{STATUS_MOD_LABEL[v]}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => projeto && setExtractingModulo(activeModulo)}
+                          className="p-1.5 rounded text-muted hover:text-violet-400 hover:bg-violet-500/10 transition"
+                          title="Extrair como microsserviço"
+                        >
+                          <Boxes className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => deleteModuloLocal(activeModulo.id)}
                       className="p-1.5 rounded text-muted hover:text-red-500 hover:bg-red-500/10 transition"
@@ -309,6 +339,21 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
                     </button>
                   </div>
                 </div>
+
+                {activeModulo.status === "extraido" && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-500/30 bg-violet-500/5 text-sm text-violet-400">
+                    <Boxes className="w-4 h-4 shrink-0" />
+                    <span>Este módulo foi extraído como microsserviço independente.</span>
+                    {activeModulo.projetoExtraidoId && (
+                      <Link
+                        href={`/projetos/${activeModulo.projetoExtraidoId}`}
+                        className="ml-auto flex items-center gap-1 text-xs font-medium hover:text-violet-300 transition shrink-0"
+                      >
+                        Ver projeto <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    )}
+                  </div>
+                )}
 
                 {/* Padrões adotados */}
                 <section>
@@ -431,6 +476,15 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
             )}
           </div>
         </div>
+      )}
+
+      {extractingModulo && projeto && (
+        <ExtractModal
+          projeto={projeto}
+          modulo={extractingModulo}
+          adocoes={adocoes.filter((a) => a.moduloId === extractingModulo.id)}
+          onClose={() => setExtractingModulo(null)}
+        />
       )}
     </div>
   );
