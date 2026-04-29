@@ -6,19 +6,32 @@
 //
 // Preserva docs existentes — adiciona com IDs novos. Pra zerar, apague na UI antes.
 
+import { loadEnvConfig } from "@next/env";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
-import { getFirestore, doc, setDoc, writeBatch, collection } from "firebase/firestore";
+import { getFirestore, doc, setDoc, writeBatch } from "firebase/firestore";
 import { randomUUID } from "node:crypto";
 
+// carrega .env.local da raiz do projeto
+loadEnvConfig(process.cwd());
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDqGt7sYozIVZJHeBa3-5JQ8D0srcemnkE",
-  authDomain: "facilito-9f70c.firebaseapp.com",
-  projectId: "facilito-9f70c",
-  storageBucket: "facilito-9f70c.firebasestorage.app",
-  messagingSenderId: "851640298286",
-  appId: "1:851640298286:web:35ebad519bd288acb568bf",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
+const missing = Object.entries(firebaseConfig)
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+if (missing.length > 0) {
+  console.error(`❌ Variáveis NEXT_PUBLIC_FIREBASE_* faltando em .env.local: ${missing.join(", ")}`);
+  console.error("   Veja .env.example pra modelo.");
+  process.exit(1);
+}
 
 const WORKSPACE_ID = "EKQuaUZAnsYfKprk8grlZlkzkRk2";
 

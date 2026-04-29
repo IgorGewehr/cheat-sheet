@@ -16,13 +16,25 @@ import {
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDqGt7sYozIVZJHeBa3-5JQ8D0srcemnkE",
-  authDomain: "facilito-9f70c.firebaseapp.com",
-  projectId: "facilito-9f70c",
-  storageBucket: "facilito-9f70c.firebasestorage.app",
-  messagingSenderId: "851640298286",
-  appId: "1:851640298286:web:35ebad519bd288acb568bf",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
+
+if (typeof window !== "undefined") {
+  const missing = Object.entries(firebaseConfig)
+    .filter(([, v]) => !v)
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    console.error(
+      `[firebase] variáveis NEXT_PUBLIC_FIREBASE_* faltando: ${missing.join(", ")}. ` +
+        `Veja .env.example.`,
+    );
+  }
+}
 
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
