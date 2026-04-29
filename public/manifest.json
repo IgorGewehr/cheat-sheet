@@ -1,0 +1,21 @@
+{
+  "name": "brain — cheat sheet de engenharia",
+  "short_name": "brain",
+  "description": "Padrões, arquiteturas e auditoria de código gerado por IA.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

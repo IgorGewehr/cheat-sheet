@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --page: #ffffff;
+  --card: #fafafa;
+  --card-hover: #f4f4f5;
+  --fg: #18181b;
+  --muted: #52525b;
+  --subtle: #71717a;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --nav: rgba(255, 255, 255, 0.85);
+  --code-bg: #f4f4f5;
+  --code-fg: #b45309;
+  --pre-bg: #fafafa;
+  color-scheme: light;
+}
+
+html.dark {
+  --page: #09090b;
+  --card: rgba(24, 24, 27, 0.4);
+  --card-hover: rgba(24, 24, 27, 0.8);
+  --fg: #f4f4f5;
+  --muted: #a1a1aa;
+  --subtle: #71717a;
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --nav: rgba(9, 9, 11, 0.8);
+  --code-bg: #27272a;
+  --code-fg: #fcd34d;
+  --pre-bg: #18181b;
+  color-scheme: dark;
+}
+
+html, body {
+  background: var(--page);
+  color: var(--fg);
+}
+
+body {
+  @apply font-sans antialiased;
+}
+
+.prose-card {
+  color: var(--fg);
+  line-height: 1.65;
+}
+.prose-card h1 { @apply text-3xl font-semibold mt-8 mb-4; color: var(--fg); }
+.prose-card h2 { @apply text-2xl font-semibold mt-7 mb-3; color: var(--fg); }
+.prose-card h3 { @apply text-xl font-semibold mt-6 mb-2; color: var(--fg); }
+.prose-card h4 { @apply text-lg font-semibold mt-5 mb-2; color: var(--fg); }
+.prose-card p  { @apply my-3; }
+.prose-card ul { @apply list-disc pl-6 my-3 space-y-1; }
+.prose-card ol { @apply list-decimal pl-6 my-3 space-y-1; }
+.prose-card code {
+  @apply px-1.5 py-0.5 rounded text-[0.9em];
+  background: var(--code-bg);
+  color: var(--code-fg);
+}
+.prose-card pre  {
+  @apply p-4 rounded-lg overflow-x-auto my-4 border;
+  background: var(--pre-bg);
+  border-color: var(--line);
+}
+.prose-card pre code { background: transparent; color: var(--fg); padding: 0; }
+.prose-card blockquote {
+  @apply pl-4 my-4 italic;
+  border-left: 4px solid #f59e0b;
+  color: var(--muted);
+}
+.prose-card a { @apply underline underline-offset-2; color: #d97706; }
+html.dark .prose-card a { color: #fbbf24; }
+.prose-card hr { @apply my-6; border-color: var(--line); }
+.prose-card strong { color: var(--fg); }
+.prose-card table { @apply w-full my-4 border-collapse; }
+.prose-card th, .prose-card td { @apply px-3 py-2 text-left text-sm border; border-color: var(--line); }
+.prose-card th { background: var(--card-hover); color: var(--fg); font-weight: 600; }
+
+/* Task list (checklists interativos) */
+.prose-card ul.contains-task-list { list-style: none; padding-left: 0; }
+.prose-card li.task-list-item { display: flex; align-items: flex-start; }
+
+/* Syntax highlighting — highlight.js tokens */
+.hljs-comment, .hljs-quote { color: #71717a; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: #7c3aed; font-weight: 500; }
+.hljs-string, .hljs-attr, .hljs-selector-attr { color: #15803d; }
+.hljs-number, .hljs-literal { color: #b45309; }
+.hljs-title, .hljs-title.class_, .hljs-title.function_ { color: #1d4ed8; }
+.hljs-type, .hljs-class { color: #0891b2; }
+.hljs-variable, .hljs-params { color: var(--fg); }
+.hljs-meta { color: #6b7280; }
+.hljs-tag { color: #b45309; }
+.hljs-name { color: #7c3aed; }
+.hljs-attribute { color: #0891b2; }
+.hljs-symbol, .hljs-bullet, .hljs-addition { color: #15803d; }
+.hljs-deletion { color: #dc2626; }
+
+html.dark .hljs-comment, html.dark .hljs-quote { color: #71717a; }
+html.dark .hljs-keyword, html.dark .hljs-selector-tag, html.dark .hljs-built_in { color: #c084fc; font-weight: 500; }
+html.dark .hljs-string, html.dark .hljs-attr, html.dark .hljs-selector-attr { color: #34d399; }
+html.dark .hljs-number, html.dark .hljs-literal { color: #fbbf24; }
+html.dark .hljs-title, html.dark .hljs-title.class_, html.dark .hljs-title.function_ { color: #60a5fa; }
+html.dark .hljs-type, html.dark .hljs-class { color: #22d3ee; }
+html.dark .hljs-variable, html.dark .hljs-params { color: var(--fg); }
+html.dark .hljs-meta { color: #a1a1aa; }
+html.dark .hljs-tag { color: #fbbf24; }
+html.dark .hljs-name { color: #c084fc; }
+html.dark .hljs-attribute { color: #22d3ee; }
+html.dark .hljs-symbol, html.dark .hljs-bullet, html.dark .hljs-addition { color: #34d399; }
+html.dark .hljs-deletion { color: #f87171; }

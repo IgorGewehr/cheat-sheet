@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Qualquer usuário autenticado (anônimo) com o ID do workspace pode ler/escrever.
+    // O ID do workspace é um UUID guardado no localStorage — não enumerável na prática.
+    // Para algo realmente sensível, troque por allow if request.auth.uid == workspaceId.
+    match /workspaces/{workspaceId}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

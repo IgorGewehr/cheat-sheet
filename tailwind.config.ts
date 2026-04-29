@@ -1,38 +1,28 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './content/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ["./src/**/*.{ts,tsx,md,mdx}"],
+  darkMode: "class",
   theme: {
     extend: {
-      colors: {
-        bg: {
-          primary: '#0f172a',
-          secondary: '#1e293b',
-        },
-        text: {
-          primary: '#f1f5f9',
-          secondary: '#94a3b8',
-        },
-        accent: {
-          DEFAULT: '#3b82f6',
-          hover: '#2563eb',
-        },
-        success: '#10b981',
-        warning: '#f59e0b',
-        danger: '#ef4444',
-        purple: '#8b5cf6',
-        'code-bg': '#020617',
-      },
       fontFamily: {
-        mono: ['Consolas', 'Monaco', 'monospace'],
+        sans: ["ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      colors: {
+        page: "var(--page)",
+        card: "var(--card)",
+        "card-hover": "var(--card-hover)",
+        fg: "var(--fg)",
+        muted: "var(--muted)",
+        subtle: "var(--subtle)",
+        line: "var(--line)",
+        "line-strong": "var(--line-strong)",
+        nav: "var(--nav)",
       },
     },
   },
   plugins: [],
-}
+};
 
-export default config
+export default config;
