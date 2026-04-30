@@ -8,7 +8,7 @@ import {
   Scale, Flame, Menu, X, CalendarDays, TrendingUp, AlertCircle,
   Eye, Swords, MessageSquareMore, Trophy, AlertTriangle,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
-  Star, GitBranch, Activity, Bot,
+  Star, GitBranch, Activity, Bot, Moon,
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
@@ -22,9 +22,10 @@ const GROUPS: Group[] = [
   {
     label: "Trabalho diário",
     items: [
-      { href: "/",         label: "Dashboard",  icon: BarChart2 },
-      { href: "/sessao",   label: "Sessão IA",  icon: Zap, hot: true },
-      { href: "/comparar", label: "Comparar",   icon: Scale, hot: true },
+      { href: "/",            label: "Dashboard",   icon: BarChart2 },
+      { href: "/sessao",      label: "Sessão IA",   icon: Zap, hot: true },
+      { href: "/comparar",    label: "Comparar",    icon: Scale, hot: true },
+      { href: "/fim-do-dia",  label: "Fim do Dia",  icon: Moon },
     ],
   },
   {

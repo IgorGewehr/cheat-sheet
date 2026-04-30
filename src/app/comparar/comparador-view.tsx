@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Scale, X, ChevronDown, ChevronUp, Sparkles, CheckCircle2, XCircle,
-  Save, History, Trash2, Trophy, AlertTriangle, Target, ArrowRight,
+  Save, History, Trash2, Trophy, AlertTriangle, Target, ArrowRight, GitFork,
 } from "lucide-react";
 import { Button, Card, Input, Select, Tag } from "@/components/ui";
 import { CATEGORY_LABEL, type CardCategory, type SavedComparison, type Project, PROJECT_TYPE_LABEL } from "@/lib/types";
 import type { CompareContext, CompareResult } from "@/app/api/ai/compare/route";
 import { createComparacao, deleteComparacao, listComparacoes, listProjectsByCardSlug } from "@/lib/db";
+import { getActiveProject, setActiveProject, type ActiveProjectContext } from "@/lib/active-project";
 import Link from "next/link";
 
 type CardLite = { slug: string; title: string; category: string; excerpt: string };
@@ -81,6 +82,21 @@ export function ComparadorView({ cards }: { cards: CardLite[] }) {
   const [savedTitle, setSavedTitle] = useState("");
   const [history, setHistory] = useState<SavedComparison[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [activeProject, setActiveProjectState] = useState<ActiveProjectContext | null>(null);
+
+  useEffect(() => {
+    const p = getActiveProject();
+    if (p) {
+      setActiveProjectState(p);
+      if (p.stack.length > 0) {
+        setCtxStack((prev) =>
+          prev.length === 0
+            ? p.stack.filter((s) => STACK_PRESETS.includes(s))
+            : prev,
+        );
+      }
+    }
+  }, []);
 
   const categories = ["all", ...Array.from(new Set(cards.map((c) => c.category)))];
 
@@ -259,6 +275,25 @@ export function ComparadorView({ cards }: { cards: CardLite[] }) {
             </div>
           )}
         </Card>
+      )}
+
+      {/* Projeto ativo */}
+      {activeProject && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5">
+          <GitFork className="w-4 h-4 text-amber-500 shrink-0" />
+          <span className="text-sm text-fg flex-1">
+            Contexto: <span className="font-semibold">{activeProject.nome}</span>
+            {activeProject.stack.length > 0 && (
+              <span className="text-muted ml-1.5">— {activeProject.stack.join(", ")}</span>
+            )}
+          </span>
+          <button
+            onClick={() => { setActiveProjectState(null); setActiveProject(null); }}
+            className="text-muted hover:text-fg transition"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

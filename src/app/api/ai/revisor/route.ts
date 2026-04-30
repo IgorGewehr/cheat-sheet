@@ -11,7 +11,11 @@ export interface RevisorResult {
 
 export async function POST(req: NextRequest) {
   try {
-    const { titulo, codigo, revisaoUsuario, cardSlug } = await req.json();
+    const { titulo, codigo, revisaoUsuario, cardSlug, projectNome, projectStack } = await req.json();
+
+    const projectContext = projectNome
+      ? `\nContexto do projeto: ${projectNome}${projectStack?.length ? ` (stack: ${(projectStack as string[]).join(", ")})` : ""}. Mencione padrões e riscos específicos dessa stack quando relevante.`
+      : "";
 
     const completion = await openai.chat.completions.create({
       model: MODELS.revisor,
@@ -21,7 +25,7 @@ export async function POST(req: NextRequest) {
           content: `Você é um tech lead sênior revisando código. Analise o código fornecido e compare com a revisão que o desenvolvedor fez.
 Sua análise deve cobrir: segurança, performance, manutenibilidade, padrões arquiteturais, edge cases.
 Compare o que o dev identificou vs o que existe no código.
-Seja específico e construtivo. Responda em JSON.`,
+Seja específico e construtivo. Responda em JSON.${projectContext}`,
         },
         {
           role: "user",

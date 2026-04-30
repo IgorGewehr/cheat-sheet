@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { SidebarWrapper } from "@/components/sidebar-wrapper";
+import { QuickCapture } from "@/components/quick-capture";
 
 export const metadata: Metadata = {
   title: "brain — cheat sheet de engenharia",
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <SidebarWrapper />
+          <QuickCapture />
           <main className="lg:pl-64 min-h-screen">
             <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8 pt-16 lg:pt-8">
               {children}

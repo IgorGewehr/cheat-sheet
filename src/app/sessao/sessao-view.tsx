@@ -1,14 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Zap, Copy, Check, ChevronRight, AlertTriangle,
-  BookOpen, ListChecks, Sparkles, ExternalLink
+  BookOpen, ListChecks, Sparkles, ExternalLink, GitFork, X, Clock,
 } from "lucide-react";
 import { Button, Card, Input, Label, Tag, Textarea } from "@/components/ui";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import Link from "next/link";
 import type { BriefingResult } from "@/app/api/ai/briefing/route";
+import { getActiveProject, setActiveProject, type ActiveProjectContext } from "@/lib/active-project";
+
+interface SavedBriefing {
+  task: string;
+  domains: string[];
+  timestamp: number;
+  result: BriefingResult;
+}
+
+const BRIEFINGS_KEY = "brain.briefings";
+
+function loadBriefings(): SavedBriefing[] {
+  try {
+    return JSON.parse(localStorage.getItem(BRIEFINGS_KEY) ?? "[]") as SavedBriefing[];
+  } catch {
+    return [];
+  }
+}
+
+function saveBriefing(entry: SavedBriefing) {
+  try {
+    const existing = loadBriefings();
+    existing.unshift(entry);
+    localStorage.setItem(BRIEFINGS_KEY, JSON.stringify(existing.slice(0, 5)));
+  } catch {}
+}
 
 const DOMAINS = [
   { id: "auth",         label: "Auth & Permissões",    color: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30" },
@@ -32,6 +58,18 @@ export function SessaoView() {
   const [activeTab, setActiveTab] = useState<"prompt" | "patterns" | "checklist">("prompt");
   const [compreensaoRespostas, setCompreensaoRespostas] = useState<[string, string]>(["", ""]);
   const [mostrarCompreensao, setMostrarCompreensao] = useState(false);
+  const [activeProject, setActiveProjectState] = useState<ActiveProjectContext | null>(null);
+  const [recentBriefings, setRecentBriefings] = useState<SavedBriefing[]>([]);
+
+  useEffect(() => {
+    const p = getActiveProject();
+    if (p) {
+      setActiveProjectState(p);
+      if (!stack) setStack(p.stack.join(", "));
+    }
+    setRecentBriefings(loadBriefings());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleDomain(id: string) {
     setSelectedDomains((prev) =>
@@ -50,12 +88,15 @@ export function SessaoView() {
       const res = await fetch("/api/ai/briefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task, domains: selectedDomains, stack: stack || undefined }),
+        body: JSON.stringify({ task, domains: selectedDomains, stack: stack || undefined, projectNome: activeProject?.nome }),
       });
       const data = await res.json() as BriefingResult & { error?: string };
       if (data.error) { setError(data.error); return; }
       setResult(data);
       setActiveTab("prompt");
+      const entry: SavedBriefing = { task: task.trim(), domains: selectedDomains, timestamp: Date.now(), result: data };
+      saveBriefing(entry);
+      setRecentBriefings(loadBriefings());
     } catch {
       setError("Erro ao conectar com a API. Tente novamente.");
     } finally {
@@ -85,6 +126,59 @@ export function SessaoView() {
           que encoda padrões, armadilhas e critérios de aceite do zero.
         </p>
       </header>
+
+      {/* Projeto ativo */}
+      {activeProject && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5">
+          <GitFork className="w-4 h-4 text-amber-500 shrink-0" />
+          <span className="text-sm text-fg flex-1">
+            Contexto: <span className="font-semibold">{activeProject.nome}</span>
+            {activeProject.stack.length > 0 && (
+              <span className="text-muted ml-1.5">— {activeProject.stack.join(", ")}</span>
+            )}
+          </span>
+          <button
+            onClick={() => {
+              setActiveProjectState(null);
+              setActiveProject(null);
+            }}
+            className="text-muted hover:text-fg transition"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Briefings recentes */}
+      {recentBriefings.length > 0 && !result && (
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wide text-muted flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" /> Recentes
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {recentBriefings.map((b, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setTask(b.task);
+                  setSelectedDomains(b.domains);
+                  setResult(b.result);
+                  setMostrarCompreensao(true);
+                  setActiveTab("prompt");
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-card hover:border-amber-500/40 hover:bg-amber-500/5 text-sm text-muted hover:text-fg transition text-left max-w-xs"
+                title={b.task}
+              >
+                <Clock className="w-3 h-3 shrink-0 text-muted" />
+                <span className="truncate">{b.task}</span>
+                <span className="text-[10px] text-subtle shrink-0">
+                  {new Date(b.timestamp).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       <Card className="space-y-5">

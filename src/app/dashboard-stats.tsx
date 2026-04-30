@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
+import { getActiveProject, setActiveProject, type ActiveProjectContext } from "@/lib/active-project";
 import {
   CalendarDays,
   Flame,
@@ -33,6 +34,9 @@ import {
   Bot,
   GitBranch,
   MessageSquareMore,
+  Briefcase,
+  GraduationCap,
+  Moon,
 } from "lucide-react";
 import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
@@ -396,7 +400,9 @@ function computeHealthScore(adocoes: Adocao[], cardProgresso: CardDoDiaProgresso
 export function DashboardStats({ totalCards, allCards }: { totalCards: number; allCards: CardType[] }) {
   const { signedIn } = useAuth();
 
-  const [loading, setLoading] = useState(true);
+  const [loadingCore, setLoadingCore] = useState(true);
+  const [loadingFull, setLoadingFull] = useState(true);
+  const loading = loadingCore || loadingFull;
   const [projects, setProjects] = useState<Project[]>([]);
   const [adocoes, setAdocoes] = useState<Adocao[]>([]);
   const [cardProgresso, setCardProgresso] = useState<CardDoDiaProgresso[]>([]);
@@ -413,23 +419,38 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
 
   useEffect(() => {
     if (!signedIn) {
-      setLoading(false);
+      setLoadingCore(false);
+      setLoadingFull(false);
       return;
     }
-    setLoading(true);
+
+    // Wave 1: data needed for "Hoje" section — loads fast
     (async () => {
       try {
-        const [
-          ps, ads, cp, div, err, sp, retro,
-          wg, iv, sd, rfc, rev, tr,
-        ] = await Promise.all([
-          listProjects(),
-          listAllAdocoes(),
+        const [cp, div, sp, retro] = await Promise.all([
           listCardDoDiaProgresso(),
           listDividas(),
-          listErrosPersonais(),
           listSprintsSemIA(),
           listRetrospectivas(),
+        ]);
+        setCardProgresso(cp);
+        setDividas(div);
+        setSprints(sp);
+        setRetrospectivas(retro);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingCore(false);
+      }
+    })();
+
+    // Wave 2: data needed for XP, radar, achievements
+    (async () => {
+      try {
+        const [ps, ads, err, wg, iv, sd, rfc, rev, tr] = await Promise.all([
+          listProjects(),
+          listAllAdocoes(),
+          listErrosPersonais(),
           listWarGames(),
           listMockInterviews(),
           listSystemDesigns(),
@@ -439,11 +460,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         ]);
         setProjects(ps);
         setAdocoes(ads);
-        setCardProgresso(cp);
-        setDividas(div);
         setErros(err);
-        setSprints(sp);
-        setRetrospectivas(retro);
         setWarGames(wg);
         setInterviews(iv);
         setSystemDesigns(sd);
@@ -451,29 +468,34 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         setRevisoes(rev);
         setTrilha(tr);
 
-        // Persist sidebar progress
-        try {
-          const today = new Date().toISOString().split("T")[0];
-          const lvl = getLevel(computeXP({ cardProgresso: cp, warGames: wg, interviews: iv, systemDesigns: sd, sprints: sp, retrospectivas: retro, dividas: div, revisoes: rev, rfcs: rfc, erros: err, adocoes: ads }));
-          const stk = computeStreak(cp);
-          localStorage.setItem("brain.sidebarProgress", JSON.stringify({
-            level: lvl.level,
-            levelTitle: lvl.title,
-            levelEmoji: lvl.emoji,
-            streak: stk,
-            xpPercent: getLevelProgress(computeXP({ cardProgresso: cp, warGames: wg, interviews: iv, systemDesigns: sd, sprints: sp, retrospectivas: retro, dividas: div, revisoes: rev, rfcs: rfc, erros: err, adocoes: ads })),
-            pendingDividas: div.filter((d) => d.status === "pendente").length,
-            cardDoneToday: cp.some((p) => p.data === today && p.completado),
-            updatedAt: Date.now(),
-          }));
-        } catch {}
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setLoadingFull(false);
       }
     })();
   }, [signedIn]);
+
+  // Persist sidebar progress once both loading waves complete
+  useEffect(() => {
+    if (loadingCore || loadingFull) return;
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const xpData = { cardProgresso, warGames, interviews, systemDesigns, sprints, retrospectivas, dividas, revisoes, rfcs, erros, adocoes };
+      const lvl = getLevel(computeXP(xpData));
+      const stk = computeStreak(cardProgresso);
+      localStorage.setItem("brain.sidebarProgress", JSON.stringify({
+        level: lvl.level,
+        levelTitle: lvl.title,
+        levelEmoji: lvl.emoji,
+        streak: stk,
+        xpPercent: getLevelProgress(computeXP(xpData)),
+        pendingDividas: dividas.filter((d) => d.status === "pendente").length,
+        cardDoneToday: cardProgresso.some((p) => p.data === today && p.completado),
+        updatedAt: Date.now(),
+      }));
+    } catch {}
+  }, [loadingCore, loadingFull]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Computed values ──────────────────────────────────────────
   const allData = {
@@ -595,9 +617,261 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
 
   const recentProjects = projects.slice(0, 5);
 
+  const [mode, setMode] = useState<"trabalho" | "estudo">("estudo");
+  useEffect(() => {
+    const saved = localStorage.getItem("brain.mode") as "trabalho" | "estudo" | null;
+    if (saved === "trabalho" || saved === "estudo") setMode(saved);
+  }, []);
+  function switchMode(m: "trabalho" | "estudo") {
+    setMode(m);
+    localStorage.setItem("brain.mode", m);
+  }
+
+  const [activeProject, setActiveProjectState] = useState<ActiveProjectContext | null>(null);
+  useEffect(() => { setActiveProjectState(getActiveProject()); }, []);
+  function selectProject(p: ActiveProjectContext) {
+    setActiveProjectState(p);
+    setActiveProject(p);
+  }
+  function clearProject() {
+    setActiveProjectState(null);
+    setActiveProject(null);
+  }
+
+  const pendingDividas = dividas.filter((d) => d.status === "pendente");
+
+  const WORK_ACTIONS = [
+    { href: "/sessao",         label: "Sessão com IA",         desc: "Pergunta livre, brainstorm, dúvida técnica",  icon: Zap,            color: "amber"   },
+    { href: "/revisor",        label: "Revisor de Código",     desc: "Cole código, receba feedback técnico",         icon: ClipboardCheck, color: "sky"     },
+    { href: "/comparar",       label: "Comparar Arquiteturas", desc: "A vs B — qual usar neste contexto",            icon: Scale,          color: "violet"  },
+    { href: "/interrogatorio", label: "Interrogatório",        desc: "Teste seu entendimento antes de decidir",      icon: Brain,          color: "emerald" },
+    { href: "/mentoria",       label: "Mentoria Sênior",       desc: "Dúvida de carreira ou decisão técnica",        icon: Users,          color: "rose"    },
+    { href: "/divida",         label: "Registrar Dívida",      desc: "Usou algo que não entende de verdade? Anota",  icon: AlertCircle,    color: "red"     },
+    { href: "/fim-do-dia",    label: "Fim do Dia",            desc: "Capture dívidas e erros de hoje em 5 min",     icon: Moon,           color: "sky"     },
+  ] as const;
+
+  const workIconColor: Record<string, string> = {
+    amber:   "text-amber-500",
+    sky:     "text-sky-500",
+    violet:  "text-violet-500",
+    emerald: "text-emerald-500",
+    rose:    "text-rose-500",
+    red:     "text-red-500",
+  };
+
   return (
     <div className="space-y-6">
       <SignedOutBanner />
+
+      {/* ── Mode Toggle ──────────────────────────────────────────── */}
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-card border border-line w-fit">
+        <button
+          onClick={() => switchMode("trabalho")}
+          className={clsx(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition",
+            mode === "trabalho"
+              ? "bg-card-hover text-fg border border-line-strong shadow-sm"
+              : "text-muted hover:text-fg",
+          )}
+        >
+          <Briefcase className="w-4 h-4" />
+          Estou trabalhando
+        </button>
+        <button
+          onClick={() => switchMode("estudo")}
+          className={clsx(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition",
+            mode === "estudo"
+              ? "bg-card-hover text-fg border border-line-strong shadow-sm"
+              : "text-muted hover:text-fg",
+          )}
+        >
+          <GraduationCap className="w-4 h-4" />
+          Quero estudar
+        </button>
+      </div>
+
+      {mode === "trabalho" ? (
+        /* ═══════════════════════════════════════════════════════════
+           MODO TRABALHO
+           ═══════════════════════════════════════════════════════════ */
+        <div className="space-y-6">
+          {/* Dívidas pendentes — aviso urgente */}
+          {!loading && pendingDividas.length > 0 && (
+            <a
+              href="/divida"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 transition group"
+            >
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-fg">
+                  {pendingDividas.length} dívida{pendingDividas.length > 1 ? "s" : ""} de conhecimento pendente{pendingDividas.length > 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-muted">Coisas que você usou sem entender de verdade</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
+            </a>
+          )}
+
+          {/* Ações rápidas */}
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[0,1,2,3,4,5].map((i) => <Skeleton key={i} className="h-28" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {WORK_ACTIONS.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <a
+                    key={action.href}
+                    href={action.href}
+                    className="flex flex-col gap-3 p-4 rounded-xl border border-line bg-card hover:border-line-strong hover:bg-card-hover transition group"
+                  >
+                    <Icon className={clsx("w-5 h-5", workIconColor[action.color])} />
+                    <div>
+                      <p className="text-sm font-semibold text-fg leading-tight">{action.label}</p>
+                      <p className="text-xs text-muted mt-0.5 leading-snug">{action.desc}</p>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Projeto ativo */}
+          {loading ? (
+            <Skeleton className="h-48" />
+          ) : (
+            <Card>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
+                  <GitFork className="w-4 h-4 text-muted" />
+                  Contexto de trabalho
+                </h3>
+                <div className="flex items-center gap-2">
+                  {activeProject && (
+                    <button onClick={clearProject} className="text-xs text-muted hover:text-fg transition">
+                      limpar
+                    </button>
+                  )}
+                  <a href="/projetos" className="text-xs text-amber-600 dark:text-amber-400 hover:underline">
+                    gerenciar →
+                  </a>
+                </div>
+              </div>
+              <p className="text-xs text-muted mb-3">
+                Clique no projeto que está trabalhando agora — Sessão e Card do Dia vão usar esse contexto.
+              </p>
+              {recentProjects.length > 0 ? (
+                <div className="space-y-1">
+                  {recentProjects.map((p) => {
+                    const isActive = activeProject?.id === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => selectProject({ id: p.id, nome: p.nome, stack: p.stack, tipo: p.tipo })}
+                        className={clsx(
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-left group",
+                          isActive
+                            ? "bg-amber-500/10 border border-amber-500/30"
+                            : "hover:bg-card-hover border border-transparent",
+                        )}
+                      >
+                        <span className={clsx("w-2 h-2 rounded-full shrink-0", isActive ? "bg-amber-500" : "bg-muted/40")} />
+                        <span className={clsx("text-sm flex-1", isActive ? "text-fg font-medium" : "text-muted")}>{p.nome}</span>
+                        {p.stack.length > 0 && (
+                          <span className="text-[10px] text-muted hidden group-hover:inline">{p.stack.slice(0, 3).join(", ")}</span>
+                        )}
+                        {isActive && <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">ativo</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-xs text-muted mb-3">Nenhum projeto ainda</p>
+                  <a
+                    href="/projetos/novo"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs bg-card-hover hover:bg-line text-fg border border-line-strong transition"
+                  >
+                    + Criar projeto
+                  </a>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* Referência rápida */}
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-muted" />
+                Referência rápida
+              </h3>
+              <a href="/biblioteca" className="text-xs text-amber-600 dark:text-amber-400 hover:underline">
+                explorar →
+              </a>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { href: "/biblioteca/auth-architecture",   label: "Auth Architecture" },
+                { href: "/biblioteca/audit-api-endpoint",  label: "Checklist de endpoint IA" },
+                { href: "/biblioteca/multi-tenant-strategies", label: "Multi-tenant strategies" },
+                { href: "/biblioteca/modular-monolith",    label: "Modular Monolith" },
+              ].map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-2 text-sm text-muted hover:text-amber-600 dark:hover:text-amber-300 transition group"
+                >
+                  <ChevronRight className="w-3 h-3 shrink-0 opacity-40 group-hover:opacity-100 transition" />
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </Card>
+        </div>
+      ) : (
+        /* ═══════════════════════════════════════════════════════════
+           MODO ESTUDO
+           ═══════════════════════════════════════════════════════════ */
+        <div className="space-y-6">
+
+      {/* ── Hoje — Smart recommendations ──────────────────────── */}
+      {loadingCore ? (
+        <Skeleton className="h-32" />
+      ) : (
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted mb-3">
+            Hoje
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {todayActions.map((action, i) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={i}
+                  href={action.href}
+                  className={clsx(
+                    "flex flex-col gap-2.5 p-4 rounded-xl border transition hover:border-line-strong group",
+                    urgencyBorder[action.urgency],
+                  )}
+                >
+                  <div className="flex items-start justify-between">
+                    <Icon className={clsx("w-4 h-4 shrink-0 mt-0.5", actionIconColor[action.color])} />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted opacity-0 group-hover:opacity-100 transition" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-fg leading-tight">{action.title}</p>
+                    <p className="text-xs text-muted mt-0.5 line-clamp-2">{action.desc}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Hero / Level section ─────────────────────────────── */}
       {loading ? (
@@ -777,41 +1051,6 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         </div>
       )}
 
-      {/* ── Hoje — Smart recommendations ──────────────────────── */}
-      {loading ? (
-        <Skeleton className="h-32" />
-      ) : (
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted mb-3">
-            Hoje
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {todayActions.map((action, i) => {
-              const Icon = action.icon;
-              return (
-                <Link
-                  key={i}
-                  href={action.href}
-                  className={clsx(
-                    "flex flex-col gap-2.5 p-4 rounded-xl border transition hover:border-line-strong group",
-                    urgencyBorder[action.urgency],
-                  )}
-                >
-                  <div className="flex items-start justify-between">
-                    <Icon className={clsx("w-4 h-4 shrink-0 mt-0.5", actionIconColor[action.color])} />
-                    <ChevronRight className="w-3.5 h-3.5 text-muted opacity-0 group-hover:opacity-100 transition" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-fg leading-tight">{action.title}</p>
-                    <p className="text-xs text-muted mt-0.5 line-clamp-2">{action.desc}</p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* ── Conquistas ─────────────────────────────────────────── */}
       {loading ? (
         <Skeleton className="h-40" />
@@ -971,6 +1210,8 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
           </div>
         </Card>
       </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,14 +11,17 @@ import {
   ChevronRight,
   RefreshCw,
   Sparkles,
+  GitFork,
 } from "lucide-react";
 import { Button, Card, Tag } from "@/components/ui";
 import { CATEGORY_LABEL, type Card as CardType, type CardDoDiaProgresso } from "@/lib/types";
 import {
   listCardDoDiaProgresso,
   saveCardDoDiaProgresso,
+  listDividas,
 } from "@/lib/db";
 import type { QuizResult, QuizPergunta } from "@/app/api/ai/card-do-dia/route";
+import { getActiveProject, getRelevantCategories } from "@/lib/active-project";
 
 type Phase =
   | { kind: "loading" }
@@ -53,11 +56,28 @@ function calcStreak(list: CardDoDiaProgresso[]): number {
   return streak;
 }
 
-function selectCard(allCards: CardType[], progressList: CardDoDiaProgresso[]): CardType {
+// Spaced repetition: 0 = struggling (<50%), 1 = needs review or never tried, 2 = solid (≥80%)
+function quizPriority(slug: string, progressList: CardDoDiaProgresso[]): number {
+  const done = progressList.filter((p) => p.cardSlug === slug && p.completado && p.totalQuiz > 0);
+  if (done.length === 0) return 1;
+  const best = Math.max(...done.map((h) => (h.acertosQuiz / h.totalQuiz) * 100));
+  if (best < 50) return 0;
+  if (best < 80) return 1;
+  return 2;
+}
+
+function selectCard(
+  allCards: CardType[],
+  progressList: CardDoDiaProgresso[],
+  projectStack?: string[],
+  projectTipo?: string,
+  debtSlugs?: Set<string>,
+): CardType {
   const today = getTodayString();
   const cutoff = new Date(today);
   cutoff.setDate(cutoff.getDate() - 65);
   const cutoffStr = cutoff.toISOString().split("T")[0];
+  const dayNum = Math.floor(new Date(today).getTime() / 86400000);
 
   const recentSlugs = new Set(
     progressList.filter((p) => p.data >= cutoffStr).map((p) => p.cardSlug),
@@ -66,12 +86,25 @@ function selectCard(allCards: CardType[], progressList: CardDoDiaProgresso[]): C
   const available = allCards.filter((c) => !recentSlugs.has(c.slug));
 
   if (available.length > 0) {
-    // Pick deterministically by day so reload gives the same card
-    const dayNum = Math.floor(new Date(today).getTime() / 86400000);
-    return available[dayNum % available.length];
+    // Pending debts with a linked card get the highest priority (-1)
+    const priorityMap = new Map(available.map((c) => [
+      c.slug,
+      (debtSlugs?.has(c.slug) ? -1 : quizPriority(c.slug, progressList)),
+    ]));
+    const sorted = [...available].sort((a, b) => priorityMap.get(a.slug)! - priorityMap.get(b.slug)!);
+    const bestPriority = priorityMap.get(sorted[0].slug)!;
+    let pool = sorted.filter((c) => priorityMap.get(c.slug) === bestPriority);
+
+    if (projectStack && projectStack.length > 0) {
+      const relevantCats = new Set<string>(getRelevantCategories(projectStack, projectTipo));
+      const relevantPool = pool.filter((c) => relevantCats.has(c.category as string));
+      if (relevantPool.length > 0) pool = relevantPool;
+    }
+
+    return pool[dayNum % pool.length];
   }
 
-  // All done in last 65 days: pick least recently done
+  // All done in last 65 days: pick least recently done, still biased by project
   const bySlug = new Map<string, string>();
   for (const p of progressList) {
     const existing = bySlug.get(p.cardSlug);
@@ -82,17 +115,31 @@ function selectCard(allCards: CardType[], progressList: CardDoDiaProgresso[]): C
     const db2 = bySlug.get(b.slug) ?? "0000-00-00";
     return da.localeCompare(db2);
   });
+
+  if (projectStack && projectStack.length > 0) {
+    const relevantCats = new Set<string>(getRelevantCategories(projectStack, projectTipo));
+    const relevant = sorted.filter((c) => relevantCats.has(c.category as string));
+    if (relevant.length > 0) return relevant[0];
+  }
+
   return sorted[0];
 }
 
 export function CardDoDiaView({ allCards }: { allCards: CardType[] }) {
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [projectContext, setProjectContext] = useState<{ nome: string } | null>(null);
 
   useEffect(() => {
     async function init() {
       try {
-        const list = await listCardDoDiaProgresso();
+        const activeProject = getActiveProject();
+        if (activeProject) setProjectContext({ nome: activeProject.nome });
+
+        const [list, debitList] = await Promise.all([
+          listCardDoDiaProgresso(),
+          listDividas(),
+        ]);
         const today = getTodayString();
         const todayEntry = list.find((p) => p.data === today && p.completado);
 
@@ -102,7 +149,19 @@ export function CardDoDiaView({ allCards }: { allCards: CardType[] }) {
           return;
         }
 
-        const card = selectCard(allCards, list);
+        const debtSlugs = new Set(
+          debitList
+            .filter((d) => d.status === "pendente" && d.cardSlug)
+            .map((d) => d.cardSlug as string),
+        );
+
+        const card = selectCard(
+          allCards,
+          list,
+          activeProject?.stack,
+          activeProject?.tipo,
+          debtSlugs,
+        );
         setPhase({ kind: "reading", card });
       } catch (e) {
         setPhase({ kind: "error", message: String(e) });
@@ -232,6 +291,16 @@ export function CardDoDiaView({ allCards }: { allCards: CardType[] }) {
     return (
       <div className="space-y-8 max-w-3xl">
         <PageHeader />
+
+        {projectContext && (
+          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5">
+            <GitFork className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="text-sm text-muted">
+              Card selecionado com base no seu projeto{" "}
+              <span className="font-semibold text-fg">{projectContext.nome}</span>
+            </span>
+          </div>
+        )}
 
         <Card className="space-y-4">
           <div className="flex items-start justify-between gap-4">

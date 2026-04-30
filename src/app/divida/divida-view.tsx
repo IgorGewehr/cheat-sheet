@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { clsx } from "clsx";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Trash2, Brain } from "lucide-react";
 import { Button, Card, Input, Label, Textarea } from "@/components/ui";
 import {
   listDividas,
@@ -126,7 +126,7 @@ function DividaCard({
       </div>
 
       {(divida.status === "pendente" || divida.status === "em-andamento") && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex gap-2 flex-wrap">
           {divida.status === "pendente" && (
             <Button
               variant="secondary"
@@ -155,6 +155,13 @@ function DividaCard({
               )}
             </Button>
           )}
+          <Link
+            href={`/interrogatorio?topic=${encodeURIComponent(divida.descricao)}${divida.cardSlug ? `&slug=${encodeURIComponent(divida.cardSlug)}` : ""}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs border border-line bg-card hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400 text-muted transition"
+          >
+            <Brain className="w-3 h-3" />
+            Estudar agora
+          </Link>
         </div>
       )}
     </div>

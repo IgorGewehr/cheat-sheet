@@ -10,8 +10,17 @@ export interface RetrospectivaGerada {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { dividas: string; acertos: string; aprendizados: string };
-    const { dividas, acertos, aprendizados } = body;
+    const body = await req.json() as {
+      dividas: string;
+      acertos: string;
+      aprendizados: string;
+      weekActivity?: {
+        cardsStudied: Array<{ slug: string; score: number }>;
+        errosRegistrados: Array<{ titulo: string; causaRaiz: string }>;
+        dividasNovas: Array<{ descricao: string }>;
+      };
+    };
+    const { dividas, acertos, aprendizados, weekActivity } = body;
 
     const completion = await openai.chat.completions.create({
       model: MODELS.retrospectiva,
@@ -33,6 +42,12 @@ ${dividas || "(nenhuma)"}
 
 O que fiz bem:
 ${acertos || "(não informado)"}
+${weekActivity ? `
+Atividade objetiva da semana (dados automáticos do sistema):
+- Cards estudados: ${weekActivity.cardsStudied.length > 0 ? weekActivity.cardsStudied.map((c) => `${c.slug} (${c.score}%)`).join(", ") : "nenhum"}
+- Erros registrados: ${weekActivity.errosRegistrados.length > 0 ? weekActivity.errosRegistrados.map((e) => `${e.titulo} — ${e.causaRaiz}`).join("; ") : "nenhum"}
+- Novas dívidas de conhecimento: ${weekActivity.dividasNovas.length > 0 ? weekActivity.dividasNovas.map((d) => d.descricao).join("; ") : "nenhuma"}
+` : ""}
 
 Retorne JSON com os campos: melhorias (string, melhorias específicas para a próxima semana), scoreAprendizado (número inteiro de 1 a 5), insights (2-3 frases sobre padrões comportamentais identificados), proximoFoco (string, foco recomendado para a próxima semana).`,
         },

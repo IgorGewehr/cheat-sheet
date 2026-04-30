@@ -46,6 +46,15 @@ export function InterrogatorioView() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // Pre-populate from URL params when coming from /divida "Estudar agora"
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const topic = params.get("topic");
+    const slug = params.get("slug");
+    if (topic) setAcaoUsuario(decodeURIComponent(topic));
+    if (slug) setTema(decodeURIComponent(slug));
+  }, []);
+
   async function startSession() {
     if (!acaoUsuario.trim()) return;
     setStarted(true);

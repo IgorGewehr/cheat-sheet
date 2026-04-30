@@ -11,11 +11,12 @@ export interface BriefingResult {
 
 export async function POST(req: NextRequest) {
   try {
-    const { task, domains, stack, adoptedSlugs = [] } = await req.json() as {
+    const { task, domains, stack, adoptedSlugs = [], projectNome } = await req.json() as {
       task: string;
       domains: string[];
       stack?: string;
       adoptedSlugs?: string[];
+      projectNome?: string;
     };
 
     if (!task?.trim()) {
@@ -64,6 +65,7 @@ Regras:
 
     const userMessage = `Tarefa: ${task}
 Domínios envolvidos: ${domains.join(", ")}
+${projectNome ? `Projeto: ${projectNome}` : ""}
 ${stack ? `Stack do projeto: ${stack}` : ""}
 ${adoptedSlugs.length ? `Padrões já adotados no projeto: ${adoptedSlugs.join(", ")}` : ""}
 

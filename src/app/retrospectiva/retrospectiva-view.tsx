@@ -8,6 +8,9 @@ import {
   listRetrospectivas,
   getRetrospectivaByWeek,
   saveRetrospectiva,
+  listCardDoDiaProgresso,
+  listErrosPersonais,
+  listDividas,
 } from "@/lib/db";
 import type { Retrospectiva } from "@/lib/types";
 import type { RetrospectivaGerada } from "@/app/api/ai/retrospectiva/route";
@@ -203,10 +206,36 @@ export function RetrospectivaView() {
     setGenerating(true);
     setError("");
     try {
+      // Fetch week activity data to enrich the AI prompt
+      const weekStart = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - d.getDay());
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      })();
+
+      const [cardProgress, erros, debitList] = await Promise.all([
+        listCardDoDiaProgresso(),
+        listErrosPersonais(),
+        listDividas(),
+      ]);
+
+      const weekActivity = {
+        cardsStudied: cardProgress
+          .filter((c) => c.completado && c.criadoEm >= weekStart)
+          .map((c) => ({ slug: c.cardSlug, score: c.totalQuiz > 0 ? Math.round((c.acertosQuiz / c.totalQuiz) * 100) : 0 })),
+        errosRegistrados: erros
+          .filter((e) => e.criadoEm >= weekStart)
+          .map((e) => ({ titulo: e.titulo, causaRaiz: e.causaRaiz })),
+        dividasNovas: debitList
+          .filter((d) => d.criadoEm >= weekStart)
+          .map((d) => ({ descricao: d.descricao })),
+      };
+
       const res = await fetch("/api/ai/retrospectiva", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dividas, acertos, aprendizados }),
+        body: JSON.stringify({ dividas, acertos, aprendizados, weekActivity }),
       });
       const data = (await res.json()) as RetrospectivaGerada & { error?: string };
       if (data.error) {

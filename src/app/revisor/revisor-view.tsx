@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { clsx } from "clsx";
 import {
   Eye, History, Trash2, Save, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, MessageSquare, Code2,
+  CheckCircle2, XCircle, MessageSquare, Code2, GitFork, X, AlertCircle,
 } from "lucide-react";
 import { Button, Card, Input, Label, Textarea } from "@/components/ui";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -15,8 +15,9 @@ import {
 } from "@/lib/db";
 import type { RevisorSession } from "@/lib/types";
 import type { RevisorResult } from "@/app/api/ai/revisor/route";
+import { getActiveProject, setActiveProject, type ActiveProjectContext } from "@/lib/active-project";
 
-type Tab = "nova" | "historico";
+type Tab = "nova" | "historico" | "padroes";
 
 function ScoreBadge({ score }: { score: number }) {
   const color = score >= 80
@@ -49,12 +50,16 @@ export function RevisorView() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Projeto ativo
+  const [activeProject, setActiveProjectState] = useState<ActiveProjectContext | null>(null);
+  useEffect(() => { setActiveProjectState(getActiveProject()); }, []);
+
   // Histórico
   const [historico, setHistorico] = useState<RevisorSession[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
 
   useEffect(() => {
-    if (tab === "historico") {
+    if (tab === "historico" || tab === "padroes") {
       setLoadingHistorico(true);
       listRevisoesCodigo()
         .then(setHistorico)
@@ -78,6 +83,8 @@ export function RevisorView() {
           codigo: codigo.trim(),
           revisaoUsuario: revisaoUsuario.trim(),
           cardSlug: cardSlug.trim() || undefined,
+          projectNome: activeProject?.nome,
+          projectStack: activeProject?.stack,
         }),
       });
       const data = (await res.json()) as RevisorResult & { error?: string };
@@ -149,7 +156,7 @@ export function RevisorView() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-line">
-        {(["nova", "historico"] as Tab[]).map((t) => (
+        {(["nova", "historico", "padroes"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -160,11 +167,9 @@ export function RevisorView() {
                 : "border-transparent text-muted hover:text-fg",
             )}
           >
-            {t === "nova" ? (
-              <span className="flex items-center gap-1.5"><Code2 className="w-4 h-4" /> Nova Revisão</span>
-            ) : (
-              <span className="flex items-center gap-1.5"><History className="w-4 h-4" /> Histórico</span>
-            )}
+            {t === "nova"      && <span className="flex items-center gap-1.5"><Code2   className="w-4 h-4" /> Nova Revisão</span>}
+            {t === "historico" && <span className="flex items-center gap-1.5"><History className="w-4 h-4" /> Histórico</span>}
+            {t === "padroes"   && <span className="flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Pontos Cegos</span>}
           </button>
         ))}
       </div>
@@ -172,6 +177,25 @@ export function RevisorView() {
       {/* ─── Tab: Nova Revisão ─── */}
       {tab === "nova" && (
         <div className="space-y-6">
+          {/* Projeto ativo */}
+          {activeProject && (
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5">
+              <GitFork className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-sm text-fg flex-1">
+                Contexto: <span className="font-semibold">{activeProject.nome}</span>
+                {activeProject.stack.length > 0 && (
+                  <span className="text-muted ml-1.5">— {activeProject.stack.join(", ")}</span>
+                )}
+              </span>
+              <button
+                onClick={() => { setActiveProjectState(null); setActiveProject(null); }}
+                className="text-muted hover:text-fg transition"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Notice */}
           <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
             <Eye className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
@@ -437,6 +461,69 @@ export function RevisorView() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── Tab: Pontos Cegos ─── */}
+      {tab === "padroes" && (
+        <div className="space-y-4">
+          {loadingHistorico ? (
+            <div className="flex items-center gap-2 text-muted py-8">
+              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+              Analisando revisões…
+            </div>
+          ) : historico.length === 0 ? (
+            <Card className="text-center py-12 text-muted">
+              <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p className="font-medium">Nenhuma revisão avaliada ainda.</p>
+              <p className="text-sm mt-1 text-subtle">Faça revisões e salve para ver seus pontos cegos.</p>
+            </Card>
+          ) : (() => {
+            const avaliadas = historico.filter((s) => s.lacunasUsuario?.length);
+            if (avaliadas.length === 0) return (
+              <Card className="text-center py-12 text-muted">
+                <p className="font-medium">Nenhuma lacuna registrada ainda.</p>
+                <p className="text-sm mt-1 text-subtle">Complete revisões com avaliação da IA para ver padrões.</p>
+              </Card>
+            );
+
+            // Aggregate lacunas with frequency count
+            const freq = new Map<string, number>();
+            avaliadas.forEach((s) => s.lacunasUsuario!.forEach((l) => {
+              freq.set(l, (freq.get(l) ?? 0) + 1);
+            }));
+            const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]);
+            const totalLacunas = sorted.reduce((acc, [, c]) => acc + c, 0);
+
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 text-sm text-muted">
+                  <span>{avaliadas.length} revisão{avaliadas.length > 1 ? "ões" : ""} analisada{avaliadas.length > 1 ? "s" : ""}</span>
+                  <span className="w-1 h-1 rounded-full bg-muted/40" />
+                  <span className="text-red-600 dark:text-red-400 font-medium">{totalLacunas} lacuna{totalLacunas > 1 ? "s" : ""} no total</span>
+                </div>
+                <div className="space-y-2">
+                  {sorted.map(([lacuna, count], i) => (
+                    <div
+                      key={i}
+                      className={clsx(
+                        "flex items-start gap-3 p-3.5 rounded-xl border transition",
+                        count > 1 ? "border-red-500/30 bg-red-500/5" : "border-line bg-card",
+                      )}
+                    >
+                      <XCircle className={clsx("w-4 h-4 shrink-0 mt-0.5", count > 1 ? "text-red-500" : "text-muted")} />
+                      <p className="text-sm flex-1 leading-relaxed">{lacuna}</p>
+                      {count > 1 && (
+                        <span className="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
+                          {count}×
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
