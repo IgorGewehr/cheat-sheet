@@ -10,7 +10,8 @@ export type CardCategory =
   | "prompts"
   | "checklists"
   | "armadilhas-ia"
-  | "craft";
+  | "craft"
+  | "agentes-ia";
 
 export const CATEGORY_LABEL: Record<CardCategory, string> = {
   arquiteturas: "Arquiteturas",
@@ -25,6 +26,7 @@ export const CATEGORY_LABEL: Record<CardCategory, string> = {
   checklists: "Checklists de Auditoria",
   "armadilhas-ia": "Armadilhas da IA",
   craft: "Craft & Julgamento Sênior",
+  "agentes-ia": "Agentes de IA",
 };
 
 export interface CardFrontmatter {

@@ -162,6 +162,12 @@ export function computeRadarAxes(
   const sprintsConcluidos = sprints.filter((s) => s.status === "concluido").length;
   const warGamesPlayed = warGames.length;
 
+  // Agentes IA axis — based on dominated agentes-ia cards
+  const agentCards = allCards.filter((c) => c.category === "agentes-ia");
+  const agentDominated = agentCards.filter((c) => dominated.includes(c.slug)).length;
+  const agentScore = agentCards.length === 0 ? 0
+    : Math.round((agentDominated / agentCards.length) * 100);
+
   return [
     { label: "Arquitetura",   emoji: "🏗️",  value: categoryScore("arquiteturas") },
     { label: "Backend",       emoji: "⚙️",  value: categoryScore("padroes-backend") },
@@ -179,5 +185,6 @@ export function computeRadarAxes(
       emoji: "💪",
       value: Math.min(100, sprintsConcluidos * 20 + warGamesPlayed * 10),
     },
+    { label: "Agentes IA",    emoji: "🤖",  value: agentScore },
   ];
 }

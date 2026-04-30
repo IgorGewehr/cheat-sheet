@@ -26,6 +26,7 @@ const CATEGORY_ORDER: CardCategory[] = [
   "armadilhas-ia",
   "prompts",
   "craft",
+  "agentes-ia",
 ];
 
 const CATEGORY_COLORS: Record<CardCategory, string> = {
@@ -41,6 +42,7 @@ const CATEGORY_COLORS: Record<CardCategory, string> = {
   "armadilhas-ia": "zinc",
   prompts: "amber",
   craft: "violet",
+  "agentes-ia": "emerald",
 };
 
 type MasteryColor = "green" | "amber" | "red" | "gray";

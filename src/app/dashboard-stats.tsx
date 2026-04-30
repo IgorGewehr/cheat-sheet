@@ -30,6 +30,9 @@ import {
   Target,
   Trophy,
   Star,
+  Bot,
+  GitBranch,
+  MessageSquareMore,
 } from "lucide-react";
 import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
@@ -109,6 +112,7 @@ interface AchievementData {
   errosRegistrados: number;
   conceitosDominados: number;
   rfcsRevisados: number;
+  agentCardsCompleted: number;
 }
 
 const ACHIEVEMENTS = [
@@ -127,6 +131,10 @@ const ACHIEVEMENTS = [
   { id: "trilha-20",       icon: "🎓", title: "Em Progresso",       desc: "20 conceitos dominados na trilha",          condition: (d: AchievementData) => d.conceitosDominados >= 20 },
   { id: "trilha-50",       icon: "👑", title: "Quase Lá",           desc: "50 conceitos dominados na trilha",          condition: (d: AchievementData) => d.conceitosDominados >= 50 },
   { id: "rfc-first",       icon: "📝", title: "Proposta Técnica",   desc: "Primeiro RFC escrito e avaliado",           condition: (d: AchievementData) => d.rfcsRevisados >= 1 },
+  { id: "agent-first",    icon: "🤖", title: "Primeiro Agente",      desc: "Completou o primeiro card de Agentes IA",            condition: (d: AchievementData) => d.agentCardsCompleted >= 1 },
+  { id: "agent-5",        icon: "🔗", title: "Encadeador",            desc: "Dominou 5 conceitos de Agentes IA",                  condition: (d: AchievementData) => d.agentCardsCompleted >= 5 },
+  { id: "agent-10",       icon: "🧠", title: "Memória Vetorial",      desc: "Dominou 10 conceitos de Agentes IA (RAG, memória...)", condition: (d: AchievementData) => d.agentCardsCompleted >= 10 },
+  { id: "agent-master",   icon: "🕸️", title: "Arquiteto de Agentes",  desc: "Dominou 20 ou mais conceitos de Agentes IA",          condition: (d: AchievementData) => d.agentCardsCompleted >= 20 },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -498,6 +506,9 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     ? Math.floor((Date.now() - new Date(lastCard.data).getTime()) / 86400000)
     : null;
 
+  const agentSlugs = new Set(allCards.filter((c) => c.category === "agentes-ia").map((c) => c.slug));
+  const agentCardsCompleted = trilha.filter((t) => t.dominado && agentSlugs.has(t.cardSlug)).length;
+
   const achievementData: AchievementData = {
     cardsCompleted: cardProgresso.filter((p) => p.completado).length,
     streak,
@@ -510,6 +521,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     errosRegistrados: erros.length,
     conceitosDominados,
     rfcsRevisados: rfcs.filter((r) => r.status === "revisado").length,
+    agentCardsCompleted,
   };
 
   const earnedAchievements = ACHIEVEMENTS.filter((a) => a.condition(achievementData));
@@ -567,6 +579,16 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         { href: "/banco-star",     label: "Banco de Experiências STAR", icon: Star, isNew: true },
         { href: "/analytics",      label: "Analytics",            icon: BarChart3 },
         { href: "/health-score",   label: "Health Score",         icon: Target },
+      ],
+    },
+    {
+      title: "Agentes de IA",
+      links: [
+        { href: "/biblioteca?category=agentes-ia", label: "Biblioteca — Agentes IA", icon: Bot, isNew: agentCardsCompleted === 0 },
+        { href: "/card-do-dia",    label: "Estudar LangGraph",           icon: GitBranch },
+        { href: "/system-design",  label: "System Design de Agente",     icon: Layers },
+        { href: "/interrogatorio", label: "Interrogatório sobre IA",     icon: MessageSquareMore },
+        { href: "/rfc-writing",    label: "RFC de Sistema com Agente",   icon: FileText },
       ],
     },
   ];
@@ -830,11 +852,11 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
 
       {/* ── Feature grid ─────────────────────────────────────── */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-48" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-48" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {featureSections.map((section) => (
             <Card key={section.title} className="p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted mb-3">

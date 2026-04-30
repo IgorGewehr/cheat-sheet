@@ -8,7 +8,7 @@ import {
   Scale, Flame, Menu, X, CalendarDays, TrendingUp, AlertCircle,
   Eye, Swords, MessageSquareMore, Trophy, AlertTriangle,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
-  Star, GitBranch, Activity,
+  Star, GitBranch, Activity, Bot,
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
@@ -79,8 +79,9 @@ const GROUPS: Group[] = [
   {
     label: "Conhecimento",
     items: [
-      { href: "/biblioteca", label: "Biblioteca", icon: BookOpen },
-      { href: "/prompts",    label: "Prompts",    icon: Sparkles },
+      { href: "/biblioteca",                   label: "Biblioteca",   icon: BookOpen },
+      { href: "/prompts",                      label: "Prompts",      icon: Sparkles },
+      { href: "/biblioteca?category=agentes-ia", label: "Agentes de IA", icon: Bot },
     ],
   },
   {
