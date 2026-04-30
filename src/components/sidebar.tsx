@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Brain, BookOpen, FolderKanban, Settings, BarChart2, Sparkles, Zap,
-  Scale, Flame, Menu, X,
+  Scale, Flame, Menu, X, CalendarDays, TrendingUp, AlertCircle,
+  Eye, Swords, MessageSquareMore, Trophy, AlertTriangle,
+  Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
+  Star, GitBranch, Activity,
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
@@ -22,6 +25,55 @@ const GROUPS: Group[] = [
       { href: "/",         label: "Dashboard",  icon: BarChart2 },
       { href: "/sessao",   label: "Sessão IA",  icon: Zap, hot: true },
       { href: "/comparar", label: "Comparar",   icon: Scale, hot: true },
+    ],
+  },
+  {
+    label: "Aprender",
+    items: [
+      { href: "/card-do-dia",    label: "Card do Dia",        icon: CalendarDays, hot: true },
+      { href: "/trilha",         label: "Trilha Sênior",      icon: TrendingUp },
+      { href: "/retrospectiva",  label: "Retrospectiva",      icon: BookMarked },
+      { href: "/mapa-dominio",   label: "Mapa de Domínio",    icon: Map },
+    ],
+  },
+  {
+    label: "Treinar",
+    items: [
+      { href: "/revisor",        label: "Revisor Ativo",      icon: Eye },
+      { href: "/anti-pattern",   label: "Anti-Pattern",       icon: AlertTriangle },
+      { href: "/interrogatorio", label: "Interrogatório",     icon: MessageSquareMore },
+      { href: "/mentoria",       label: "Mentoria Invertida", icon: Dumbbell },
+    ],
+  },
+  {
+    label: "Desafios",
+    items: [
+      { href: "/war-game",       label: "War Game",           icon: Swords, hot: true },
+      { href: "/system-design",  label: "System Design",      icon: GitBranch },
+      { href: "/mock-interview", label: "Mock Interview",     icon: Mic },
+    ],
+  },
+  {
+    label: "Accountability",
+    items: [
+      { href: "/health-score",    label: "Health Score",           icon: Activity },
+      { href: "/divida",          label: "Dívida de Conhecimento", icon: AlertCircle },
+      { href: "/sprint-sem-ia",   label: "Sprint sem IA",          icon: FlaskConical },
+      { href: "/biblioteca-erros",label: "Erros Pessoais",         icon: BookOpen },
+    ],
+  },
+  {
+    label: "Entrevista",
+    items: [
+      { href: "/banco-star",     label: "Banco STAR",         icon: Star },
+      { href: "/rfc-writing",    label: "RFC Writing",        icon: FileText },
+    ],
+  },
+  {
+    label: "Diagnóstico",
+    items: [
+      { href: "/refatoracao",       label: "Refatoração Guiada", icon: Trophy },
+      { href: "/architecture-audit",label: "Architecture Audit", icon: Sparkles },
     ],
   },
   {

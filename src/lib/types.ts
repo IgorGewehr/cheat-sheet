@@ -186,3 +186,186 @@ export interface CustomCard {
   isCustom: true;
   criadoEm: number;
 }
+
+// ── Card do Dia (#1) ─────────────────────────────────────────
+
+export interface CardDoDiaProgresso {
+  id: string;
+  cardSlug: string;
+  data: string; // YYYY-MM-DD
+  acertosQuiz: number;
+  totalQuiz: number;
+  completado: boolean;
+  criadoEm: number;
+}
+
+// ── Trilha de Senioridade (#5) ───────────────────────────────
+
+export type NivelTrilha = "junior" | "pleno" | "senior" | "staff";
+
+export interface TrilhaProgresso {
+  cardSlug: string;
+  dominado: boolean;
+  tentativas: number;
+  melhorScore: number; // 0-100
+  ultimaRevisao?: number;
+}
+
+// ── Dívida de Conhecimento (#7) ──────────────────────────────
+
+export type DividaStatus = "pendente" | "em-andamento" | "paga";
+
+export interface DividaConhecimento {
+  id: string;
+  descricao: string;
+  contexto?: string;
+  cardSlug?: string;
+  status: DividaStatus;
+  criadoEm: number;
+  resolvidoEm?: number;
+}
+
+// ── Retrospectiva Semanal (#13) ──────────────────────────────
+
+export interface Retrospectiva {
+  id: string;
+  semana: string; // YYYY-Www
+  aprendizados: string;
+  dividas: string;
+  acertos: string;
+  melhorias: string;
+  scoreAprendizado: number; // 1-5
+  geradaPorIA: boolean;
+  criadoEm: number;
+}
+
+// ── Sprint sem IA (#14) ──────────────────────────────────────
+
+export type SprintSemIAStatus = "em-andamento" | "concluido";
+
+export interface SprintSemIA {
+  id: string;
+  titulo: string;
+  descricao: string;
+  status: SprintSemIAStatus;
+  codigoProducido?: string;
+  codigoIA?: string;
+  reflexao?: string;
+  lacunas?: string;
+  criadoEm: number;
+  concluidoEm?: number;
+}
+
+// ── Biblioteca de Erros Pessoais (#15) ───────────────────────
+
+export interface ErroPersonal {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categorias: string[];
+  padraoViolado?: string;
+  causaRaiz: string;
+  comoDetectar: string;
+  comoPrevenir: string;
+  criadoEm: number;
+}
+
+// ── Banco de Experiências STAR (#19) ─────────────────────────
+
+export interface ExperienciaSTAR {
+  id: string;
+  titulo: string;
+  situacao: string;
+  tarefa: string;
+  acao: string;
+  resultado: string;
+  tags: string[];
+  respostaFormatada?: string;
+  criadoEm: number;
+}
+
+// ── System Design (#17) ──────────────────────────────────────
+
+export type SystemDesignStatus = "rascunho" | "avaliado";
+
+export interface SystemDesignSession {
+  id: string;
+  titulo: string;
+  enunciado: string;
+  resposta: string;
+  feedbackIA?: string;
+  scoreGeral?: number;
+  pontosFracos?: string[];
+  status: SystemDesignStatus;
+  criadoEm: number;
+}
+
+// ── Mock Interview (#18) ─────────────────────────────────────
+
+export type MockInterviewTipo = "tecnica" | "comportamental" | "misto";
+export type MockInterviewStatus = "em-andamento" | "concluido";
+
+export interface MockInterviewPergunta {
+  pergunta: string;
+  resposta: string;
+  feedback?: string;
+  score?: number;
+}
+
+export interface MockInterviewSession {
+  id: string;
+  tipo: MockInterviewTipo;
+  nivel: "pleno" | "senior" | "staff";
+  perguntas: MockInterviewPergunta[];
+  scoreGeral?: number;
+  feedbackGeral?: string;
+  status: MockInterviewStatus;
+  criadoEm: number;
+}
+
+// ── RFC Writing (#21) ────────────────────────────────────────
+
+export type RFCStatus = "rascunho" | "revisado";
+
+export interface RFCSession {
+  id: string;
+  titulo: string;
+  problema: string;
+  rfc: string;
+  feedbackIA?: string;
+  scoreClarez?: number;
+  scoreCompletude?: number;
+  scoreRaciocinio?: number;
+  status: RFCStatus;
+  criadoEm: number;
+}
+
+// ── War Game (#9) ────────────────────────────────────────────
+
+export interface WarGameSession {
+  id: string;
+  cenario: string;
+  restricoes: string[];
+  decisao: string;
+  justificativa: string;
+  feedbackIA?: string;
+  scoreDecisao?: number;
+  tempoGasto?: number;
+  criadoEm: number;
+}
+
+// ── Revisor de Código (#3) ───────────────────────────────────
+
+export interface RevisorSession {
+  id: string;
+  cardSlug?: string;
+  titulo: string;
+  codigo: string;
+  revisaoUsuario: string;
+  revisaoIA?: string;
+  lacunasUsuario?: string[];
+  acertosUsuario?: string[];
+  scoreRevisao?: number;
+  status: "pendente" | "avaliado";
+  criadoEm: number;
+}

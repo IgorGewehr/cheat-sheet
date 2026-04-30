@@ -21,16 +21,35 @@ import { getWorkspaceId } from "./workspace";
 import type {
   Adocao,
   AdocaoStatus,
+  CardDoDiaProgresso,
   ChecklistSession,
   CustomCard,
   Decisao,
+  DividaConhecimento,
+  DividaStatus,
+  ErroPersonal,
+  ExperienciaSTAR,
   Modulo,
   ModuloStatus,
+  MockInterviewSession,
   Project,
+  RFCSession,
+  Retrospectiva,
+  RevisorSession,
   SavedComparison,
+  SprintSemIA,
+  SystemDesignSession,
+  TrilhaProgresso,
+  WarGameSession,
 } from "./types";
 
-type ColName = "projetos" | "modulos" | "adocoes" | "decisoes" | "checklistSessions" | "customCards" | "comparacoes";
+type ColName =
+  | "projetos" | "modulos" | "adocoes" | "decisoes"
+  | "checklistSessions" | "customCards" | "comparacoes"
+  | "cardDoDia" | "dividas" | "retrospectivas" | "sprintsSemIA"
+  | "errosPersonais" | "experienciasSTAR" | "systemDesigns"
+  | "mockInterviews" | "rfcSessions" | "warGames" | "revisoesCodigo"
+  | "trilhaProgresso";
 
 function col(name: ColName) {
   const { db } = getFirebase();
@@ -479,6 +498,310 @@ export async function createComparacao(
 export async function deleteComparacao(id: string): Promise<void> {
   await ready();
   await deleteDoc(docRef("comparacoes", id));
+}
+
+// ───── Card do Dia ───────────────────────────────────────────
+
+export async function getCardDoDiaProgresso(data: string): Promise<CardDoDiaProgresso | null> {
+  await ready();
+  const snap = await getDocs(query(col("cardDoDia"), where("data", "==", data)));
+  if (snap.empty) return null;
+  return snap.docs[0].data() as CardDoDiaProgresso;
+}
+
+export async function listCardDoDiaProgresso(): Promise<CardDoDiaProgresso[]> {
+  await ready();
+  const snap = await getDocs(query(col("cardDoDia"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as CardDoDiaProgresso);
+}
+
+export async function saveCardDoDiaProgresso(
+  input: Omit<CardDoDiaProgresso, "id" | "criadoEm">,
+): Promise<CardDoDiaProgresso> {
+  await ready();
+  const p: CardDoDiaProgresso = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("cardDoDia", p.id), clean(p) as DocumentData);
+  return p;
+}
+
+// ───── Trilha de Senioridade ─────────────────────────────────
+
+export async function listTrilhaProgresso(): Promise<TrilhaProgresso[]> {
+  await ready();
+  const snap = await getDocs(col("trilhaProgresso"));
+  return snap.docs.map((d) => d.data() as TrilhaProgresso);
+}
+
+export async function saveTrilhaProgresso(
+  cardSlug: string,
+  update: Partial<Omit<TrilhaProgresso, "cardSlug">>,
+): Promise<void> {
+  await ready();
+  const existing = await getDoc(docRef("trilhaProgresso", cardSlug));
+  const current: TrilhaProgresso = existing.exists()
+    ? (existing.data() as TrilhaProgresso)
+    : { cardSlug, dominado: false, tentativas: 0, melhorScore: 0 };
+  await setDoc(
+    docRef("trilhaProgresso", cardSlug),
+    clean({ ...current, ...update }) as DocumentData,
+  );
+}
+
+// ───── Dívida de Conhecimento ────────────────────────────────
+
+export async function listDividas(): Promise<DividaConhecimento[]> {
+  await ready();
+  const snap = await getDocs(query(col("dividas"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as DividaConhecimento);
+}
+
+export async function createDivida(
+  input: Omit<DividaConhecimento, "id" | "criadoEm">,
+): Promise<DividaConhecimento> {
+  await ready();
+  const d: DividaConhecimento = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("dividas", d.id), clean(d) as DocumentData);
+  return d;
+}
+
+export async function updateDividaStatus(id: string, status: DividaStatus, resolvidoEm?: number): Promise<void> {
+  await ready();
+  await setDoc(docRef("dividas", id), { status, ...(resolvidoEm ? { resolvidoEm } : {}) }, { merge: true });
+}
+
+export async function deleteDivida(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("dividas", id));
+}
+
+// ───── Retrospectiva Semanal ─────────────────────────────────
+
+export async function listRetrospectivas(): Promise<Retrospectiva[]> {
+  await ready();
+  const snap = await getDocs(query(col("retrospectivas"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as Retrospectiva);
+}
+
+export async function getRetrospectivaByWeek(semana: string): Promise<Retrospectiva | null> {
+  await ready();
+  const snap = await getDocs(query(col("retrospectivas"), where("semana", "==", semana)));
+  if (snap.empty) return null;
+  return snap.docs[0].data() as Retrospectiva;
+}
+
+export async function saveRetrospectiva(
+  input: Omit<Retrospectiva, "id" | "criadoEm">,
+): Promise<Retrospectiva> {
+  await ready();
+  const r: Retrospectiva = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("retrospectivas", r.id), clean(r) as DocumentData);
+  return r;
+}
+
+// ───── Sprint sem IA ─────────────────────────────────────────
+
+export async function listSprintsSemIA(): Promise<SprintSemIA[]> {
+  await ready();
+  const snap = await getDocs(query(col("sprintsSemIA"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as SprintSemIA);
+}
+
+export async function createSprintSemIA(
+  input: Omit<SprintSemIA, "id" | "criadoEm">,
+): Promise<SprintSemIA> {
+  await ready();
+  const s: SprintSemIA = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("sprintsSemIA", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function updateSprintSemIA(id: string, updates: Partial<SprintSemIA>): Promise<void> {
+  await ready();
+  await setDoc(docRef("sprintsSemIA", id), clean(updates), { merge: true });
+}
+
+export async function deleteSprintSemIA(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("sprintsSemIA", id));
+}
+
+// ───── Biblioteca de Erros Pessoais ──────────────────────────
+
+export async function listErrosPersonais(): Promise<ErroPersonal[]> {
+  await ready();
+  const snap = await getDocs(query(col("errosPersonais"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as ErroPersonal);
+}
+
+export async function createErroPersonal(
+  input: Omit<ErroPersonal, "id" | "criadoEm">,
+): Promise<ErroPersonal> {
+  await ready();
+  const e: ErroPersonal = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("errosPersonais", e.id), clean(e) as DocumentData);
+  return e;
+}
+
+export async function deleteErroPersonal(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("errosPersonais", id));
+}
+
+// ───── Banco de Experiências STAR ────────────────────────────
+
+export async function listExperienciasSTAR(): Promise<ExperienciaSTAR[]> {
+  await ready();
+  const snap = await getDocs(query(col("experienciasSTAR"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as ExperienciaSTAR);
+}
+
+export async function createExperienciaSTAR(
+  input: Omit<ExperienciaSTAR, "id" | "criadoEm">,
+): Promise<ExperienciaSTAR> {
+  await ready();
+  const e: ExperienciaSTAR = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("experienciasSTAR", e.id), clean(e) as DocumentData);
+  return e;
+}
+
+export async function updateExperienciaSTAR(id: string, updates: Partial<ExperienciaSTAR>): Promise<void> {
+  await ready();
+  await setDoc(docRef("experienciasSTAR", id), clean(updates), { merge: true });
+}
+
+export async function deleteExperienciaSTAR(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("experienciasSTAR", id));
+}
+
+// ───── System Design ─────────────────────────────────────────
+
+export async function listSystemDesigns(): Promise<SystemDesignSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("systemDesigns"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as SystemDesignSession);
+}
+
+export async function createSystemDesign(
+  input: Omit<SystemDesignSession, "id" | "criadoEm">,
+): Promise<SystemDesignSession> {
+  await ready();
+  const s: SystemDesignSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("systemDesigns", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function updateSystemDesign(id: string, updates: Partial<SystemDesignSession>): Promise<void> {
+  await ready();
+  await setDoc(docRef("systemDesigns", id), clean(updates), { merge: true });
+}
+
+export async function deleteSystemDesign(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("systemDesigns", id));
+}
+
+// ───── Mock Interview ────────────────────────────────────────
+
+export async function listMockInterviews(): Promise<MockInterviewSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("mockInterviews"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as MockInterviewSession);
+}
+
+export async function createMockInterview(
+  input: Omit<MockInterviewSession, "id" | "criadoEm">,
+): Promise<MockInterviewSession> {
+  await ready();
+  const s: MockInterviewSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("mockInterviews", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function updateMockInterview(id: string, updates: Partial<MockInterviewSession>): Promise<void> {
+  await ready();
+  await setDoc(docRef("mockInterviews", id), clean(updates), { merge: true });
+}
+
+export async function deleteMockInterview(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("mockInterviews", id));
+}
+
+// ───── RFC Writing ───────────────────────────────────────────
+
+export async function listRFCSessions(): Promise<RFCSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("rfcSessions"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as RFCSession);
+}
+
+export async function createRFCSession(
+  input: Omit<RFCSession, "id" | "criadoEm">,
+): Promise<RFCSession> {
+  await ready();
+  const r: RFCSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("rfcSessions", r.id), clean(r) as DocumentData);
+  return r;
+}
+
+export async function updateRFCSession(id: string, updates: Partial<RFCSession>): Promise<void> {
+  await ready();
+  await setDoc(docRef("rfcSessions", id), clean(updates), { merge: true });
+}
+
+export async function deleteRFCSession(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("rfcSessions", id));
+}
+
+// ───── War Game ───────────────────────────────────────────────
+
+export async function listWarGames(): Promise<WarGameSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("warGames"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as WarGameSession);
+}
+
+export async function createWarGame(
+  input: Omit<WarGameSession, "id" | "criadoEm">,
+): Promise<WarGameSession> {
+  await ready();
+  const w: WarGameSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("warGames", w.id), clean(w) as DocumentData);
+  return w;
+}
+
+export async function deleteWarGame(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("warGames", id));
+}
+
+// ───── Revisor de Código ─────────────────────────────────────
+
+export async function listRevisoesCodigo(): Promise<RevisorSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("revisoesCodigo"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as RevisorSession);
+}
+
+export async function createRevisorSession(
+  input: Omit<RevisorSession, "id" | "criadoEm">,
+): Promise<RevisorSession> {
+  await ready();
+  const r: RevisorSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("revisoesCodigo", r.id), clean(r) as DocumentData);
+  return r;
+}
+
+export async function updateRevisorSession(id: string, updates: Partial<RevisorSession>): Promise<void> {
+  await ready();
+  await setDoc(docRef("revisoesCodigo", id), clean(updates), { merge: true });
+}
+
+export async function deleteRevisorSession(id: string): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("revisoesCodigo", id));
 }
 
 // ───── Export / Import ──────────────────────────────────────

@@ -30,6 +30,8 @@ export function SessaoView() {
   const [error, setError] = useState("");
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [activeTab, setActiveTab] = useState<"prompt" | "patterns" | "checklist">("prompt");
+  const [compreensaoRespostas, setCompreensaoRespostas] = useState<[string, string]>(["", ""]);
+  const [mostrarCompreensao, setMostrarCompreensao] = useState(false);
 
   function toggleDomain(id: string) {
     setSelectedDomains((prev) =>
@@ -42,6 +44,8 @@ export function SessaoView() {
     setLoading(true);
     setError("");
     setResult(null);
+    setMostrarCompreensao(false);
+    setCompreensaoRespostas(["", ""]);
     try {
       const res = await fetch("/api/ai/briefing", {
         method: "POST",
@@ -149,8 +153,41 @@ export function SessaoView() {
         {error && <p className="text-sm text-red-500">{error}</p>}
       </Card>
 
+      {/* Comprehension gate */}
+      {result && !mostrarCompreensao && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🧠</span>
+            <div>
+              <p className="font-medium">Antes de copiar, demonstre que entendeu</p>
+              <p className="text-sm text-muted mt-1">Responda brevemente as 2 perguntas abaixo. Não precisa ser perfeito — o objetivo é pensar antes de usar.</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <Label>1. Qual é o padrão mais crítico no briefing e por que ele importa para esta tarefa?</Label>
+              <Textarea rows={2} value={compreensaoRespostas[0]} onChange={e => setCompreensaoRespostas(prev => [e.target.value, prev[1]])} placeholder="Em suas palavras..." />
+            </div>
+            <div>
+              <Label>2. Qual é o maior risco de não seguir as instruções do briefing nesta implementação?</Label>
+              <Textarea rows={2} value={compreensaoRespostas[1]} onChange={e => setCompreensaoRespostas(prev => [prev[0], e.target.value])} placeholder="Em suas palavras..." />
+            </div>
+          </div>
+          <Button
+            disabled={compreensaoRespostas[0].trim().length < 20 || compreensaoRespostas[1].trim().length < 20}
+            onClick={() => setMostrarCompreensao(true)}
+          >
+            Confirmar — liberar briefing
+          </Button>
+          {(compreensaoRespostas[0].length > 0 || compreensaoRespostas[1].length > 0) &&
+           (compreensaoRespostas[0].trim().length < 20 || compreensaoRespostas[1].trim().length < 20) && (
+            <p className="text-xs text-muted">Mínimo de 20 caracteres em cada resposta para continuar</p>
+          )}
+        </div>
+      )}
+
       {/* Result */}
-      {result && (
+      {result && mostrarCompreensao && (
         <div className="space-y-4">
           {/* Tabs */}
           <div className="flex items-center gap-1 border-b border-line">
