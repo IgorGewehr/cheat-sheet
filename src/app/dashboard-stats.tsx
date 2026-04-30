@@ -37,6 +37,8 @@ import {
   Briefcase,
   GraduationCap,
   Moon,
+  CheckCircle2,
+  Wrench,
 } from "lucide-react";
 import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
@@ -56,6 +58,7 @@ import {
   listRFCSessions,
   listRevisoesCodigo,
   listTrilhaProgresso,
+  listComparacoes,
 } from "@/lib/db";
 import type {
   Card as CardType,
@@ -72,6 +75,7 @@ import type {
   RFCSession,
   RevisorSession,
   TrilhaProgresso,
+  SavedComparison,
 } from "@/lib/types";
 
 // ─── XP Table ───────────────────────────────────────────────
@@ -88,7 +92,10 @@ const XP_TABLE = {
   rfcRevisado: 45,
   erroRegistrado: 5,
   padraoAdotado: 10,
+  comparacaoFeita: 15,
 };
+
+const WORK_XP_DAILY_GOAL = 30;
 
 // ─── Levels ─────────────────────────────────────────────────
 
@@ -185,6 +192,7 @@ function computeXP(data: {
   rfcs: RFCSession[];
   erros: ErroPersonal[];
   adocoes: Adocao[];
+  comparacoes: SavedComparison[];
 }): number {
   let xp = 0;
   xp += data.cardProgresso.filter((p) => p.completado).length * XP_TABLE.cardDoDia;
@@ -198,7 +206,69 @@ function computeXP(data: {
   xp += data.rfcs.filter((r) => r.status === "revisado").length * XP_TABLE.rfcRevisado;
   xp += data.erros.length * XP_TABLE.erroRegistrado;
   xp += data.adocoes.length * XP_TABLE.padraoAdotado;
+  xp += data.comparacoes.length * XP_TABLE.comparacaoFeita;
   return xp;
+}
+
+// ─── Work XP ────────────────────────────────────────────────
+
+function computeWorkXP(data: {
+  revisoes: RevisorSession[];
+  comparacoes: SavedComparison[];
+  erros: ErroPersonal[];
+  adocoes: Adocao[];
+  dividas: DividaConhecimento[];
+}): number {
+  let xp = 0;
+  xp += data.revisoes.filter((r) => r.status === "avaliado").length * XP_TABLE.revisorSession;
+  xp += data.comparacoes.length * XP_TABLE.comparacaoFeita;
+  xp += data.erros.length * XP_TABLE.erroRegistrado;
+  xp += data.adocoes.length * XP_TABLE.padraoAdotado;
+  xp += data.dividas.filter((d) => d.status === "paga").length * XP_TABLE.dividaPaga;
+  return xp;
+}
+
+function computeWorkXPToday(data: {
+  revisoes: RevisorSession[];
+  comparacoes: SavedComparison[];
+  erros: ErroPersonal[];
+  adocoes: Adocao[];
+  dividas: DividaConhecimento[];
+}): number {
+  const today = new Date().toISOString().split("T")[0];
+  const todayMs = new Date(today).getTime();
+  const tomorrowMs = todayMs + 86400000;
+  const inToday = (ts: number) => ts >= todayMs && ts < tomorrowMs;
+  let xp = 0;
+  xp += data.revisoes.filter((r) => r.status === "avaliado" && inToday(r.criadoEm)).length * XP_TABLE.revisorSession;
+  xp += data.comparacoes.filter((c) => inToday(c.criadoEm)).length * XP_TABLE.comparacaoFeita;
+  xp += data.erros.filter((e) => inToday(e.criadoEm)).length * XP_TABLE.erroRegistrado;
+  xp += data.adocoes.filter((a) => inToday(a.dataDecisao)).length * XP_TABLE.padraoAdotado;
+  xp += data.dividas.filter((d) => d.status === "paga" && d.resolvidoEm && inToday(d.resolvidoEm)).length * XP_TABLE.dividaPaga;
+  return xp;
+}
+
+function computeWorkStreak(data: {
+  revisoes: RevisorSession[];
+  comparacoes: SavedComparison[];
+  erros: ErroPersonal[];
+  adocoes: Adocao[];
+}): number {
+  const toDate = (ts: number) => new Date(ts).toISOString().split("T")[0];
+  const workDates = new Set<string>();
+  data.revisoes.filter((r) => r.status === "avaliado").forEach((r) => workDates.add(toDate(r.criadoEm)));
+  data.comparacoes.forEach((c) => workDates.add(toDate(c.criadoEm)));
+  data.erros.forEach((e) => workDates.add(toDate(e.criadoEm)));
+  data.adocoes.forEach((a) => workDates.add(toDate(a.dataDecisao)));
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    if (workDates.has(d.toISOString().split("T")[0])) streak++;
+    else break;
+  }
+  return streak;
 }
 
 function computeXPToday(data: {
@@ -213,6 +283,7 @@ function computeXPToday(data: {
   rfcs: RFCSession[];
   erros: ErroPersonal[];
   adocoes: Adocao[];
+  comparacoes: SavedComparison[];
 }): number {
   const today = new Date().toISOString().split("T")[0];
   const todayMs = new Date(today).getTime();
@@ -232,6 +303,7 @@ function computeXPToday(data: {
   xp += data.rfcs.filter((r) => r.status === "revisado" && inToday(r.criadoEm)).length * XP_TABLE.rfcRevisado;
   xp += data.erros.filter((e) => inToday(e.criadoEm)).length * XP_TABLE.erroRegistrado;
   xp += data.adocoes.filter((a) => inToday(a.dataDecisao)).length * XP_TABLE.padraoAdotado;
+  xp += data.comparacoes.filter((c) => inToday(c.criadoEm)).length * XP_TABLE.comparacaoFeita;
   return xp;
 }
 
@@ -416,6 +488,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   const [rfcs, setRfcs] = useState<RFCSession[]>([]);
   const [revisoes, setRevisoes] = useState<RevisorSession[]>([]);
   const [trilha, setTrilha] = useState<TrilhaProgresso[]>([]);
+  const [comparacoes, setComparacoes] = useState<SavedComparison[]>([]);
 
   useEffect(() => {
     if (!signedIn) {
@@ -447,7 +520,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     // Wave 2: data needed for XP, radar, achievements
     (async () => {
       try {
-        const [ps, ads, err, wg, iv, sd, rfc, rev, tr] = await Promise.all([
+        const [ps, ads, err, wg, iv, sd, rfc, rev, tr, comp] = await Promise.all([
           listProjects(),
           listAllAdocoes(),
           listErrosPersonais(),
@@ -457,6 +530,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
           listRFCSessions(),
           listRevisoesCodigo(),
           listTrilhaProgresso(),
+          listComparacoes(),
         ]);
         setProjects(ps);
         setAdocoes(ads);
@@ -467,6 +541,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         setRfcs(rfc);
         setRevisoes(rev);
         setTrilha(tr);
+        setComparacoes(comp);
 
       } catch (err) {
         console.error(err);
@@ -481,7 +556,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     if (loadingCore || loadingFull) return;
     try {
       const today = new Date().toISOString().split("T")[0];
-      const xpData = { cardProgresso, warGames, interviews, systemDesigns, sprints, retrospectivas, dividas, revisoes, rfcs, erros, adocoes };
+      const xpData = { cardProgresso, warGames, interviews, systemDesigns, sprints, retrospectivas, dividas, revisoes, rfcs, erros, adocoes, comparacoes };
       const lvl = getLevel(computeXP(xpData));
       const stk = computeStreak(cardProgresso);
       localStorage.setItem("brain.sidebarProgress", JSON.stringify({
@@ -510,6 +585,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     rfcs,
     erros,
     adocoes,
+    comparacoes,
   };
 
   const totalXP = computeXP(allData);
@@ -547,6 +623,23 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   };
 
   const earnedAchievements = ACHIEVEMENTS.filter((a) => a.condition(achievementData));
+
+  // ── Work mode gamification ───────────────────────────────────
+  const workData = { revisoes, comparacoes, erros, adocoes, dividas };
+  const workXP = computeWorkXP(workData);
+  const workXPToday = computeWorkXPToday(workData);
+  const workStreak = computeWorkStreak({ revisoes, comparacoes, erros, adocoes });
+  const workGoalPct = Math.min(100, Math.round((workXPToday / WORK_XP_DAILY_GOAL) * 100));
+  const workGoalMet = workXPToday >= WORK_XP_DAILY_GOAL;
+
+  const revisoeAvaliadas = revisoes.filter((r) => r.status === "avaliado").length;
+  const workAchievements = [
+    { id: "revisor",   icon: ClipboardCheck, title: "Revisor",    color: "sky",     current: revisoeAvaliadas,  total: 5,  label: "revisão"   },
+    { id: "arquiteto", icon: Scale,          title: "Arquiteto",  color: "violet",  current: comparacoes.length, total: 5, label: "comparação" },
+    { id: "honesto",   icon: AlertCircle,    title: "Honesto",    color: "amber",   current: dividas.length,    total: 10, label: "dívida"    },
+    { id: "detetive",  icon: Bug,            title: "Detetive",   color: "red",     current: erros.length,      total: 5,  label: "erro"      },
+    { id: "padroes",   icon: Shield,         title: "Padrões",    color: "emerald", current: adocoes.length,    total: 10, label: "adoção"    },
+  ] as const;
 
   const healthColor =
     healthScore >= 80 ? "text-emerald-500" :
@@ -696,6 +789,109 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
            MODO TRABALHO
            ═══════════════════════════════════════════════════════════ */
         <div className="space-y-6">
+
+          {/* ── Work XP Strip ── */}
+          {loadingFull ? (
+            <div className="h-24 rounded-2xl bg-card border border-line animate-pulse" />
+          ) : (
+            <div className="rounded-2xl border border-line bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                {/* Left: daily goal */}
+                <div className="flex items-center gap-3">
+                  <div className={clsx(
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                    workGoalMet ? "bg-amber-500" : "bg-card-hover",
+                  )}>
+                    <Wrench className={clsx("w-4 h-4", workGoalMet ? "text-zinc-950" : "text-muted")} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted uppercase tracking-wide">Meta do dia</p>
+                    <p className="text-sm font-semibold text-fg">
+                      {workGoalMet
+                        ? "Meta atingida!"
+                        : `${workXPToday} / ${WORK_XP_DAILY_GOAL} XP`}
+                      {workXPToday > 0 && !workGoalMet && (
+                        <span className="text-emerald-500 font-normal ml-2 text-xs">+{workXPToday} hoje</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {/* Right: streak + total */}
+                <div className="flex items-center gap-4 text-right">
+                  {workStreak > 0 && (
+                    <div>
+                      <p className="text-xs text-muted uppercase tracking-wide">Streak</p>
+                      <p className="text-sm font-semibold flex items-center gap-1 justify-end">
+                        <Flame className="w-3.5 h-3.5 text-amber-500" />
+                        {workStreak}d
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted uppercase tracking-wide">XP trabalho</p>
+                    <p className="text-sm font-semibold text-fg">{workXP}</p>
+                  </div>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="h-2 rounded-full bg-card-hover overflow-hidden">
+                <div
+                  className={clsx(
+                    "h-full rounded-full transition-all duration-700",
+                    workGoalMet ? "bg-amber-500" : "bg-amber-500/60",
+                  )}
+                  style={{ width: `${workGoalPct}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Work Achievements ── */}
+          {loadingFull ? (
+            <div className="grid grid-cols-5 gap-2">
+              {[0,1,2,3,4].map((i) => <div key={i} className="h-20 rounded-xl bg-card border border-line animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 gap-2">
+              {workAchievements.map((ach) => {
+                const pct = Math.min(100, Math.round((ach.current / ach.total) * 100));
+                const done = ach.current >= ach.total;
+                const Icon = ach.icon;
+                const iconColor =
+                  ach.color === "sky"     ? "text-sky-500" :
+                  ach.color === "violet"  ? "text-violet-500" :
+                  ach.color === "amber"   ? "text-amber-500" :
+                  ach.color === "red"     ? "text-red-500" :
+                  "text-emerald-500";
+                return (
+                  <div
+                    key={ach.id}
+                    className={clsx(
+                      "flex flex-col gap-2 p-3 rounded-xl border transition",
+                      done ? "border-amber-500/40 bg-amber-500/5" : "border-line bg-card",
+                    )}
+                    title={`${ach.current}/${ach.total} ${ach.label}${ach.current !== 1 ? "s" : ""}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <Icon className={clsx("w-4 h-4", done ? "text-amber-500" : iconColor)} />
+                      {done && <CheckCircle2 className="w-3 h-3 text-amber-500" />}
+                    </div>
+                    <p className="text-[11px] font-medium text-fg leading-tight">{ach.title}</p>
+                    <div className="space-y-1">
+                      <div className="h-1 rounded-full bg-card-hover overflow-hidden">
+                        <div
+                          className={clsx("h-full rounded-full transition-all", done ? "bg-amber-500" : "bg-amber-500/50")}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted">{ach.current}/{ach.total}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Dívidas pendentes — aviso urgente */}
           {!loading && pendingDividas.length > 0 && (
             <a
