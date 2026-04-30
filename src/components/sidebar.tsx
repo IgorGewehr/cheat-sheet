@@ -98,13 +98,31 @@ const GROUPS: Group[] = [
   },
 ];
 
+interface SidebarProgress {
+  level: number;
+  levelTitle: string;
+  levelEmoji: string;
+  streak: number;
+  xpPercent: number;
+  pendingDividas: number;
+  cardDoneToday: boolean;
+}
+
 export function Sidebar({ commandPalette }: { commandPalette?: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [progress, setProgress] = useState<SidebarProgress | null>(null);
 
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("brain.sidebarProgress");
+      if (raw) setProgress(JSON.parse(raw) as SidebarProgress);
+    } catch {}
+  }, []);
 
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -153,6 +171,48 @@ export function Sidebar({ commandPalette }: { commandPalette?: ReactNode }) {
           {commandPalette && (
             <div className="mt-4">
               {commandPalette}
+            </div>
+          )}
+
+          {/* Progress mini-bar */}
+          {progress && (
+            <div className="mt-3 space-y-2">
+              {/* Level + streak row */}
+              <div className="flex items-center justify-between gap-2 px-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base leading-none">{progress.levelEmoji}</span>
+                  <div>
+                    <p className="text-xs font-medium text-fg leading-tight">{progress.levelTitle}</p>
+                    <p className="text-[10px] text-subtle">Nível {progress.level}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-amber-500">
+                  <Flame className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-xs font-semibold">{progress.streak}d</span>
+                </div>
+              </div>
+              {/* XP bar */}
+              <div>
+                <div className="h-1.5 rounded-full bg-card-hover overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
+                    style={{ width: `${progress.xpPercent}%` }}
+                  />
+                </div>
+              </div>
+              {/* Alerts row */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {!progress.cardDoneToday && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium">
+                    📅 card do dia
+                  </span>
+                )}
+                {progress.pendingDividas > 0 && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-500 font-medium">
+                    {progress.pendingDividas} dívida{progress.pendingDividas > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>

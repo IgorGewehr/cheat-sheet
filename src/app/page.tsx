@@ -11,7 +11,7 @@ export default function Page() {
 
   return (
     <div className="space-y-10">
-      <DashboardStats totalCards={all.length} />
+      <DashboardStats totalCards={all.length} allCards={all} />
 
       <LibrarySection groups={groups} />
     </div>

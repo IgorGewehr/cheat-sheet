@@ -34,6 +34,7 @@ import {
 import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
 import { useAuth } from "@/lib/auth-context";
+import { RadarChart, computeRadarAxes } from "@/components/radar-chart";
 import {
   listProjects,
   listAllAdocoes,
@@ -50,6 +51,7 @@ import {
   listTrilhaProgresso,
 } from "@/lib/db";
 import type {
+  Card as CardType,
   Project,
   Adocao,
   CardDoDiaProgresso,
@@ -84,12 +86,13 @@ const XP_TABLE = {
 // ─── Levels ─────────────────────────────────────────────────
 
 const LEVELS = [
-  { level: 1, title: "Estagiário", min: 0,    max: 150,       color: "zinc"    },
-  { level: 2, title: "Júnior",     min: 150,  max: 400,       color: "sky"     },
-  { level: 3, title: "Pleno",      min: 400,  max: 900,       color: "emerald" },
-  { level: 4, title: "Sênior",     min: 900,  max: 2000,      color: "amber"   },
-  { level: 5, title: "Staff",      min: 2000, max: 4000,      color: "violet"  },
-  { level: 6, title: "Principal",  min: 4000, max: Infinity,  color: "rose"    },
+  { level: 0, title: "Aprendiz",   min: 0,    max: 50,        color: "zinc",    emoji: "🌱" },
+  { level: 1, title: "Estagiário", min: 50,   max: 200,       color: "zinc",    emoji: "📚" },
+  { level: 2, title: "Júnior",     min: 200,  max: 500,       color: "sky",     emoji: "💡" },
+  { level: 3, title: "Pleno",      min: 500,  max: 1100,      color: "emerald", emoji: "⚡" },
+  { level: 4, title: "Sênior",     min: 1100, max: 2500,      color: "amber",   emoji: "🔥" },
+  { level: 5, title: "Staff",      min: 2500, max: 5000,      color: "violet",  emoji: "🚀" },
+  { level: 6, title: "Principal",  min: 5000, max: Infinity,  color: "rose",    emoji: "👑" },
 ];
 
 // ─── Achievements ────────────────────────────────────────────
@@ -382,7 +385,7 @@ function computeHealthScore(adocoes: Adocao[], cardProgresso: CardDoDiaProgresso
 
 // ─── Main component ──────────────────────────────────────────
 
-export function DashboardStats({ totalCards }: { totalCards: number }) {
+export function DashboardStats({ totalCards, allCards }: { totalCards: number; allCards: CardType[] }) {
   const { signedIn } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -439,6 +442,23 @@ export function DashboardStats({ totalCards }: { totalCards: number }) {
         setRfcs(rfc);
         setRevisoes(rev);
         setTrilha(tr);
+
+        // Persist sidebar progress
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const lvl = getLevel(computeXP({ cardProgresso: cp, warGames: wg, interviews: iv, systemDesigns: sd, sprints: sp, retrospectivas: retro, dividas: div, revisoes: rev, rfcs: rfc, erros: err, adocoes: ads }));
+          const stk = computeStreak(cp);
+          localStorage.setItem("brain.sidebarProgress", JSON.stringify({
+            level: lvl.level,
+            levelTitle: lvl.title,
+            levelEmoji: lvl.emoji,
+            streak: stk,
+            xpPercent: getLevelProgress(computeXP({ cardProgresso: cp, warGames: wg, interviews: iv, systemDesigns: sd, sprints: sp, retrospectivas: retro, dividas: div, revisoes: rev, rfcs: rfc, erros: err, adocoes: ads })),
+            pendingDividas: div.filter((d) => d.status === "pendente").length,
+            cardDoneToday: cp.some((p) => p.data === today && p.completado),
+            updatedAt: Date.now(),
+          }));
+        } catch {}
       } catch (err) {
         console.error(err);
       } finally {
@@ -471,6 +491,7 @@ export function DashboardStats({ totalCards }: { totalCards: number }) {
   const conceitosDominados = trilha.filter((t) => t.dominado).length;
   const healthScore = computeHealthScore(adocoes, cardProgresso);
   const todayActions = getTodayActions({ cardProgresso, dividas, sprints, retrospectivas });
+  const radarAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs);
 
   const lastCard = cardProgresso[0];
   const lastCardDaysAgo = lastCard
@@ -575,7 +596,7 @@ export function DashboardStats({ totalCards }: { totalCards: number }) {
                 levelColor,
               )}>
                 <Trophy className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-sm font-semibold">Nível {level.level}</span>
+                <span className="text-sm font-semibold">{level.emoji} Nível {level.level}</span>
                 <span className="text-sm">{level.title}</span>
               </div>
               {xpToday > 0 && (
@@ -676,6 +697,60 @@ export function DashboardStats({ totalCards }: { totalCards: number }) {
             <p className="text-xs text-muted mt-1">
               {xpToday === 0 ? "nenhuma atividade hoje" : "ótimo trabalho hoje"}
             </p>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Radar de Habilidades ─────────────────────────────── */}
+      {loading ? (
+        <Skeleton className="h-80" />
+      ) : (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Radar de Habilidades</h2>
+            <Link href="/mapa-dominio" className="text-xs text-amber-600 dark:text-amber-400 hover:underline">
+              ver detalhes →
+            </Link>
+          </div>
+          <Card className="flex flex-col md:flex-row items-center gap-6 p-6">
+            {/* Chart */}
+            <div className="w-64 h-64 shrink-0 mx-auto">
+              <RadarChart axes={radarAxes} size={256} />
+            </div>
+            {/* Legend */}
+            <div className="flex-1 grid grid-cols-2 gap-2 w-full">
+              {radarAxes.map((axis) => (
+                <div key={axis.label} className="flex items-center gap-2.5">
+                  <div className="w-full">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted">{axis.emoji} {axis.label}</span>
+                      <span className={clsx(
+                        "font-medium",
+                        axis.value >= 80 ? "text-emerald-500" :
+                        axis.value >= 50 ? "text-amber-500" :
+                        axis.value >= 20 ? "text-fg" :
+                        "text-muted"
+                      )}>{axis.value}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-card-hover overflow-hidden">
+                      <div
+                        className={clsx(
+                          "h-full rounded-full transition-all duration-500",
+                          axis.value >= 80 ? "bg-emerald-500" :
+                          axis.value >= 50 ? "bg-amber-500" :
+                          axis.value >= 20 ? "bg-amber-500/60" :
+                          "bg-card-hover"
+                        )}
+                        style={{ width: `${Math.max(2, axis.value)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <p className="col-span-2 text-xs text-muted mt-2 italic">
+                Use mais as features do app para ver seu radar crescer
+              </p>
+            </div>
           </Card>
         </div>
       )}
