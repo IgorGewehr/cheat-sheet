@@ -27,6 +27,11 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     "llm-fundamentos",
     "prompt-engineering-avancado",
     "tool-use-function-calling",
+    // Data Science
+    "eda-workflow",
+    "pandas-patterns",
+    "data-cleaning",
+    "statistical-thinking",
   ],
   pleno: [
     "modular-monolith",
@@ -54,6 +59,13 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     "anthropic-sdk-patterns",
     "claude-tool-use",
     "langsmith-observabilidade",
+    // Data Science
+    "feature-engineering",
+    "model-selection",
+    "ml-evaluation",
+    "sklearn-patterns",
+    "data-leakage",
+    "overfitting-strategies",
   ],
   senior: [
     "cqrs-lite",
@@ -80,6 +92,9 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     "agent-memory-patterns",
     "multi-agent-orchestration",
     "human-in-the-loop",
+    // Data Science
+    "ml-pipeline-production",
+    "mlops-basics",
   ],
   staff: [
     "multi-filial",

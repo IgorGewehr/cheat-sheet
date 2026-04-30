@@ -80,9 +80,10 @@ const GROUPS: Group[] = [
   {
     label: "Conhecimento",
     items: [
-      { href: "/biblioteca",                   label: "Biblioteca",   icon: BookOpen },
-      { href: "/prompts",                      label: "Prompts",      icon: Sparkles },
-      { href: "/biblioteca?category=agentes-ia", label: "Agentes de IA", icon: Bot },
+      { href: "/biblioteca",                        label: "Biblioteca",      icon: BookOpen },
+      { href: "/gerar-card",                        label: "Gerar Card c/ IA", icon: Sparkles, hot: true },
+      { href: "/biblioteca?category=data-science",  label: "Data Science",    icon: BarChart2 },
+      { href: "/biblioteca?category=agentes-ia",    label: "Agentes de IA",   icon: Bot },
     ],
   },
   {

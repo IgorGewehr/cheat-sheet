@@ -43,6 +43,7 @@ const CATEGORY_COLORS: Record<CardCategory, string> = {
   prompts: "amber",
   craft: "violet",
   "agentes-ia": "emerald",
+  "data-science": "sky",
 };
 
 type MasteryColor = "green" | "amber" | "red" | "gray";

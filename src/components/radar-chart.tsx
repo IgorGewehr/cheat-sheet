@@ -186,5 +186,6 @@ export function computeRadarAxes(
       value: Math.min(100, sprintsConcluidos * 20 + warGamesPlayed * 10),
     },
     { label: "Agentes IA",    emoji: "🤖",  value: agentScore },
+    { label: "Data Science",  emoji: "📊",  value: categoryScore("data-science") },
   ];
 }
