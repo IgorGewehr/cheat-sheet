@@ -853,3 +853,40 @@ export async function importWorkspace(payload: {
     await batch.commit();
   }
 }
+
+// ───── Public Profiles & Leaderboard ────────────────────────
+
+export interface PublicProfile {
+  userId: string;
+  displayName: string;
+  photoURL?: string;
+  totalXP: number;
+  level: number;
+  levelTitle: string;
+  topSkill?: string;
+  updatedAt: number;
+}
+
+export async function syncPublicProfile(profile: PublicProfile): Promise<void> {
+  await ready();
+  const { db } = getFirebase();
+  const ref = doc(db, "publicProfiles", profile.userId);
+  await setDoc(ref, clean(profile) as DocumentData, { merge: true });
+}
+
+export async function listLeaderboard(): Promise<PublicProfile[]> {
+  await ready();
+  const { db } = getFirebase();
+  const snap = await getDocs(
+    query(collection(db, "publicProfiles"), orderBy("totalXP", "desc"))
+  );
+  return snap.docs.map((d) => d.data() as PublicProfile);
+}
+
+export function subscribeLeaderboard(callback: (profiles: PublicProfile[]) => void): Unsubscribe {
+  const { db } = getFirebase();
+  const q = query(collection(db, "publicProfiles"), orderBy("totalXP", "desc"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => d.data() as PublicProfile));
+  });
+}

@@ -52,6 +52,7 @@ const GROUPS: Group[] = [
       { href: "/war-game",       label: "War Game",           icon: Swords, hot: true },
       { href: "/system-design",  label: "System Design",      icon: GitBranch },
       { href: "/mock-interview", label: "Mock Interview",     icon: Mic },
+      { href: "/ranking",        label: "Ranking Global",     icon: Trophy, hot: true },
     ],
   },
   {

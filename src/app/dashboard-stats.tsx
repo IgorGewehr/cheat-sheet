@@ -57,8 +57,10 @@ import {
   listSystemDesigns,
   listRFCSessions,
   listRevisoesCodigo,
+  listRevisoesCodigo,
   listTrilhaProgresso,
   listComparacoes,
+  syncPublicProfile,
 } from "@/lib/db";
 import type {
   Card as CardType,
@@ -470,7 +472,7 @@ function computeHealthScore(adocoes: Adocao[], cardProgresso: CardDoDiaProgresso
 // ─── Main component ──────────────────────────────────────────
 
 export function DashboardStats({ totalCards, allCards }: { totalCards: number; allCards: CardType[] }) {
-  const { signedIn } = useAuth();
+  const { signedIn, user } = useAuth();
 
   const [loadingCore, setLoadingCore] = useState(true);
   const [loadingFull, setLoadingFull] = useState(true);
@@ -557,20 +559,36 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     try {
       const today = new Date().toISOString().split("T")[0];
       const xpData = { cardProgresso, warGames, interviews, systemDesigns, sprints, retrospectivas, dividas, revisoes, rfcs, erros, adocoes, comparacoes };
-      const lvl = getLevel(computeXP(xpData));
+      const currentXP = computeXP(xpData);
+      const lvl = getLevel(currentXP);
       const stk = computeStreak(cardProgresso);
       localStorage.setItem("brain.sidebarProgress", JSON.stringify({
         level: lvl.level,
         levelTitle: lvl.title,
         levelEmoji: lvl.emoji,
         streak: stk,
-        xpPercent: getLevelProgress(computeXP(xpData)),
+        xpPercent: getLevelProgress(currentXP),
         pendingDividas: dividas.filter((d) => d.status === "pendente").length,
         cardDoneToday: cardProgresso.some((p) => p.data === today && p.completado),
         updatedAt: Date.now(),
       }));
+
+      if (user) {
+        const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs);
+        const topAxis = [...rAxes].sort((a,b) => b.value - a.value)[0];
+        syncPublicProfile({
+          userId: user.uid,
+          displayName: user.displayName || user.email?.split("@")[0] || "Usuário",
+          photoURL: user.photoURL || undefined,
+          totalXP: currentXP,
+          level: lvl.level,
+          levelTitle: lvl.title,
+          topSkill: topAxis && topAxis.value > 0 ? topAxis.label : undefined,
+          updatedAt: Date.now(),
+        }).catch(console.error);
+      }
     } catch {}
-  }, [loadingCore, loadingFull]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadingCore, loadingFull, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Computed values ──────────────────────────────────────────
   const allData = {
@@ -794,51 +812,65 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
           {loadingFull ? (
             <div className="h-24 rounded-2xl bg-card border border-line animate-pulse" />
           ) : (
-            <div className="rounded-2xl border border-line bg-card p-4 space-y-3">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className={clsx(
+              "rounded-2xl p-5 space-y-4 relative overflow-hidden transition-all duration-500",
+              workGoalMet 
+                ? "border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-card shadow-[0_0_20px_rgba(245,158,11,0.05)]" 
+                : "border border-line bg-card"
+            )}>
+              {workGoalMet && (
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
+              )}
+              <div className="flex items-center justify-between gap-4 flex-wrap relative z-10">
                 {/* Left: daily goal */}
                 <div className="flex items-center gap-3">
                   <div className={clsx(
-                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                    workGoalMet ? "bg-amber-500" : "bg-card-hover",
+                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-500",
+                    workGoalMet ? "bg-gradient-to-br from-amber-400 to-amber-600 shadow-md" : "bg-card-hover border border-line",
                   )}>
                     <Wrench className={clsx("w-4 h-4", workGoalMet ? "text-zinc-950" : "text-muted")} />
                   </div>
                   <div>
-                    <p className="text-xs text-muted uppercase tracking-wide">Meta do dia</p>
-                    <p className="text-sm font-semibold text-fg">
+                    <p className="text-xs text-muted uppercase tracking-wider font-semibold">Meta do dia</p>
+                    <p className={clsx(
+                      "text-sm font-bold mt-0.5",
+                      workGoalMet ? "text-amber-500 dark:text-amber-400" : "text-fg"
+                    )}>
                       {workGoalMet
                         ? "Meta atingida!"
                         : `${workXPToday} / ${WORK_XP_DAILY_GOAL} XP`}
                       {workXPToday > 0 && !workGoalMet && (
-                        <span className="text-emerald-500 font-normal ml-2 text-xs">+{workXPToday} hoje</span>
+                        <span className="text-emerald-500 font-medium ml-2 text-xs">+{workXPToday} hoje</span>
                       )}
                     </p>
                   </div>
                 </div>
                 {/* Right: streak + total */}
-                <div className="flex items-center gap-4 text-right">
+                <div className="flex items-center gap-6 text-right">
                   {workStreak > 0 && (
                     <div>
-                      <p className="text-xs text-muted uppercase tracking-wide">Streak</p>
-                      <p className="text-sm font-semibold flex items-center gap-1 justify-end">
-                        <Flame className="w-3.5 h-3.5 text-amber-500" />
-                        {workStreak}d
+                      <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mb-0.5">Streak</p>
+                      <p className="text-sm font-bold flex items-center gap-1.5 justify-end text-fg">
+                        <Flame className="w-4 h-4 text-amber-500" />
+                        {workStreak} dias
                       </p>
                     </div>
                   )}
                   <div>
-                    <p className="text-xs text-muted uppercase tracking-wide">XP trabalho</p>
-                    <p className="text-sm font-semibold text-fg">{workXP}</p>
+                    <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mb-0.5">XP Total</p>
+                    <p className="text-sm font-bold text-fg flex items-center gap-1.5 justify-end">
+                      <Zap className="w-3.5 h-3.5 text-sky-500" />
+                      {workXP}
+                    </p>
                   </div>
                 </div>
               </div>
               {/* Progress bar */}
-              <div className="h-2 rounded-full bg-card-hover overflow-hidden">
+              <div className="h-2.5 rounded-full bg-card-hover overflow-hidden relative z-10 border border-line">
                 <div
                   className={clsx(
-                    "h-full rounded-full transition-all duration-700",
-                    workGoalMet ? "bg-amber-500" : "bg-amber-500/60",
+                    "h-full rounded-full transition-all duration-1000",
+                    workGoalMet ? "bg-gradient-to-r from-amber-400 to-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : "bg-amber-500/60",
                   )}
                   style={{ width: `${workGoalPct}%` }}
                 />
@@ -1197,51 +1229,73 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
       {loading ? (
         <Skeleton className="h-80" />
       ) : (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Radar de Habilidades</h2>
-            <Link href="/mapa-dominio" className="text-xs text-amber-600 dark:text-amber-400 hover:underline">
-              ver detalhes →
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-fg flex items-center gap-2">
+                Evolução de Especialidades
+              </h2>
+              <p className="text-sm text-muted">Complete cards, sprints e entrevistas para subir de rank em cada área.</p>
+            </div>
+            <Link href="/mapa-dominio" className="text-sm font-medium text-amber-600 dark:text-amber-400 hover:underline">
+              ver mapa completo →
             </Link>
           </div>
-          <Card className="flex flex-col md:flex-row items-center gap-6 p-6">
+          
+          <Card className="flex flex-col md:flex-row items-center gap-8 p-6 md:p-8 border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 relative overflow-hidden">
+            {/* Background glowing effect */}
+            <div className="absolute -top-32 -left-32 w-64 h-64 bg-amber-500/20 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
             {/* Chart */}
-            <div className="w-64 h-64 shrink-0 mx-auto">
-              <RadarChart axes={radarAxes} size={256} />
+            <div className="w-[300px] h-[300px] shrink-0 mx-auto relative z-10">
+              <RadarChart axes={radarAxes} size={300} />
             </div>
-            {/* Legend */}
-            <div className="flex-1 grid grid-cols-2 gap-2 w-full">
-              {radarAxes.map((axis) => (
-                <div key={axis.label} className="flex items-center gap-2.5">
-                  <div className="w-full">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted">{axis.emoji} {axis.label}</span>
+            
+            {/* Legend / Mastery levels */}
+            <div className="flex-1 grid grid-cols-2 gap-3 w-full relative z-10">
+              {radarAxes.map((axis) => {
+                const isDiamond = axis.value >= 80;
+                const isGold = axis.value >= 50 && axis.value < 80;
+                const isSilver = axis.value >= 20 && axis.value < 50;
+                
+                const mastery = isDiamond ? "Mestre" : isGold ? "Avançado" : isSilver ? "Intermediário" : "Iniciante";
+                const masteryColor = isDiamond ? "text-cyan-500 dark:text-cyan-400" : isGold ? "text-amber-500 dark:text-amber-400" : isSilver ? "text-zinc-500 dark:text-zinc-300" : "text-amber-900/40 dark:text-amber-900/60";
+                
+                return (
+                  <div key={axis.label} className="flex flex-col gap-1.5 p-3 rounded-xl bg-card border border-line shadow-sm hover:border-amber-500/30 transition group">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-semibold text-fg flex items-center gap-1.5 group-hover:text-amber-500 transition">
+                          <span className="opacity-80">{axis.emoji}</span> {axis.label}
+                        </p>
+                        <p className={clsx("text-[10px] font-bold uppercase tracking-wider mt-0.5", masteryColor)}>
+                          {mastery}
+                        </p>
+                      </div>
                       <span className={clsx(
-                        "font-medium",
-                        axis.value >= 80 ? "text-emerald-500" :
-                        axis.value >= 50 ? "text-amber-500" :
-                        axis.value >= 20 ? "text-fg" :
+                        "text-sm font-bold",
+                        isDiamond ? "text-cyan-500 dark:text-cyan-400" :
+                        isGold ? "text-amber-500" :
+                        isSilver ? "text-fg" :
                         "text-muted"
                       )}>{axis.value}%</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-card-hover overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-card-hover overflow-hidden mt-1">
                       <div
                         className={clsx(
-                          "h-full rounded-full transition-all duration-500",
-                          axis.value >= 80 ? "bg-emerald-500" :
-                          axis.value >= 50 ? "bg-amber-500" :
-                          axis.value >= 20 ? "bg-amber-500/60" :
-                          "bg-card-hover"
+                          "h-full rounded-full transition-all duration-1000",
+                          isDiamond ? "bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" :
+                          isGold ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" :
+                          isSilver ? "bg-zinc-400 dark:bg-zinc-300" :
+                          "bg-amber-900/20 dark:bg-amber-900/40"
                         )}
                         style={{ width: `${Math.max(2, axis.value)}%` }}
                       />
                     </div>
                   </div>
-                </div>
-              ))}
-              <p className="col-span-2 text-xs text-muted mt-2 italic">
-                Use mais as features do app para ver seu radar crescer
-              </p>
+                );
+              })}
             </div>
           </Card>
         </div>

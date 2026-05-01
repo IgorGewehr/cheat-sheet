@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import type { TrilhaProgresso, MockInterviewSession, SprintSemIA, WarGameSession, RFCSession } from "@/lib/types";
 import type { Card } from "@/lib/types";
@@ -10,10 +11,19 @@ export interface RadarAxis {
 }
 
 export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: number }) {
+  const [mounted, setMounted] = useState(false);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Slight delay for entry animation to be visible
+    const t = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
   const cx = size / 2;
   const cy = size / 2;
-  const radius = (size / 2) * 0.68; // inner radius for data
-  const labelRadius = (size / 2) * 0.88; // labels further out
+  const radius = (size / 2) * 0.65; // Slightly smaller to fit glow and labels safely
+  const labelRadius = (size / 2) * 0.88;
   const ringRadii = [0.25, 0.5, 0.75, 1.0].map((r) => r * radius);
   const n = axes.length;
 
@@ -23,7 +33,6 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
     y: cy + r * Math.sin(angle(i)),
   });
 
-  // Build filled polygon points from data values
   const dataPoints = axes.map((axis, i) => {
     const r = (axis.value / 100) * radius;
     return point(r, i);
@@ -31,107 +40,162 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
   const polygonPoints = dataPoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      width="100%"
-      height="100%"
-      className="text-fg"
-    >
-      {/* Concentric rings */}
-      {ringRadii.map((r, ri) => {
-        const ringPoints = Array.from({ length: n }, (_, i) => point(r, i));
-        const d = ringPoints
-          .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-          .join(" ") + " Z";
-        return (
-          <path
-            key={ri}
-            d={d}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={0.5}
-            className="text-line"
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        width="100%"
+        height="100%"
+        className="text-fg overflow-visible"
+        onMouseLeave={() => setHoveredIdx(null)}
+      >
+        <defs>
+          <linearGradient id="radar-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgb(245 158 11)" stopOpacity={0.6} />
+            <stop offset="100%" stopColor="rgb(245 158 11)" stopOpacity={0.1} />
+          </linearGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Concentric rings */}
+        {ringRadii.map((r, ri) => {
+          const ringPoints = Array.from({ length: n }, (_, i) => point(r, i));
+          const d = ringPoints
+            .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+            .join(" ") + " Z";
+          return (
+            <path
+              key={ri}
+              d={d}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={ri === ringRadii.length - 1 ? 1 : 0.5}
+              className={clsx(
+                "transition-opacity duration-1000",
+                mounted ? "opacity-100" : "opacity-0"
+              )}
+              style={{
+                color: "var(--line)",
+                opacity: ri === ringRadii.length - 1 ? 0.6 : 0.2,
+              }}
+              strokeDasharray={ri === ringRadii.length - 1 ? "none" : "3 4"}
+            />
+          );
+        })}
+
+        {/* Axis spokes */}
+        {axes.map((_, i) => {
+          const outer = point(radius, i);
+          const isHovered = hoveredIdx === i;
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={outer.x}
+              y2={outer.y}
+              stroke="currentColor"
+              strokeWidth={isHovered ? 1.5 : 0.5}
+              className={clsx(
+                "transition-all duration-300 ease-out",
+                isHovered ? "text-amber-500 opacity-80" : "text-line opacity-30",
+                !mounted && "opacity-0"
+              )}
+            />
+          );
+        })}
+
+        {/* Filled data polygon */}
+        <g
+          className="transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] origin-center"
+          style={{ transform: mounted ? "scale(1)" : "scale(0)" }}
+        >
+          <polygon
+            points={polygonPoints}
+            fill="url(#radar-gradient)"
+            stroke="#f59e0b"
+            strokeWidth={2}
+            strokeLinejoin="round"
+            filter="url(#glow)"
           />
-        );
-      })}
 
-      {/* Axis spokes */}
-      {axes.map((_, i) => {
-        const outer = point(radius, i);
-        return (
-          <line
-            key={i}
-            x1={cx}
-            y1={cy}
-            x2={outer.x}
-            y2={outer.y}
-            stroke="currentColor"
-            strokeWidth={0.5}
-            className="text-line"
-            opacity={0.4}
-          />
-        );
-      })}
+          {/* Dots at each axis point */}
+          {dataPoints.map((p, i) => {
+            const isHovered = hoveredIdx === i;
+            return (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r={isHovered ? 6 : 4}
+                fill="#f59e0b"
+                stroke="var(--card)"
+                strokeWidth={1.5}
+                className="transition-all duration-300 cursor-pointer"
+                onMouseEnter={() => setHoveredIdx(i)}
+              />
+            );
+          })}
+        </g>
 
-      {/* Filled data polygon */}
-      <polygon
-        points={polygonPoints}
-        fill="rgb(245 158 11 / 0.15)"
-        stroke="#f59e0b"
-        strokeWidth={2}
-        strokeLinejoin="round"
-      />
-
-      {/* Dots at each axis point */}
-      {dataPoints.map((p, i) => (
+        {/* Center dot */}
         <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r={4}
+          cx={cx}
+          cy={cy}
+          r={3}
           fill="#f59e0b"
+          className={clsx("transition-opacity duration-700", mounted ? "opacity-100" : "opacity-0")}
         />
-      ))}
 
-      {/* Center dot */}
-      <circle cx={cx} cy={cy} r={3} fill="#f59e0b" />
+        {/* Labels */}
+        {axes.map((axis, i) => {
+          const lp = point(labelRadius, i);
+          const dx = lp.x - cx;
+          const textAnchor = dx > 10 ? "start" : dx < -10 ? "end" : "middle";
+          const isHovered = hoveredIdx === i;
 
-      {/* Labels */}
-      {axes.map((axis, i) => {
-        const lp = point(labelRadius, i);
-        // Determine text anchor based on x position relative to center
-        const dx = lp.x - cx;
-        const textAnchor =
-          dx > 10 ? "start" : dx < -10 ? "end" : "middle";
-
-        return (
-          <g key={i} className={clsx(axis.value === 0 && "opacity-30")}>
-            <text
-              x={lp.x}
-              y={lp.y - 6}
-              textAnchor={textAnchor}
-              fontSize={11}
-              fill="currentColor"
-              className="text-fg"
-              dominantBaseline="auto"
+          return (
+            <g
+              key={i}
+              className={clsx(
+                "transition-all duration-500 cursor-pointer select-none origin-center",
+                !mounted && "opacity-0 translate-y-2",
+                mounted && axis.value === 0 && !isHovered ? "opacity-40" : "opacity-100",
+                isHovered && "scale-110"
+              )}
+              style={{ transitionDelay: `${mounted ? i * 50 : 0}ms` }}
+              onMouseEnter={() => setHoveredIdx(i)}
             >
-              {axis.emoji} {axis.label}
-            </text>
-            <text
-              x={lp.x}
-              y={lp.y + 8}
-              textAnchor={textAnchor}
-              fontSize={10}
-              fill="currentColor"
-              className="text-muted"
-              dominantBaseline="auto"
-            >
-              {axis.value}%
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+              <text
+                x={lp.x}
+                y={lp.y - 6}
+                textAnchor={textAnchor}
+                fontSize={isHovered ? 12 : 11}
+                fontWeight={isHovered ? 600 : 400}
+                fill="currentColor"
+                className={clsx("transition-colors duration-300", isHovered ? "text-amber-500" : "text-fg")}
+                dominantBaseline="auto"
+              >
+                {axis.emoji} {axis.label}
+              </text>
+              <text
+                x={lp.x}
+                y={lp.y + 8}
+                textAnchor={textAnchor}
+                fontSize={10}
+                fill="currentColor"
+                className={clsx("transition-colors duration-300", isHovered ? "text-amber-400" : "text-muted")}
+                dominantBaseline="auto"
+              >
+                {Math.round(axis.value)}%
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 
