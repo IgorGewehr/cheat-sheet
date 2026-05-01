@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { clsx } from "clsx";
-import { Send, RotateCcw, ChevronDown, ChevronUp, Brain, User, Sparkles } from "lucide-react";
+import { Send, RotateCcw, ChevronDown, ChevronUp, Brain, User, Sparkles, Zap } from "lucide-react";
 import { Button, Card, Input, Label, Tag } from "@/components/ui";
 import type { InterrogatorioResposta } from "@/app/api/ai/interrogatorio/route";
+import type { QuickCapturePayload } from "@/components/quick-capture";
 
 interface Message {
   role: "user" | "assistant";
@@ -209,6 +210,19 @@ export function InterrogatorioView() {
           <span className={clsx("inline-block px-2 py-0.5 rounded text-[11px] font-medium", FASE_COLOR[fase])}>
             {FASE_LABEL[fase]}
           </span>
+          <Button
+            variant="ghost"
+            className="px-2 py-1.5 text-xs gap-1.5"
+            onClick={() => {
+              const ev = new CustomEvent<QuickCapturePayload>("brain:quick-capture-open", {
+                detail: { tab: "divida", desc: acaoUsuario },
+              });
+              window.dispatchEvent(ev);
+            }}
+            title="Marcar tópico como dívida de conhecimento"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-500" /> Marcar dívida
+          </Button>
           <Button variant="ghost" onClick={reset} className="px-2 py-1.5 text-xs gap-1.5">
             <RotateCcw className="w-3.5 h-3.5" /> Nova sessão
           </Button>

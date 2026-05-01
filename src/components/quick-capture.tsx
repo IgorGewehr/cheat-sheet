@@ -1,12 +1,30 @@
 "use client";
 
+// Decision — aba "Insight":
+// Textos que começam ou terminam com "?" são gravados como DividaConhecimento (mesma coleção
+// já existente), pois a dúvida/questão é semanticamente uma dívida de conhecimento.
+// Textos livres são gravados como ErroPersonal com categorias: ["insight"] e causaRaiz = texto,
+// reaproveitando a coleção já existente sem criar coleção nova.  Essa abordagem evita nova
+// coleção Firestore e nenhuma migração de schema é necessária.
+
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Bug, Check, Plus, X, Zap } from "lucide-react";
+import { AlertCircle, Bug, Check, Lightbulb, Plus, X, Zap } from "lucide-react";
 import { clsx } from "clsx";
 import { createDivida, createErroPersonal } from "@/lib/db";
 import { Button, Input, Label, Textarea } from "@/components/ui";
 
-type Tab = "divida" | "erro";
+type Tab = "divida" | "erro" | "insight";
+
+export interface QuickCapturePayload {
+  tab?: Tab;
+  desc?: string;
+}
+
+declare global {
+  interface WindowEventMap {
+    "brain:quick-capture-open": CustomEvent<QuickCapturePayload>;
+  }
+}
 
 export function QuickCapture() {
   const [open, setOpen] = useState(false);
@@ -20,8 +38,27 @@ export function QuickCapture() {
   const [erroTitulo, setErroTitulo] = useState("");
   const [erroCausa, setErroCausa] = useState("");
 
+  const [insightText, setInsightText] = useState("");
+
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Global event listener — accepts payload to pre-fill and open
+  useEffect(() => {
+    function onOpen(e: CustomEvent<QuickCapturePayload>) {
+      const { tab: requestedTab, desc } = e.detail ?? {};
+      if (requestedTab) setTab(requestedTab);
+      if (desc) {
+        if (requestedTab === "divida" || !requestedTab) setDividaDesc(desc);
+        else if (requestedTab === "erro") setErroTitulo(desc);
+        else if (requestedTab === "insight") setInsightText(desc);
+      }
+      setOpen(true);
+    }
+    window.addEventListener("brain:quick-capture-open", onOpen);
+    return () => window.removeEventListener("brain:quick-capture-open", onOpen);
+  }, []);
+
+  // Keyboard shortcut Cmd⇧C
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "c") {
@@ -35,6 +72,7 @@ export function QuickCapture() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Auto-focus first field when drawer opens
   useEffect(() => {
     if (open) {
       setSaved(false);
@@ -51,6 +89,7 @@ export function QuickCapture() {
     setDividaCtx("");
     setErroTitulo("");
     setErroCausa("");
+    setInsightText("");
     setSaved(false);
   }
 
@@ -91,6 +130,32 @@ export function QuickCapture() {
           setSaved(false);
           formRef.current?.querySelector("input")?.focus();
         }, 1800);
+      } else if (tab === "insight" && insightText.trim()) {
+        const text = insightText.trim();
+        const isQuestion = text.startsWith("?") || text.endsWith("?");
+        if (isQuestion) {
+          // Question-form insight → DividaConhecimento
+          await createDivida({
+            descricao: text,
+            status: "pendente",
+          });
+        } else {
+          // Free-form insight → ErroPersonal com categoria "insight"
+          await createErroPersonal({
+            titulo: text.slice(0, 80),
+            descricao: text,
+            categorias: ["insight"],
+            causaRaiz: text,
+            comoDetectar: "",
+            comoPrevenir: "",
+          });
+        }
+        setInsightText("");
+        setSaved(true);
+        setTimeout(() => {
+          setSaved(false);
+          formRef.current?.querySelector("textarea")?.focus();
+        }, 1800);
       }
     } finally {
       setSaving(false);
@@ -107,20 +172,34 @@ export function QuickCapture() {
   const canSubmit =
     tab === "divida"
       ? dividaDesc.trim().length > 0
-      : erroTitulo.trim().length > 0 && erroCausa.trim().length > 0;
+      : tab === "erro"
+      ? erroTitulo.trim().length > 0 && erroCausa.trim().length > 0
+      : insightText.trim().length > 0;
+
+  const saveLabel =
+    tab === "divida" ? "dívida" : tab === "erro" ? "erro" : "insight";
 
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={(e) => { if (e.target === e.currentTarget) close(); }}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <>
+      {/* Invisible click-outside overlay — no backdrop-blur, no color */}
+      <div
+        className="fixed inset-0 z-40"
+        onClick={close}
+        aria-hidden="true"
+      />
 
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl bg-card border border-line shadow-2xl">
+      {/* Inline drawer — slides in from right, does not block content */}
+      <div
+        className={clsx(
+          "fixed bottom-4 right-4 z-50 w-[380px] rounded-2xl bg-card border border-line shadow-2xl",
+          "animate-in slide-in-from-right-4 duration-200",
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-500" />
             <span className="font-semibold text-sm">Captura rápida</span>
@@ -132,11 +211,11 @@ export function QuickCapture() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-line px-5">
+        <div className="flex border-b border-line px-4">
           <button
             onClick={() => switchTab("divida")}
             className={clsx(
-              "flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition -mb-px",
+              "flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium border-b-2 transition -mb-px",
               tab === "divida"
                 ? "border-amber-500 text-amber-600 dark:text-amber-400"
                 : "border-transparent text-muted hover:text-fg",
@@ -147,7 +226,7 @@ export function QuickCapture() {
           <button
             onClick={() => switchTab("erro")}
             className={clsx(
-              "flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition -mb-px",
+              "flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium border-b-2 transition -mb-px",
               tab === "erro"
                 ? "border-red-500 text-red-600 dark:text-red-400"
                 : "border-transparent text-muted hover:text-fg",
@@ -155,16 +234,27 @@ export function QuickCapture() {
           >
             <Bug className="w-3.5 h-3.5" /> Erro
           </button>
+          <button
+            onClick={() => switchTab("insight")}
+            className={clsx(
+              "flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium border-b-2 transition -mb-px",
+              tab === "insight"
+                ? "border-violet-500 text-violet-600 dark:text-violet-400"
+                : "border-transparent text-muted hover:text-fg",
+            )}
+          >
+            <Lightbulb className="w-3.5 h-3.5" /> Insight
+          </button>
         </div>
 
         {/* Form */}
-        <div className="p-5 space-y-3" ref={formRef} onKeyDown={handleKeyDown}>
-          {tab === "divida" ? (
+        <div className="p-4 space-y-2.5" ref={formRef} onKeyDown={handleKeyDown}>
+          {tab === "divida" && (
             <>
               <div>
                 <Label>O que você usou sem entender de verdade?</Label>
                 <Textarea
-                  rows={3}
+                  rows={2}
                   value={dividaDesc}
                   onChange={(e) => setDividaDesc(e.target.value)}
                   placeholder="Ex: Usei JWT sem entender rotação de refresh tokens"
@@ -172,15 +262,16 @@ export function QuickCapture() {
               </div>
               <div>
                 <Label>Onde usou? (opcional)</Label>
-                <Textarea
-                  rows={2}
+                <Input
                   value={dividaCtx}
                   onChange={(e) => setDividaCtx(e.target.value)}
                   placeholder="Ex: Módulo de auth do saas-erp"
                 />
               </div>
             </>
-          ) : (
+          )}
+
+          {tab === "erro" && (
             <>
               <div>
                 <Label>O que deu errado?</Label>
@@ -196,10 +287,29 @@ export function QuickCapture() {
                   rows={2}
                   value={erroCausa}
                   onChange={(e) => setErroCausa(e.target.value)}
-                  placeholder="Ex: ORM fazia query por item do loop sem que eu percebesse"
+                  placeholder="Ex: ORM fazia query por item do loop"
                 />
               </div>
             </>
+          )}
+
+          {tab === "insight" && (
+            <div>
+              <Label>Pensamento livre</Label>
+              <Textarea
+                rows={3}
+                value={insightText}
+                onChange={(e) => setInsightText(e.target.value)}
+                placeholder={'Comece/termine com "?" para gravar como dívida. Texto livre vira nota.'}
+              />
+              <p className="mt-1 text-[10px] text-muted">
+                {insightText.trim().startsWith("?") || insightText.trim().endsWith("?")
+                  ? "→ Será gravado como dívida de conhecimento"
+                  : insightText.trim()
+                  ? "→ Será gravado como nota de insight"
+                  : "Comece ou termine com ? para gravar como dívida"}
+              </p>
+            </div>
           )}
 
           {saved && (
@@ -219,7 +329,7 @@ export function QuickCapture() {
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  Salvar {tab === "divida" ? "dívida" : "erro"}
+                  Salvar {saveLabel}
                 </>
               )}
             </Button>
@@ -227,6 +337,6 @@ export function QuickCapture() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
