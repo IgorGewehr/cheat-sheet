@@ -1,23 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Moon, AlertCircle, Bug, Check, Plus, Trash2,
-  ChevronRight, BookOpen, PartyPopper,
+  ChevronRight, BookOpen, PartyPopper, Zap,
 } from "lucide-react";
 import { clsx } from "clsx";
-import { Button, Card, Input, Label, Textarea } from "@/components/ui";
-import { createDivida, createErroPersonal } from "@/lib/db";
+import { Button, Card, Label, Textarea, Input } from "@/components/ui";
+import { listDividas, listErrosPersonais, createErroPersonal } from "@/lib/db";
+import type { DividaConhecimento, ErroPersonal } from "@/lib/types";
+import type { QuickCapturePayload } from "@/components/quick-capture";
 import Link from "next/link";
 
 type Step = "dividas" | "erros" | "done";
 
-interface DividaEntry { desc: string; ctx: string }
-interface ErroEntry   { titulo: string; causa: string }
-
 interface Saved {
   dividas: number;
   erros: number;
+}
+
+function todayStart(): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
 }
 
 export function FimDoDiaView() {
@@ -25,31 +30,42 @@ export function FimDoDiaView() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<Saved>({ dividas: 0, erros: 0 });
 
-  // Step 1 — Dívidas
-  const [dividaDesc, setDividaDesc] = useState("");
-  const [dividaCtx, setDividaCtx] = useState("");
-  const [dividasSalvas, setDividasSalvas] = useState<string[]>([]);
+  // Step 1 — today's dividas loaded from Firestore
+  const [dividasHoje, setDividasHoje] = useState<DividaConhecimento[]>([]);
+  const [loadingDividas, setLoadingDividas] = useState(true);
 
   // Step 2 — Erros
   const [erroTitulo, setErroTitulo] = useState("");
   const [erroCausa, setErroCausa] = useState("");
   const [errosSalvos, setErrosSalvos] = useState<string[]>([]);
 
-  async function adicionarDivida() {
-    if (!dividaDesc.trim()) return;
-    setSaving(true);
-    try {
-      await createDivida({
-        descricao: dividaDesc.trim(),
-        contexto: dividaCtx.trim() || undefined,
-        status: "pendente",
-      });
-      setDividasSalvas((prev) => [...prev, dividaDesc.trim()]);
-      setDividaDesc("");
-      setDividaCtx("");
-    } finally {
-      setSaving(false);
+  // Load today's dividas on mount
+  useEffect(() => {
+    const start = todayStart();
+    listDividas()
+      .then((all) => setDividasHoje(all.filter((d) => d.criadoEm >= start)))
+      .catch(() => {})
+      .finally(() => setLoadingDividas(false));
+  }, []);
+
+  // Refresh dividas list after Quick Capture event fires
+  useEffect(() => {
+    function onCapture() {
+      const start = todayStart();
+      listDividas()
+        .then((all) => setDividasHoje(all.filter((d) => d.criadoEm >= start)))
+        .catch(() => {});
     }
+    // listen for quick-capture saves by subscribing to the custom event
+    window.addEventListener("brain:quick-capture-open", onCapture);
+    return () => window.removeEventListener("brain:quick-capture-open", onCapture);
+  }, []);
+
+  function openQuickCapture() {
+    const ev = new CustomEvent<QuickCapturePayload>("brain:quick-capture-open", {
+      detail: { tab: "divida" },
+    });
+    window.dispatchEvent(ev);
   }
 
   async function adicionarErro() {
@@ -73,7 +89,7 @@ export function FimDoDiaView() {
   }
 
   function avancarParaErros() {
-    setSaved((prev) => ({ ...prev, dividas: dividasSalvas.length }));
+    setSaved((prev) => ({ ...prev, dividas: dividasHoje.length }));
     setStep("erros");
   }
 
@@ -121,73 +137,57 @@ export function FimDoDiaView() {
         ))}
       </div>
 
-      {/* ── Step 1: Dívidas ── */}
+      {/* ── Step 1: Dívidas (review mode) ── */}
       {step === "dividas" && (
         <div className="space-y-5">
           <Card className="space-y-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              <h2 className="font-semibold">Dívidas de conhecimento</h2>
-            </div>
-            <p className="text-sm text-muted">
-              Hoje você usou algo que não entende de verdade? Anote antes de esquecer.
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <Label>O que você usou sem entender?</Label>
-                <Textarea
-                  rows={2}
-                  value={dividaDesc}
-                  onChange={(e) => setDividaDesc(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) adicionarDivida(); }}
-                  placeholder="Ex: Usei Promise.all sem saber o comportamento quando uma falha…"
-                />
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                <h2 className="font-semibold">Dívidas de conhecimento — hoje</h2>
               </div>
-              <div>
-                <Label>Contexto (opcional)</Label>
-                <Input
-                  value={dividaCtx}
-                  onChange={(e) => setDividaCtx(e.target.value)}
-                  placeholder="Ex: Módulo de pagamentos do saas-erp"
-                />
-              </div>
-              <Button
-                variant="secondary"
-                onClick={adicionarDivida}
-                disabled={saving || !dividaDesc.trim()}
-              >
-                {saving ? (
-                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                Adicionar dívida
-              </Button>
+              {!loadingDividas && (
+                <span className="text-xs text-muted">{dividasHoje.length} registrada{dividasHoje.length !== 1 ? "s" : ""}</span>
+              )}
             </div>
 
-            {dividasSalvas.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-line">
-                <p className="text-xs text-muted uppercase tracking-wide">Registradas hoje</p>
-                {dividasSalvas.map((d, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-muted">
+            {loadingDividas ? (
+              <div className="flex items-center gap-2 text-sm text-muted py-2">
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Carregando…
+              </div>
+            ) : dividasHoje.length > 0 ? (
+              <div className="space-y-2">
+                {dividasHoje.map((d) => (
+                  <div key={d.id} className="flex items-start gap-2 text-sm text-muted">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span className="line-clamp-1">{d}</span>
+                    <span className="line-clamp-2">{d.descricao}</span>
                   </div>
                 ))}
+                <p className="text-xs text-muted pt-1">
+                  Boa! Já capturou {dividasHoje.length} dívida{dividasHoje.length !== 1 ? "s" : ""} hoje.
+                </p>
               </div>
+            ) : (
+              <p className="text-sm text-muted">
+                Nenhuma dívida registrada ainda hoje.
+              </p>
             )}
+
+            <Button
+              variant="secondary"
+              onClick={openQuickCapture}
+              className="gap-2"
+            >
+              <Zap className="w-4 h-4 text-amber-500" />
+              Adicionar mais (⌘⇧C)
+            </Button>
           </Card>
 
           <div className="flex items-center gap-3">
             <Button onClick={avancarParaErros}>
-              {dividasSalvas.length > 0 ? "Próximo →" : "Pular →"}
+              {dividasHoje.length > 0 ? "Próximo →" : "Pular →"}
             </Button>
-            {dividasSalvas.length > 0 && (
-              <span className="text-sm text-muted">
-                {dividasSalvas.length} dívida{dividasSalvas.length > 1 ? "s" : ""} registrada{dividasSalvas.length > 1 ? "s" : ""}
-              </span>
-            )}
           </div>
         </div>
       )}
