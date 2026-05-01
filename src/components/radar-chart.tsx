@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { clsx } from "clsx";
-import type { TrilhaProgresso, MockInterviewSession, SprintSemIA, WarGameSession, RFCSession } from "@/lib/types";
+import type { TrilhaProgresso, MockInterviewSession, SprintSemIA, WarGameSession, RFCSession, Adocao, Decisao } from "@/lib/types";
 import type { Card } from "@/lib/types";
 
 export interface RadarAxis {
   label: string;
   value: number; // 0–100
   emoji?: string;
+  decaying?: boolean;
 }
 
 export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: number }) {
@@ -178,7 +179,7 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
                 className={clsx("transition-colors duration-300", isHovered ? "text-amber-500" : "text-fg")}
                 dominantBaseline="auto"
               >
-                {axis.emoji} {axis.label}
+                {axis.emoji} {axis.label} {axis.decaying && "🔥"}
               </text>
               <text
                 x={lp.x}
@@ -208,17 +209,55 @@ export function computeRadarAxes(
   sprints: SprintSemIA[],
   warGames: WarGameSession[],
   rfcs: RFCSession[],
+  adocoes: Adocao[],
+  decisoes: Decisao[]
 ): RadarAxis[] {
-  const dominated = trilha.filter((t) => t.dominado).map((t) => t.cardSlug);
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
 
-  function categoryScore(cat: string): number {
+  function categoryScore(cat: string): { value: number; decaying: boolean } {
     const cardsInCategory = allCards.filter((c) => c.category === cat);
-    if (cardsInCategory.length === 0) return 0;
-    return Math.round(
-      (cardsInCategory.filter((c) => dominated.includes(c.slug)).length /
-        cardsInCategory.length) *
-        100,
-    );
+    if (cardsInCategory.length === 0) return { value: 0, decaying: false };
+    
+    let totalScore = 0;
+    let latestActivity = 0;
+    
+    cardsInCategory.forEach((c) => {
+      let score = 0;
+      
+      const tr = trilha.find((t) => t.cardSlug === c.slug);
+      if (tr && tr.dominado) {
+        score += 1;
+        if (tr.ultimaRevisao && tr.ultimaRevisao > latestActivity) latestActivity = tr.ultimaRevisao;
+      }
+      
+      const adopted = adocoes.find((a) => a.cardSlug === c.slug && a.status === "adotado");
+      if (adopted) {
+        score += 3;
+        if (adopted.dataDecisao > latestActivity) latestActivity = adopted.dataDecisao;
+      }
+      
+      const decided = decisoes.find((d) => d.status === "aceita" && d.cardSlugs?.includes(c.slug));
+      if (decided) {
+        score += 2;
+        if (decided.data > latestActivity) latestActivity = decided.data;
+      }
+      
+      totalScore += Math.min(4, score);
+    });
+
+    const maxScore = cardsInCategory.length * 4; 
+    if (maxScore === 0) return { value: 0, decaying: false };
+    
+    let rawScore = (totalScore / maxScore) * 100;
+    let decaying = false;
+
+    if (totalScore > 0 && latestActivity > 0 && (now - latestActivity > THIRTY_DAYS)) {
+      decaying = true;
+      rawScore = Math.max(0, rawScore * 0.9); // -10% penalty
+    }
+    
+    return { value: Math.round(rawScore), decaying };
   }
 
   const interviewsConcluido = interviews.filter((i) => i.status === "concluido").length;
@@ -226,30 +265,47 @@ export function computeRadarAxes(
   const sprintsConcluidos = sprints.filter((s) => s.status === "concluido").length;
   const warGamesPlayed = warGames.length;
 
-  // Agentes IA axis — based on dominated agentes-ia cards
   const agentCards = allCards.filter((c) => c.category === "agentes-ia");
-  const agentDominated = agentCards.filter((c) => dominated.includes(c.slug)).length;
-  const agentScore = agentCards.length === 0 ? 0
-    : Math.round((agentDominated / agentCards.length) * 100);
+  let agentTotalScore = 0;
+  let agentLatestActivity = 0;
+  agentCards.forEach(c => {
+    let score = 0;
+    const tr = trilha.find((t) => t.cardSlug === c.slug);
+    if (tr && tr.dominado) { score += 1; if (tr.ultimaRevisao && tr.ultimaRevisao > agentLatestActivity) agentLatestActivity = tr.ultimaRevisao; }
+    const adopted = adocoes.find(a => a.cardSlug === c.slug && a.status === "adotado");
+    if (adopted) { score += 3; if (adopted.dataDecisao > agentLatestActivity) agentLatestActivity = adopted.dataDecisao; }
+    const decided = decisoes.find(d => d.status === "aceita" && d.cardSlugs?.includes(c.slug));
+    if (decided) { score += 2; if (decided.data > agentLatestActivity) agentLatestActivity = decided.data; }
+    agentTotalScore += Math.min(4, score);
+  });
+  
+  let agentScore = agentCards.length === 0 ? 0 : (agentTotalScore / (agentCards.length * 4)) * 100;
+  let agentDecaying = false;
+  if (agentTotalScore > 0 && agentLatestActivity > 0 && (now - agentLatestActivity > THIRTY_DAYS)) {
+    agentDecaying = true;
+    agentScore = Math.max(0, agentScore * 0.9);
+  }
 
   return [
-    { label: "Arquitetura",   emoji: "🏗️",  value: categoryScore("arquiteturas") },
-    { label: "Backend",       emoji: "⚙️",  value: categoryScore("padroes-backend") },
-    { label: "Banco & DB",    emoji: "🗄️",  value: categoryScore("banco") },
-    { label: "Auth & Sec",    emoji: "🔐",  value: categoryScore("auth") },
-    { label: "Frontend",      emoji: "🎨",  value: categoryScore("padroes-frontend") },
-    { label: "Infra & Deploy",emoji: "☁️",  value: categoryScore("infra") },
+    { label: "Arquitetura",   emoji: "🏗️",  ...categoryScore("arquiteturas") },
+    { label: "Backend",       emoji: "⚙️",  ...categoryScore("padroes-backend") },
+    { label: "Banco & DB",    emoji: "🗄️",  ...categoryScore("banco") },
+    { label: "Auth & Sec",    emoji: "🔐",  ...categoryScore("auth") },
+    { label: "Frontend",      emoji: "🎨",  ...categoryScore("padroes-frontend") },
+    { label: "Infra & Deploy",emoji: "☁️",  ...categoryScore("infra") },
     {
       label: "Entrevista",
       emoji: "🎤",
       value: Math.min(100, interviewsConcluido * 25 + rfcsRevisados * 20),
+      decaying: false
     },
     {
       label: "Autonomia",
       emoji: "💪",
       value: Math.min(100, sprintsConcluidos * 20 + warGamesPlayed * 10),
+      decaying: false
     },
-    { label: "Agentes IA",    emoji: "🤖",  value: agentScore },
-    { label: "Data Science",  emoji: "📊",  value: categoryScore("data-science") },
+    { label: "Agentes IA",    emoji: "🤖",  value: Math.round(agentScore), decaying: agentDecaying },
+    { label: "Data Science",  emoji: "📊",  ...categoryScore("data-science") },
   ];
 }

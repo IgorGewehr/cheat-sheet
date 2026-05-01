@@ -289,6 +289,12 @@ export async function listDecisoes(projetoId: string): Promise<Decisao[]> {
   return snap.docs.map((d) => d.data() as Decisao);
 }
 
+export async function listAllDecisoes(): Promise<Decisao[]> {
+  await ready();
+  const snap = await getDocs(query(col("decisoes"), orderBy("data", "desc")));
+  return snap.docs.map((d) => d.data() as Decisao);
+}
+
 export async function createDecisao(input: Omit<Decisao, "id" | "data">): Promise<Decisao> {
   await ready();
   const decisao: Decisao = { ...input, id: uuidv4(), data: Date.now() };

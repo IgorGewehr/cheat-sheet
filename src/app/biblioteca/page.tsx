@@ -1,5 +1,6 @@
 import { getAllCards, getCategoriesWithCards } from "@/lib/content";
 import { BibliotecaSearch } from "./biblioteca-search";
+import { LibraryRadar } from "@/components/library-radar";
 
 function bodySnippet(body: string): string {
   return body.replace(/#{1,6}\s/g, "").replace(/[*`_[\]()]/g, "").slice(0, 400);
@@ -37,6 +38,8 @@ export default function BibliotecaPage() {
           <strong>como pedir pra IA</strong> e <strong>como auditar</strong> o que ela gerou.
         </p>
       </header>
+
+      <LibraryRadar />
 
       <BibliotecaSearch cards={cards} groups={groups} />
     </div>

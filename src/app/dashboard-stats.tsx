@@ -59,8 +59,10 @@ import {
   listRevisoesCodigo,
   listTrilhaProgresso,
   listComparacoes,
+  listAllDecisoes,
   syncPublicProfile,
 } from "@/lib/db";
+import { DailyQuestWidget } from "@/components/daily-quest-widget";
 import type {
   Card as CardType,
   Project,
@@ -489,6 +491,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   const [rfcs, setRfcs] = useState<RFCSession[]>([]);
   const [revisoes, setRevisoes] = useState<RevisorSession[]>([]);
   const [trilha, setTrilha] = useState<TrilhaProgresso[]>([]);
+  const [decisoes, setDecisoes] = useState<Decisao[]>([]);
   const [comparacoes, setComparacoes] = useState<SavedComparison[]>([]);
 
   useEffect(() => {
@@ -521,7 +524,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     // Wave 2: data needed for XP, radar, achievements
     (async () => {
       try {
-        const [ps, ads, err, wg, iv, sd, rfc, rev, tr, comp] = await Promise.all([
+        const [ps, ads, err, wg, iv, sd, rfc, rev, tr, comp, decs] = await Promise.all([
           listProjects(),
           listAllAdocoes(),
           listErrosPersonais(),
@@ -532,6 +535,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
           listRevisoesCodigo(),
           listTrilhaProgresso(),
           listComparacoes(),
+          listAllDecisoes(),
         ]);
         setProjects(ps);
         setAdocoes(ads);
@@ -543,6 +547,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         setRevisoes(rev);
         setTrilha(tr);
         setComparacoes(comp);
+        setDecisoes(decs);
 
       } catch (err) {
         console.error(err);
@@ -573,7 +578,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
       }));
 
       if (user) {
-        const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs);
+        const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes);
         const topAxis = [...rAxes].sort((a,b) => b.value - a.value)[0];
         syncPublicProfile({
           userId: user.uid,
@@ -614,7 +619,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   const conceitosDominados = trilha.filter((t) => t.dominado).length;
   const healthScore = computeHealthScore(adocoes, cardProgresso);
   const todayActions = getTodayActions({ cardProgresso, dividas, sprints, retrospectivas });
-  const radarAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs);
+  const radarAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes);
 
   const lastCard = cardProgresso[0];
   const lastCardDaysAgo = lastCard
@@ -1149,6 +1154,13 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         </div>
       )}
 
+      {/* ── Daily Quest ───────────────────────────────────────── */}
+      {!loading && radarAxes.length > 0 && (
+        <div className="mt-4">
+          <DailyQuestWidget axes={radarAxes} dividas={dividas} />
+        </div>
+      )}
+
       {/* ── 4 Metric cards ──────────────────────────────────── */}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1241,18 +1253,18 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
             </Link>
           </div>
           
-          <Card className="flex flex-col md:flex-row items-center gap-8 p-6 md:p-8 border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 relative overflow-hidden">
+          <Card className="flex flex-col items-center gap-10 p-6 md:p-10 border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 relative overflow-hidden">
             {/* Background glowing effect */}
-            <div className="absolute -top-32 -left-32 w-64 h-64 bg-amber-500/20 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute -top-32 -left-32 w-80 h-80 bg-amber-500/20 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
 
             {/* Chart */}
-            <div className="w-[300px] h-[300px] shrink-0 mx-auto relative z-10">
-              <RadarChart axes={radarAxes} size={300} />
+            <div className="w-full max-w-[400px] aspect-square mx-auto relative z-10 flex items-center justify-center">
+              <RadarChart axes={radarAxes} size={360} />
             </div>
             
             {/* Legend / Mastery levels */}
-            <div className="flex-1 grid grid-cols-2 gap-3 w-full relative z-10">
+            <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 relative z-10 border-t border-line/50 pt-8">
               {radarAxes.map((axis) => {
                 const isDiamond = axis.value >= 80;
                 const isGold = axis.value >= 50 && axis.value < 80;
@@ -1262,25 +1274,23 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
                 const masteryColor = isDiamond ? "text-cyan-500 dark:text-cyan-400" : isGold ? "text-amber-500 dark:text-amber-400" : isSilver ? "text-zinc-500 dark:text-zinc-300" : "text-amber-900/40 dark:text-amber-900/60";
                 
                 return (
-                  <div key={axis.label} className="flex flex-col gap-1.5 p-3 rounded-xl bg-card border border-line shadow-sm hover:border-amber-500/30 transition group">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs font-semibold text-fg flex items-center gap-1.5 group-hover:text-amber-500 transition">
-                          <span className="opacity-80">{axis.emoji}</span> {axis.label}
-                        </p>
-                        <p className={clsx("text-[10px] font-bold uppercase tracking-wider mt-0.5", masteryColor)}>
-                          {mastery}
-                        </p>
-                      </div>
-                      <span className={clsx(
-                        "text-sm font-bold",
-                        isDiamond ? "text-cyan-500 dark:text-cyan-400" :
-                        isGold ? "text-amber-500" :
-                        isSilver ? "text-fg" :
-                        "text-muted"
-                      )}>{axis.value}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-card-hover overflow-hidden mt-1">
+                  <div key={axis.label} className="flex flex-col gap-1.5 p-3 rounded-xl bg-card border border-line shadow-sm hover:border-amber-500/30 transition group text-center items-center justify-center">
+                    <p className="text-sm font-semibold text-fg flex items-center gap-1.5 group-hover:text-amber-500 transition">
+                      <span className="opacity-80 text-base">{axis.emoji}</span> {axis.label}
+                      {axis.decaying && <span title="Skill em deterioração" className="text-red-500 animate-pulse">🔥</span>}
+                    </p>
+                    <p className={clsx("text-[10px] font-bold uppercase tracking-wider", masteryColor)}>
+                      {mastery}
+                    </p>
+                    <span className={clsx(
+                      "text-xl font-bold mt-1",
+                      isDiamond ? "text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]" :
+                      isGold ? "text-amber-500 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" :
+                      isSilver ? "text-fg" :
+                      "text-muted"
+                    )}>{axis.value}%</span>
+                    
+                    <div className="w-full h-1.5 rounded-full bg-card-hover overflow-hidden mt-1">
                       <div
                         className={clsx(
                           "h-full rounded-full transition-all duration-1000",

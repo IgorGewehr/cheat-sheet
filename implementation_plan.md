@@ -1,52 +1,43 @@
-# Melhorias de Gamificação e Sistema de Ranking
+# Gamificação Avançada e Expansão de Cibersegurança
 
-Este plano propõe uma evolução profunda na gamificação do app "brain", dividida em duas fases: (1) Melhoria da Gamificação Individual (destacando skills/módulos de forma elegante) e (2) Criação do Sistema de Ranking (Leaderboard).
+Este plano visa implementar as novas mecânicas de retenção de usuários (Missões Diárias e Decaimento de Habilidades) e expandir massivamente o conteúdo técnico focado em Cibersegurança na era da IA e monitoramento moderno.
 
 ## User Review Required
 
-> [!IMPORTANT]  
-> **Escopo do Ranking:** Atualmente os dados são salvos em coleções por `workspaceId` no Firestore. Para um ranking competitivo, precisaremos de uma coleção global (ex: `publicProfiles` ou `leaderboard`) que sincronize o XP e nível de todos os usuários. Você concorda com essa abordagem de ter uma coleção pública de perfis?
-> 
-> **Novas Collections no Firebase:** Será necessário adicionar regras no `firestore.rules` para a nova coleção do Leaderboard. 
+> [!WARNING]
+> **Penalidade por Inatividade (Decay):** Você concorda que as habilidades do Radar comecem a "enferrujar" (perder pontuação percentual) se o usuário ficar mais de 30 dias sem registrar uma Adoção, Decisão ou progresso de Estudo naquela área específica?
 
 ## Proposed Changes
 
-### 1. Gamificação Individual (Evolução do Radar de Habilidades)
-
-Conforme seu feedback, em vez de criar *badges* que podem ser ignoradas, vamos transformar o **Radar de Habilidades** existente no centro das atenções da evolução individual. Ele será refeito para ter um visual extremamente premium, dinâmico e profissional.
+### 1. Skill Decay (A Ameaça da Inatividade)
+Para forçar a manutenção do conhecimento e prestação de contas, o radar sofrerá deterioração nas habilidades não praticadas.
 
 #### [MODIFY] [components/radar-chart.tsx](file:///Users/igorgewehr/air/brain/src/components/radar-chart.tsx)
-- Reescrever o SVG do Radar para utilizar gradientes suaves (ex: fundo com opacidade que se intensifica nas pontas), linhas de grade refinadas (glassmorphism ou neon sutil) e animações de preenchimento ao carregar.
-- Adicionar tooltips interativos no hover sobre os eixos (mostrando o progresso exato e os próximos passos para subir aquela skill).
-- Otimizar a tipografia e os ícones para dar uma cara mais "Pro" e menos "dashboard genérico".
+- No `computeRadarAxes`, checaremos a data da última ação (`TrilhaProgresso.date`, `Adocao.dataDecisao` e `Decisao.data`) relacionada a cada eixo.
+- Se a última ação tiver mais de 30 dias, aplicaremos uma penalidade (ex: -10% na nota do eixo).
+- **Feedback Visual:** Se a skill estiver decaindo, exibiremos um ícone (🔥 apagando ou ⚠️) ao lado do rótulo do Radar para induzir o usuário a estudar aquele tema urgente.
 
-#### [MODIFY] [dashboard-stats.tsx](file:///Users/igorgewehr/air/brain/src/app/dashboard-stats.tsx)
-- Redesenhar a seção do "Radar de Habilidades" para dar mais destaque a ele, fazendo com que a progressão nos módulos (Data Science, Agentes IA, Dev) seja o grande troféu visual do usuário.
-- **Modo Estudo:** O radar será a estrela principal. Vamos adicionar feedbacks de "Level Up" por eixo (ex: quando o eixo "Agentes IA" passa de 20% para 50%).
-- **Modo Trabalho:** Melhorar a comemoração da Meta Diária (Work XP), adicionando uma animação mais premium e responsiva quando `workGoalMet` for atingido.
+### 2. Daily Quests (Missões Diárias de Baixa Fricção)
+Para engajar o usuário logo que ele entra, sem exigir que ele faça fluxos longos.
 
----
+#### [MODIFY] [app/dashboard-stats.tsx](file:///Users/igorgewehr/air/brain/src/app/dashboard-stats.tsx)
+- Criar um widget de **"Daily Quests"** no topo. 
+- O sistema sorteará dinamicamente 1 a 3 missões simples por dia baseadas no estado do usuário. Exemplo: *"Você está perdendo nível em Backend. Revise 1 card dessa categoria hoje para recuperar o XP."* ou *"Você tem 3 dívidas técnicas, resolva 1 hoje."*
+- Concluir a Quest renderá Work XP.
 
-### 2. Sistema de Ranking e Competitividade
+### 3. Expansão de Conteúdo (Auth, Sec & AI)
+Criar cards técnicos aprofundados sobre a arquitetura e segurança na era da IA, tornando o app um arsenal obrigatório para DevSecOps e Arquitetos.
 
-Para tornar o app competitivo, vamos criar uma nova aba no menu principal para o Ranking e sincronizar o progresso do usuário no Firebase globalmente.
-
-#### [MODIFY] [db.ts](file:///Users/igorgewehr/air/brain/src/lib/db.ts)
-- Adicionar funções de sync: `syncPublicProfile(xp, level, badges)`.
-- Adicionar função `listLeaderboard()` para buscar os top usuários de uma coleção global `publicProfiles`.
-
-#### [NEW] [app/ranking/page.tsx](file:///Users/igorgewehr/air/brain/src/app/ranking/page.tsx)
-- Criação da página do **Leaderboard Global**.
-- Exibição de Tiers competitivos (Bronze, Prata, Ouro, Mestre).
-- Os usuários serão listados por XP total ou XP da semana, exibindo também a principal badge de especialidade que eles conquistaram.
-
-#### [MODIFY] [components/sidebar.tsx](file:///Users/igorgewehr/air/brain/src/components/sidebar.tsx) ou Navigation
-- Adicionar o link para o "Ranking Global" com um ícone de troféu (`Trophy`), destacando a posição atual do usuário.
+#### [NEW] [src/content/auth/ai-prompt-injection.md](file:///Users/igorgewehr/air/brain/src/content/auth/ai-prompt-injection.md)
+- Card sobre mitigação de Prompt Injection, Jailbreaks e Data Exfiltration via LLMs.
+#### [NEW] [src/content/auth/zero-trust-architecture.md](file:///Users/igorgewehr/air/brain/src/content/auth/zero-trust-architecture.md)
+- Card detalhando o conceito de Zero Trust e como implementar a nível de rede, IAM e microsserviços.
+#### [NEW] [src/content/auth/modern-monitoring-sec.md](file:///Users/igorgewehr/air/brain/src/content/auth/modern-monitoring-sec.md)
+- Card sobre Observabilidade Orientada à Segurança (SIEM, CSPM, Logs auditáveis e detecção de anomalias com IA).
+#### [NEW] [src/content/auth/oauth-2-1.md](file:///Users/igorgewehr/air/brain/src/content/auth/oauth-2-1.md)
+- Card consolidando as melhores práticas do OAuth 2.1 (rejeitando Implicit Flow, exigindo PKCE, etc).
 
 ## Verification Plan
-
-### Manual Verification
-1. Acessar o Dashboard no modo Estudo e verificar se as novas **Skill Badges** aparecem e calculam o nível (Bronze/Ouro/etc) corretamente baseado no progresso da trilha.
-2. Atingir a meta diária no Modo Trabalho e validar a nova animação de recompensa.
-3. Acessar a nova rota `/ranking` e garantir que o quadro de líderes está listando os perfis corretamente, aplicando o design visual competitivo proposto.
-4. Validar se a atualização do XP atualiza o rank em tempo real ou no recarregamento.
+1. Alterar a data simulada de algumas `Adocoes` no Firestore (ou hardcodar no teste) para mais de 30 dias atrás e confirmar se o radar avisa sobre o "decay".
+2. Validar o surgimento do Card de Daily Quests no Dashboard e sua lógica condicional.
+3. Checar a Biblioteca para garantir que os 4 novos cards de Cibersegurança estão disponíveis para estudo e vinculados ao eixo "Auth & Sec".
