@@ -31,8 +31,13 @@ export function QuickCapture() {
         close();
       }
     }
+    function onOpen() { setOpen(true); }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("brain:quick-capture-open", onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("brain:quick-capture-open", onOpen);
+    };
   }, [open]);
 
   useEffect(() => {

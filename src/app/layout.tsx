@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { SidebarWrapper } from "@/components/sidebar-wrapper";
 import { QuickCapture } from "@/components/quick-capture";
+import { TopNavWrapper } from "@/components/top-nav-wrapper";
 
 export const metadata: Metadata = {
   title: "brain — cheat sheet de engenharia",
@@ -39,10 +40,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AuthProvider>
-          <SidebarWrapper />
+          {/* Global top navigation */}
+          <TopNavWrapper />
+
+          {/* QuickCapture modal — always available globally */}
           <QuickCapture />
-          <main className="lg:pl-64 min-h-screen">
-            <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8 pt-16 lg:pt-8">
+
+          {/* Contextual sidebar (desktop only, collapses to icon strip) */}
+          <SidebarWrapper />
+
+          <main className="lg:pl-14 min-h-screen">
+            <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">
               {children}
             </div>
           </main>
