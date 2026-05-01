@@ -139,6 +139,7 @@ export interface Decisao {
   status: "proposta" | "aceita" | "depreciada";
   data: number;
   cardSlugs?: string[];
+  revisitadoEm?: number[];  // timestamps de revisão via Idle Companion
 }
 
 // ── Checklist Sessions ───────────────────────────────────────
@@ -371,5 +372,32 @@ export interface RevisorSession {
   acertosUsuario?: string[];
   scoreRevisao?: number;
   status: "pendente" | "avaliado";
+  criadoEm: number;
+}
+
+// === IDLE COMPANION (A2) ===
+
+export interface IdleSession {
+  id: string;
+  workspaceId: string;
+  plano: string;
+  riscosIA: string[];
+  perguntasIA: string[];
+  alternativaIA: string;
+  riscosConsiderados: string[];
+  observacao?: string;
+  criadoEm: number;
+}
+
+export interface QuestSession {
+  id: string;
+  workspaceId: string;
+  decisaoId?: string;       // se foi gerada de decisão real
+  fallback: boolean;
+  pergunta: string;
+  resposta: string;
+  feedback: string;
+  score: number;            // 0-100
+  duracaoMs: number;
   criadoEm: number;
 }

@@ -29,10 +29,12 @@ import type {
   DividaStatus,
   ErroPersonal,
   ExperienciaSTAR,
+  IdleSession,
   Modulo,
   ModuloStatus,
   MockInterviewSession,
   Project,
+  QuestSession,
   RFCSession,
   Retrospectiva,
   RevisorSession,
@@ -49,7 +51,7 @@ type ColName =
   | "cardDoDia" | "dividas" | "retrospectivas" | "sprintsSemIA"
   | "errosPersonais" | "experienciasSTAR" | "systemDesigns"
   | "mockInterviews" | "rfcSessions" | "warGames" | "revisoesCodigo"
-  | "trilhaProgresso";
+  | "trilhaProgresso" | "idleSessions" | "questSessions";
 
 function col(name: ColName) {
   const { db } = getFirebase();
@@ -895,4 +897,46 @@ export function subscribeLeaderboard(callback: (profiles: PublicProfile[]) => vo
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => d.data() as PublicProfile));
   });
+}
+
+// ───── Idle Companion ────────────────────────────────────────
+
+export async function createIdleSession(
+  input: Omit<IdleSession, "id" | "criadoEm">,
+): Promise<IdleSession> {
+  await ready();
+  const s: IdleSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("idleSessions", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function listIdleSessions(): Promise<IdleSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("idleSessions"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as IdleSession);
+}
+
+export async function createQuestSession(
+  input: Omit<QuestSession, "id" | "criadoEm">,
+): Promise<QuestSession> {
+  await ready();
+  const s: QuestSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("questSessions", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function listQuestSessions(): Promise<QuestSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("questSessions"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as QuestSession);
+}
+
+export async function markDecisaoRevisitada(decisaoId: string, ts: number): Promise<void> {
+  await ready();
+  const ref = docRef("decisoes", decisaoId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const current = snap.data() as Decisao;
+  const revisitadoEm = [...(current.revisitadoEm ?? []), ts];
+  await setDoc(ref, { revisitadoEm }, { merge: true });
 }
