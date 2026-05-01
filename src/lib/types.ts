@@ -139,6 +139,17 @@ export interface Decisao {
   status: "proposta" | "aceita" | "depreciada";
   data: number;
   cardSlugs?: string[];
+  revisitas?: RevisitaDecisao[];
+}
+
+// === DECISION JOURNAL (A3) ===
+
+export type DecisaoUrgencia = "calmo" | "proximo" | "atrasado";
+
+export interface RevisitaDecisao {
+  data: number; // timestamp ms
+  resposta: "ainda-faria" | "mudaria" | "depende";
+  observacao?: string;
 }
 
 // ── Checklist Sessions ───────────────────────────────────────
