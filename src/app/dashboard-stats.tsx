@@ -57,7 +57,6 @@ import {
   listSystemDesigns,
   listRFCSessions,
   listRevisoesCodigo,
-  listRevisoesCodigo,
   listTrilhaProgresso,
   listComparacoes,
   syncPublicProfile,
