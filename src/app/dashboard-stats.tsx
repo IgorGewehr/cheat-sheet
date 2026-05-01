@@ -79,6 +79,7 @@ import type {
   RevisorSession,
   TrilhaProgresso,
   SavedComparison,
+  Decisao,
 } from "@/lib/types";
 
 // ─── XP Table ───────────────────────────────────────────────

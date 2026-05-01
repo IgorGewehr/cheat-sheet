@@ -5,9 +5,9 @@ import { Target, AlertTriangle, ShieldCheck, Zap } from "lucide-react";
 import { Card } from "@/components/ui";
 import { clsx } from "clsx";
 import type { RadarAxis } from "@/components/radar-chart";
-import type { Divida } from "@/lib/types";
+import type { DividaConhecimento } from "@/lib/types";
 
-export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas: Divida[] }) {
+export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas: DividaConhecimento[] }) {
   const [quest, setQuest] = useState<{ title: string; subtitle: string; icon: any; color: string; done?: boolean; border: string; bg: string } | null>(null);
 
   useEffect(() => {

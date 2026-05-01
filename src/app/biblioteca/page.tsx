@@ -7,7 +7,8 @@ function bodySnippet(body: string): string {
 }
 
 export default function BibliotecaPage() {
-  const cards = getAllCards().map((c) => ({
+  const allCardsRaw = getAllCards();
+  const cards = allCardsRaw.map((c) => ({
     slug: c.slug,
     title: c.title,
     excerpt: c.excerpt,
@@ -39,7 +40,7 @@ export default function BibliotecaPage() {
         </p>
       </header>
 
-      <LibraryRadar />
+      <LibraryRadar allCards={allCardsRaw} />
 
       <BibliotecaSearch cards={cards} groups={groups} />
     </div>

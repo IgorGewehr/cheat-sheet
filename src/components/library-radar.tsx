@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { RadarChart, computeRadarAxes, type RadarAxis } from "@/components/radar-chart";
-import { getAllCards } from "@/lib/content";
 import {
   listTrilhaProgresso,
   listAllAdocoes,
@@ -14,8 +13,9 @@ import {
 } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui";
+import type { Card as CardType } from "@/lib/types";
 
-export function LibraryRadar() {
+export function LibraryRadar({ allCards }: { allCards: CardType[] }) {
   const { user, signedIn } = useAuth();
   const [axes, setAxes] = useState<RadarAxis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,6 @@ export function LibraryRadar() {
           listWarGames(),
           listRFCSessions(),
         ]);
-        const allCards = getAllCards();
         const computed = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes);
         setAxes(computed);
       } catch (err) {
