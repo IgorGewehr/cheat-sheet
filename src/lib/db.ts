@@ -31,10 +31,12 @@ import type {
   DividaStatus,
   ErroPersonal,
   ExperienciaSTAR,
+  IdleSession,
   Modulo,
   ModuloStatus,
   MockInterviewSession,
   Project,
+  QuestSession,
   RFCSession,
   Retrospectiva,
   RevisitaDecisao,
@@ -52,7 +54,7 @@ type ColName =
   | "cardDoDia" | "dividas" | "retrospectivas" | "sprintsSemIA"
   | "errosPersonais" | "experienciasSTAR" | "systemDesigns"
   | "mockInterviews" | "rfcSessions" | "warGames" | "revisoesCodigo"
-  | "trilhaProgresso";
+  | "trilhaProgresso" | "idleSessions" | "questSessions";
 
 function col(name: ColName) {
   const { db } = getFirebase();
@@ -914,29 +916,23 @@ export async function listDecisoesAtrasadas(
   const snap = await getDocs(query(col("decisoes"), orderBy("data", "desc")));
   const all = snap.docs.map((d) => d.data() as Decisao);
 
-  // Annotate each decisao with SRS urgency
   const annotated = all.map((dec) => {
     const { dias, urgencia } = computeNextReview(dec);
     return { ...dec, urgencia, dias };
   });
 
-  // Filter only non-calmo
   const pending = annotated.filter((d) => d.urgencia !== "calmo");
 
-  // Sort: atrasado > proximo, then by dias ascending (most overdue first)
   const urgencyRank: Record<DecisaoUrgencia, number> = { atrasado: 0, proximo: 1, calmo: 2 };
   pending.sort((a, b) => {
     const rankDiff = urgencyRank[a.urgencia] - urgencyRank[b.urgencia];
     if (rankDiff !== 0) return rankDiff;
-    return a.dias - b.dias; // more overdue first
+    return a.dias - b.dias;
   });
 
   return pending;
 }
 
-/**
- * Add a revisita to a decisao (push to revisitas array).
- */
 export async function addRevisitaDecisao(
   decisaoId: string,
   revisita: RevisitaDecisao,
@@ -950,11 +946,50 @@ export async function addRevisitaDecisao(
   await setDoc(ref, { revisitas }, { merge: true });
 }
 
-/**
- * Get a single decisao by id.
- */
 export async function getDecisao(id: string): Promise<Decisao | null> {
   await ready();
   const snap = await getDoc(docRef("decisoes", id));
   return snap.exists() ? (snap.data() as Decisao) : null;
+}
+
+// === IDLE COMPANION (A2) ===
+
+export async function createIdleSession(
+  input: Omit<IdleSession, "id" | "criadoEm">,
+): Promise<IdleSession> {
+  await ready();
+  const s: IdleSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("idleSessions", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function listIdleSessions(): Promise<IdleSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("idleSessions"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as IdleSession);
+}
+
+export async function createQuestSession(
+  input: Omit<QuestSession, "id" | "criadoEm">,
+): Promise<QuestSession> {
+  await ready();
+  const s: QuestSession = { ...input, id: uuidv4(), criadoEm: Date.now() };
+  await setDoc(docRef("questSessions", s.id), clean(s) as DocumentData);
+  return s;
+}
+
+export async function listQuestSessions(): Promise<QuestSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("questSessions"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as QuestSession);
+}
+
+export async function markDecisaoRevisitada(decisaoId: string, ts: number): Promise<void> {
+  await ready();
+  const ref = docRef("decisoes", decisaoId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const current = snap.data() as Decisao;
+  const revisitadoEm = [...(current.revisitadoEm ?? []), ts];
+  await setDoc(ref, { revisitadoEm }, { merge: true });
 }

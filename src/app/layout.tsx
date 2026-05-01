@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { SidebarWrapper } from "@/components/sidebar-wrapper";
 import { QuickCapture } from "@/components/quick-capture";
 import { TopNavWrapper } from "@/components/top-nav-wrapper";
+import { IdleTrigger } from "@/components/idle-trigger";
 
 export const metadata: Metadata = {
   title: "brain — cheat sheet de engenharia",
@@ -43,11 +44,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Global top navigation */}
           <TopNavWrapper />
 
-          {/* QuickCapture modal — always available globally */}
+          {/* QuickCapture drawer — always available globally */}
           <QuickCapture />
 
           {/* Contextual sidebar (desktop only, collapses to icon strip) */}
           <SidebarWrapper />
+
+          {/* Idle Companion floating trigger (hidden on /idle) */}
+          <IdleTrigger />
 
           <main className="lg:pl-14 min-h-screen">
             <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">
