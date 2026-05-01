@@ -9,6 +9,7 @@ export interface RadarAxis {
   value: number; // 0–100
   emoji?: string;
   decaying?: boolean;
+  diasInativo?: number; // days since last activity (only set when decaying)
 }
 
 export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: number }) {
@@ -176,10 +177,13 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
                 fontSize={isHovered ? 12 : 11}
                 fontWeight={isHovered ? 600 : 400}
                 fill="currentColor"
-                className={clsx("transition-colors duration-300", isHovered ? "text-amber-500" : "text-fg")}
+                className={clsx(
+                  "transition-colors duration-300",
+                  isHovered ? "text-amber-500" : axis.decaying ? "text-amber-400" : "text-fg"
+                )}
                 dominantBaseline="auto"
               >
-                {axis.emoji} {axis.label} {axis.decaying && "🔥"}
+                {axis.emoji} {axis.label} {axis.decaying && (axis.diasInativo && axis.diasInativo > 60 ? "⚠️" : "🔥")}
               </text>
               <text
                 x={lp.x}
@@ -212,52 +216,87 @@ export function computeRadarAxes(
   adocoes: Adocao[],
   decisoes: Decisao[]
 ): RadarAxis[] {
-  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const THIRTY_DAYS_MS  = 30 * DAY_MS;
+  const SIXTY_DAYS_MS   = 60 * DAY_MS;
   const now = Date.now();
 
-  function categoryScore(cat: string): { value: number; decaying: boolean } {
+  /**
+   * Apply tiered skill decay based on days inactive:
+   * >30 days: -10%, >60 days: -20%
+   * Returns { decayedScore, decaying, diasInativo }
+   */
+  function applyDecay(rawScore: number, latestActivity: number, hasActivity: boolean): {
+    value: number;
+    decaying: boolean;
+    diasInativo?: number;
+  } {
+    if (!hasActivity || latestActivity === 0) {
+      return { value: Math.round(rawScore), decaying: false };
+    }
+    const elapsed = now - latestActivity;
+    const diasInativo = Math.round(elapsed / DAY_MS);
+
+    if (elapsed > SIXTY_DAYS_MS) {
+      // -20% penalty for >60 days inactive
+      return {
+        value: Math.round(Math.max(0, rawScore * 0.80)),
+        decaying: true,
+        diasInativo,
+      };
+    }
+    if (elapsed > THIRTY_DAYS_MS) {
+      // -10% penalty for >30 days inactive
+      return {
+        value: Math.round(Math.max(0, rawScore * 0.90)),
+        decaying: true,
+        diasInativo,
+      };
+    }
+    return { value: Math.round(rawScore), decaying: false };
+  }
+
+  function categoryScore(cat: string): { value: number; decaying: boolean; diasInativo?: number } {
     const cardsInCategory = allCards.filter((c) => c.category === cat);
     if (cardsInCategory.length === 0) return { value: 0, decaying: false };
-    
+
     let totalScore = 0;
     let latestActivity = 0;
-    
+
     cardsInCategory.forEach((c) => {
       let score = 0;
-      
+
       const tr = trilha.find((t) => t.cardSlug === c.slug);
       if (tr && tr.dominado) {
         score += 1;
         if (tr.ultimaRevisao && tr.ultimaRevisao > latestActivity) latestActivity = tr.ultimaRevisao;
       }
-      
+
       const adopted = adocoes.find((a) => a.cardSlug === c.slug && a.status === "adotado");
       if (adopted) {
         score += 3;
         if (adopted.dataDecisao > latestActivity) latestActivity = adopted.dataDecisao;
       }
-      
+
       const decided = decisoes.find((d) => d.status === "aceita" && d.cardSlugs?.includes(c.slug));
       if (decided) {
         score += 2;
         if (decided.data > latestActivity) latestActivity = decided.data;
+        // Also consider revisitas of the decisao as activity
+        const revisitas = decided.revisitas ?? [];
+        for (const rv of revisitas) {
+          if (rv.data > latestActivity) latestActivity = rv.data;
+        }
       }
-      
+
       totalScore += Math.min(4, score);
     });
 
-    const maxScore = cardsInCategory.length * 4; 
+    const maxScore = cardsInCategory.length * 4;
     if (maxScore === 0) return { value: 0, decaying: false };
-    
-    let rawScore = (totalScore / maxScore) * 100;
-    let decaying = false;
 
-    if (totalScore > 0 && latestActivity > 0 && (now - latestActivity > THIRTY_DAYS)) {
-      decaying = true;
-      rawScore = Math.max(0, rawScore * 0.9); // -10% penalty
-    }
-    
-    return { value: Math.round(rawScore), decaying };
+    const rawScore = (totalScore / maxScore) * 100;
+    return applyDecay(rawScore, latestActivity, totalScore > 0);
   }
 
   const interviewsConcluido = interviews.filter((i) => i.status === "concluido").length;
@@ -265,26 +304,23 @@ export function computeRadarAxes(
   const sprintsConcluidos = sprints.filter((s) => s.status === "concluido").length;
   const warGamesPlayed = warGames.length;
 
+  // Agentes IA — same tiered decay logic
   const agentCards = allCards.filter((c) => c.category === "agentes-ia");
   let agentTotalScore = 0;
   let agentLatestActivity = 0;
-  agentCards.forEach(c => {
+  agentCards.forEach((c) => {
     let score = 0;
     const tr = trilha.find((t) => t.cardSlug === c.slug);
     if (tr && tr.dominado) { score += 1; if (tr.ultimaRevisao && tr.ultimaRevisao > agentLatestActivity) agentLatestActivity = tr.ultimaRevisao; }
-    const adopted = adocoes.find(a => a.cardSlug === c.slug && a.status === "adotado");
+    const adopted = adocoes.find((a) => a.cardSlug === c.slug && a.status === "adotado");
     if (adopted) { score += 3; if (adopted.dataDecisao > agentLatestActivity) agentLatestActivity = adopted.dataDecisao; }
-    const decided = decisoes.find(d => d.status === "aceita" && d.cardSlugs?.includes(c.slug));
+    const decided = decisoes.find((d) => d.status === "aceita" && d.cardSlugs?.includes(c.slug));
     if (decided) { score += 2; if (decided.data > agentLatestActivity) agentLatestActivity = decided.data; }
     agentTotalScore += Math.min(4, score);
   });
-  
-  let agentScore = agentCards.length === 0 ? 0 : (agentTotalScore / (agentCards.length * 4)) * 100;
-  let agentDecaying = false;
-  if (agentTotalScore > 0 && agentLatestActivity > 0 && (now - agentLatestActivity > THIRTY_DAYS)) {
-    agentDecaying = true;
-    agentScore = Math.max(0, agentScore * 0.9);
-  }
+
+  const agentRaw = agentCards.length === 0 ? 0 : (agentTotalScore / (agentCards.length * 4)) * 100;
+  const agentResult = applyDecay(agentRaw, agentLatestActivity, agentTotalScore > 0);
 
   return [
     { label: "Arquitetura",   emoji: "🏗️",  ...categoryScore("arquiteturas") },
@@ -297,15 +333,15 @@ export function computeRadarAxes(
       label: "Entrevista",
       emoji: "🎤",
       value: Math.min(100, interviewsConcluido * 25 + rfcsRevisados * 20),
-      decaying: false
+      decaying: false,
     },
     {
       label: "Autonomia",
       emoji: "💪",
       value: Math.min(100, sprintsConcluidos * 20 + warGamesPlayed * 10),
-      decaying: false
+      decaying: false,
     },
-    { label: "Agentes IA",    emoji: "🤖",  value: Math.round(agentScore), decaying: agentDecaying },
-    { label: "Data Science",  emoji: "📊",  ...categoryScore("data-science") },
+    { label: "Agentes IA",   emoji: "🤖",  ...agentResult },
+    { label: "Data Science", emoji: "📊",  ...categoryScore("data-science") },
   ];
 }

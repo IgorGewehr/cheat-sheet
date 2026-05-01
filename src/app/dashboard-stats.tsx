@@ -39,7 +39,9 @@ import {
   Moon,
   CheckCircle2,
   Wrench,
+  AlertTriangle,
 } from "lucide-react";
+import { computeNextReview } from "@/lib/srs";
 import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
 import { useAuth } from "@/lib/auth-context";
@@ -806,6 +808,37 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
           Quero estudar
         </button>
       </div>
+
+      {/* ── Decision Journal widget (shown when there are pending decisions) ── */}
+      {!loadingFull && signedIn && (() => {
+        const pending = decisoes.filter((d) => {
+          const { urgencia } = computeNextReview(d);
+          return urgencia !== "calmo";
+        });
+        const atrasadas = pending.filter((d) => computeNextReview(d).urgencia === "atrasado").length;
+        if (pending.length === 0) return null;
+        return (
+          <Link
+            href="/decisoes"
+            className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/50 transition group"
+          >
+            <div className="flex items-center gap-3">
+              <AlertTriangle className={clsx("w-4 h-4 shrink-0", atrasadas > 0 ? "text-red-500" : "text-amber-500")} />
+              <div>
+                <p className="text-sm font-semibold text-fg">
+                  {pending.length} {pending.length === 1 ? "decisão" : "decisões"} para revisitar
+                </p>
+                {atrasadas > 0 && (
+                  <p className="text-xs text-red-500 mt-0.5">{atrasadas} atrasada{atrasadas !== 1 ? "s" : ""}</p>
+                )}
+              </div>
+            </div>
+            <span className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 group-hover:underline shrink-0">
+              Ir <ChevronRight className="w-3 h-3" />
+            </span>
+          </Link>
+        );
+      })()}
 
       {mode === "trabalho" ? (
         /* ═══════════════════════════════════════════════════════════

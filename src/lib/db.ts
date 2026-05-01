@@ -18,6 +18,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { ensureSignedIn, getFirebase } from "./firebase";
 import { getWorkspaceId } from "./workspace";
+import { computeNextReview } from "./srs";
 import type {
   Adocao,
   AdocaoStatus,
@@ -25,6 +26,7 @@ import type {
   ChecklistSession,
   CustomCard,
   Decisao,
+  DecisaoUrgencia,
   DividaConhecimento,
   DividaStatus,
   ErroPersonal,
@@ -35,6 +37,7 @@ import type {
   Project,
   RFCSession,
   Retrospectiva,
+  RevisitaDecisao,
   RevisorSession,
   SavedComparison,
   SprintSemIA,
@@ -895,4 +898,63 @@ export function subscribeLeaderboard(callback: (profiles: PublicProfile[]) => vo
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => d.data() as PublicProfile));
   });
+}
+
+// === DECISION JOURNAL (A3) ===
+
+/**
+ * List all decisoes that need attention (urgencia != "calmo").
+ * Uses HLR-based computeNextReview from srs.ts.
+ * Returns ordered: atrasado first, then proximo, then by date.
+ */
+export async function listDecisoesAtrasadas(
+  _workspaceId?: string,
+): Promise<Array<Decisao & { urgencia: DecisaoUrgencia; dias: number }>> {
+  await ready();
+  const snap = await getDocs(query(col("decisoes"), orderBy("data", "desc")));
+  const all = snap.docs.map((d) => d.data() as Decisao);
+
+  // Annotate each decisao with SRS urgency
+  const annotated = all.map((dec) => {
+    const { dias, urgencia } = computeNextReview(dec);
+    return { ...dec, urgencia, dias };
+  });
+
+  // Filter only non-calmo
+  const pending = annotated.filter((d) => d.urgencia !== "calmo");
+
+  // Sort: atrasado > proximo, then by dias ascending (most overdue first)
+  const urgencyRank: Record<DecisaoUrgencia, number> = { atrasado: 0, proximo: 1, calmo: 2 };
+  pending.sort((a, b) => {
+    const rankDiff = urgencyRank[a.urgencia] - urgencyRank[b.urgencia];
+    if (rankDiff !== 0) return rankDiff;
+    return a.dias - b.dias; // more overdue first
+  });
+
+  return pending;
+}
+
+/**
+ * Add a revisita to a decisao (push to revisitas array).
+ */
+export async function addRevisitaDecisao(
+  decisaoId: string,
+  revisita: RevisitaDecisao,
+): Promise<void> {
+  await ready();
+  const ref = docRef("decisoes", decisaoId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const current = snap.data() as Decisao;
+  const revisitas = [...(current.revisitas ?? []), revisita];
+  await setDoc(ref, { revisitas }, { merge: true });
+}
+
+/**
+ * Get a single decisao by id.
+ */
+export async function getDecisao(id: string): Promise<Decisao | null> {
+  await ready();
+  const snap = await getDoc(docRef("decisoes", id));
+  return snap.exists() ? (snap.data() as Decisao) : null;
 }
