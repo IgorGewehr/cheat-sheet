@@ -13,9 +13,9 @@ export interface WarGameFeedback {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { cenario, restricoes, decisao, justificativa, tempoGasto } = body as {
+    const { cenario, restricoes = [], decisao, justificativa, tempoGasto } = body as {
       cenario: string;
-      restricoes: string[];
+      restricoes?: string[];
       decisao: string;
       justificativa: string;
       tempoGasto: number;

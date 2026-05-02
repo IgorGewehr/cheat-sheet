@@ -22,6 +22,7 @@ import type {
   SquadPresence,
   SquadConstraint,
   SquadActivityEvent,
+  SquadAudit,
 } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -336,4 +337,30 @@ async function syncSquadPublic(squadId: string): Promise<void> {
     } as DocumentData,
     { merge: true },
   );
+}
+
+// ── Squad Audits ──────────────────────────────────────────────
+
+export async function shareAuditWithSquad(
+  squadId: string,
+  audit: SquadAudit,
+): Promise<void> {
+  await ensureSignedIn();
+  const { db } = getFirebase();
+  await setDoc(doc(db, "squads", squadId, "audits", audit.id), clean(audit));
+}
+
+export function subscribeSquadAudits(
+  squadId: string,
+  callback: (audits: SquadAudit[]) => void,
+): () => void {
+  const { db } = getFirebase();
+  const q = query(
+    collection(db, "squads", squadId, "audits"),
+    orderBy("sharedAt", "desc"),
+    limit(10),
+  );
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => d.data() as SquadAudit));
+  });
 }

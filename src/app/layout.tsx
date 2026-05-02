@@ -6,6 +6,7 @@ import { QuickCapture } from "@/components/quick-capture";
 import { TopNavWrapper } from "@/components/top-nav-wrapper";
 import { IdleTrigger } from "@/components/idle-trigger";
 import { AuditHotkey } from "@/components/audit-hotkey";
+import { SquadPresenceSync } from "@/components/squad-presence-sync";
 
 export const metadata: Metadata = {
   title: "brain — cheat sheet de engenharia",
@@ -56,6 +57,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Global ⌘⇧A → Sentinela with clipboard */}
           <AuditHotkey />
+
+          {/* Squad presence heartbeat — no-op for users without squad */}
+          <SquadPresenceSync />
 
           <main className="lg:pl-14 min-h-screen">
             <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">

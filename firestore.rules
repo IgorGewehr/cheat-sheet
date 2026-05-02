@@ -50,6 +50,13 @@ service cloud.firestore {
       allow read, create: if true;
     }
 
+    // ── Shared audits ────────────────────────────────────────────
+    // Membros autenticados compartilham e consultam auditorias Sentinela.
+    match /squads/{squadId}/audits/{auditId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
     // ── Invite codes (public read) ───────────────────────────────
     // Precisa do code exato; apenas auth cria.
     match /squadInvites/{inviteCode} {

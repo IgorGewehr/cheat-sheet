@@ -3,10 +3,10 @@ import { openai, MODELS } from "@/lib/openai";
 
 export async function POST(req: NextRequest) {
   try {
-    const { description, stack, availableSlugs } = await req.json() as {
+    const { description, stack = [], availableSlugs = [] } = await req.json() as {
       description: string;
-      stack: string[];
-      availableSlugs: { slug: string; title: string; category: string; excerpt: string }[];
+      stack?: string[];
+      availableSlugs?: { slug: string; title: string; category: string; excerpt: string }[];
     };
 
     if (!description?.trim()) {

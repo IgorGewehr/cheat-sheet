@@ -14,6 +14,9 @@ import {
   ChevronUp,
   Check,
   Clock,
+  ArrowRight,
+  Trophy,
+  Flame,
 } from "lucide-react";
 import { Card, Button } from "@/components/ui";
 import { getProgress, markMilestone, unmarkMilestone } from "@/lib/jobs-db";
@@ -72,11 +75,13 @@ function MilestoneRow({
   marco,
   index,
   concluded,
+  isNext,
   onToggle,
 }: {
   marco: JobTrackMilestone;
   index: number;
   concluded: boolean;
+  isNext?: boolean;
   onToggle: (id: string) => void;
 }) {
   const href = getMilestoneHref(marco);
@@ -84,12 +89,21 @@ function MilestoneRow({
   return (
     <div
       className={clsx(
-        "flex gap-4 p-4 rounded-lg border transition",
+        "relative flex gap-4 p-4 rounded-lg border transition",
         concluded
           ? "border-line bg-card opacity-60"
+          : isNext
+          ? "border-violet-500/50 bg-violet-500/5 hover:border-violet-500/70"
           : "border-line bg-card hover:border-line-strong",
       )}
     >
+      {isNext && (
+        <div className="absolute -mt-3 ml-8">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/30 px-1.5 py-0.5 rounded">
+            próximo
+          </span>
+        </div>
+      )}
       {/* Step number + check */}
       <div className="flex flex-col items-center gap-1 pt-0.5 shrink-0">
         <span className="text-[11px] text-muted tabular-nums w-5 text-center">{index + 1}</span>
@@ -232,6 +246,12 @@ export function TrackClient({ track }: { track: JobTrack }) {
   const total = track.marcos.length;
   const done = concluded.size;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const nextMarco = track.marcos.find((m) => !concluded.has(m.id));
+  const horasTotais = track.marcos.reduce((s, m) => s + (m.estimateHours ?? 0), 0);
+  const horasFeitas = track.marcos
+    .filter((m) => concluded.has(m.id))
+    .reduce((s, m) => s + (m.estimateHours ?? 0), 0);
+  const horasRestantes = horasTotais - horasFeitas;
 
   return (
     <div className="space-y-8">
@@ -247,45 +267,81 @@ export function TrackClient({ track }: { track: JobTrack }) {
       {/* ── Header ── */}
       <div className="rounded-xl border border-line bg-card p-5 space-y-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-medium text-violet-400">
-            {track.papel}
-          </span>
-          <span
-            className={clsx(
-              "inline-block px-2 py-0.5 rounded text-[11px] font-medium",
-              LEVEL_COLOR[track.nivelAlvo],
-            )}
-          >
+          <span className="text-xs font-medium text-violet-400">{track.papel}</span>
+          <span className={clsx("inline-block px-2 py-0.5 rounded text-[11px] font-medium", LEVEL_COLOR[track.nivelAlvo])}>
             {LEVEL_LABEL[track.nivelAlvo]}
           </span>
+          {pct === 100 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/15 text-amber-400">
+              <Trophy className="w-3 h-3" /> Concluída
+            </span>
+          )}
         </div>
         <h1 className="text-2xl font-bold">{track.titulo}</h1>
         <p className="text-sm text-muted leading-relaxed max-w-2xl">{track.resumo}</p>
 
-        {/* Progress */}
+        {/* Stats row */}
+        <div className="flex flex-wrap gap-4 text-xs text-muted">
+          <span className="flex items-center gap-1">
+            <Check className="w-3.5 h-3.5 text-violet-400" />
+            <strong className="text-fg">{done}</strong>/{total} marcos
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-violet-400" />
+            <strong className="text-fg">{horasFeitas}h</strong> feitas
+          </span>
+          {horasRestantes > 0 && (
+            <span className="flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <strong className="text-amber-400">{horasRestantes}h</strong> restantes
+            </span>
+          )}
+        </div>
+
+        {/* Progress bar */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs">
             <span className="text-muted">Progresso</span>
-            <span className="font-medium tabular-nums">
-              {done}/{total} marcos ({pct}%)
-            </span>
+            <span className="font-medium tabular-nums">{pct}%</span>
           </div>
           <div className="h-2 rounded-full bg-card-hover overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${pct}%`,
-                background:
-                  pct === 100
-                    ? "#8b5cf6"
-                    : pct > 50
-                    ? "#7c3aed"
-                    : "#6d28d9",
-              }}
+              style={{ width: `${pct}%`, background: pct === 100 ? "#8b5cf6" : pct > 50 ? "#7c3aed" : "#6d28d9" }}
             />
           </div>
         </div>
       </div>
+
+      {/* ── Next Step Banner ── */}
+      {nextMarco && done > 0 && (
+        <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4 flex items-start gap-3">
+          <div className="w-7 h-7 rounded-full bg-violet-500/20 border border-violet-500/40 flex items-center justify-center shrink-0 mt-0.5">
+            <ArrowRight className="w-3.5 h-3.5 text-violet-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-400 mb-0.5">Próximo passo</p>
+            <p className="text-sm font-semibold text-fg">{nextMarco.titulo}</p>
+            <p className="text-xs text-muted mt-0.5 line-clamp-1">{nextMarco.descricao}</p>
+          </div>
+          {getMilestoneHref(nextMarco) && (
+            <Link
+              href={getMilestoneHref(nextMarco)!}
+              className="shrink-0 text-xs text-violet-400 hover:underline flex items-center gap-1 mt-1"
+            >
+              Abrir <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* ── First-time CTA (no progress yet) ── */}
+      {done === 0 && (
+        <div className="rounded-xl border border-dashed border-line p-5 text-center space-y-2">
+          <p className="text-sm font-medium">Pronto para começar?</p>
+          <p className="text-xs text-muted">Marque o primeiro marco como concluído ao terminar cada etapa. O progresso fica salvo automaticamente.</p>
+        </div>
+      )}
 
       {/* ── Pre-requisites ── */}
       <section className="space-y-3">
@@ -319,6 +375,7 @@ export function TrackClient({ track }: { track: JobTrack }) {
               marco={marco}
               index={i}
               concluded={concluded.has(marco.id)}
+              isNext={marco.id === nextMarco?.id && done > 0}
               onToggle={handleToggle}
             />
           ))}

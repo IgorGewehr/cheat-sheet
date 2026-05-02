@@ -1503,7 +1503,206 @@ export const JOB_TRACKS: JobTrack[] = [
     },
   },
 
-  // ─── 9. Quant / AI Researcher ─────────────────────────────────────────────
+  // ─── 9. Cybersecurity Fundamentals ───────────────────────────────────────────
+  {
+    slug: "cybersecurity-fundamentals",
+    titulo: "Cybersecurity — Fundamentos",
+    papel: "Security Engineer",
+    categoria: "seguranca",
+    nivelAlvo: "pleno",
+    resumo:
+      "Do zero até trabalhar com segurança no dia a dia: fundamentos de rede, criptografia, OWASP Top 10, autenticação segura, secrets management, scanning estático e dinâmico, incident response e threat modeling. Não é red team — é o security engineer que sabe defender sistemas reais.",
+    preRequisitos: [
+      "Desenvolve e faz deploy de aplicações web — back ou full stack",
+      "Entende HTTP, cookies e como tokens JWT funcionam superficialmente",
+      "Já implementou algum form de autenticação (login, sessão, OAuth)",
+      "Conhece o básico de Docker e variáveis de ambiente",
+    ],
+    marcos: [
+      {
+        id: "cs-01",
+        titulo: "Fundamentos de rede para devs: TLS, CORS e headers de segurança",
+        tipo: "estudo",
+        descricao:
+          "Entenda TLS (por que HTTP puro não vai a produção), o que CORS realmente protege e quais headers de segurança toda aplicação deve ter. A base antes de qualquer outra coisa.",
+        cardSlug: "network-security-basics",
+        estimateHours: 4,
+      },
+      {
+        id: "cs-02",
+        titulo: "Criptografia prática: hashing, encryption simétrica e assimétrica",
+        tipo: "estudo",
+        descricao:
+          "Aprenda por que MD5 e SHA-1 são inadequados para senhas, quando usar Argon2id vs bcrypt, AES-256-GCM para campos sensíveis no banco, e ECDSA para assinaturas. Com exemplos Node.js reais.",
+        cardSlug: "cryptography-basics",
+        estimateHours: 5,
+      },
+      {
+        id: "cs-03",
+        titulo: "Arquitetura de autenticação: identity, profile, membership",
+        tipo: "estudo",
+        descricao:
+          "Entenda a separação correta entre identidade, perfil e pertencimento a tenants. Session strategy, token lifecycle, revogação. A fundação que a maioria dos sistemas erra.",
+        cardSlug: "auth-architecture",
+        estimateHours: 5,
+      },
+      {
+        id: "cs-04",
+        titulo: "OAuth 2.1 — fluxos, PKCE e armadilhas",
+        tipo: "estudo",
+        descricao:
+          "Estude OAuth 2.1 com PKCE, as diferenças do 2.0, token binding e quando usar cada fluxo. Muita vulnerabilidade vem de usar o fluxo errado para o caso de uso.",
+        cardSlug: "oauth-2-1",
+        estimateHours: 5,
+      },
+      {
+        id: "cs-05",
+        titulo: "RBAC vs ABAC — modelagem correta de controle de acesso",
+        tipo: "estudo",
+        descricao:
+          "Modelagem incorreta de acesso é uma das maiores fontes de IDOR e privilege escalation. Entenda quando Role-Based não é suficiente e Attribute-Based é necessário.",
+        cardSlug: "rbac-vs-abac",
+        estimateHours: 3,
+      },
+      {
+        id: "cs-06",
+        titulo: "OWASP Top 10 2021 — vulnerabilidades críticas com código real",
+        tipo: "estudo",
+        descricao:
+          "Estude cada categoria do OWASP Top 10 com exemplos de código vulnerável vs seguro em Node.js/TypeScript. Injection, Broken Auth, XSS, IDOR, Security Misconfiguration e mais.",
+        cardSlug: "owasp-top10",
+        estimateHours: 6,
+      },
+      {
+        id: "cs-07",
+        titulo: "Pratica: auditar código com Sentinela buscando OWASP issues",
+        tipo: "pratica",
+        descricao:
+          "Cole código de autenticação ou endpoints da sua aplicação no Sentinela. Busque especificamente por IDOR, SQL injection e misconfiguration. Pratique pensar como atacante.",
+        routeHref: "/sentinela",
+        estimateHours: 3,
+      },
+      {
+        id: "cs-08",
+        titulo: "Secrets management — nunca no código, sempre no vault",
+        tipo: "estudo",
+        descricao:
+          "Aprenda a estrutura correta de .env.local vs produção, AWS Secrets Manager, rotação automática e como configurar detecção de leak com Gitleaks no CI.",
+        cardSlug: "secrets-management",
+        estimateHours: 4,
+      },
+      {
+        id: "cs-09",
+        titulo: "Session strategy e token encryption at rest",
+        tipo: "estudo",
+        descricao:
+          "Sessões stateful vs stateless, onde guardar tokens, encryption at rest de campos sensíveis e rotação de chaves. Decisões que parecem simples mas têm implicações profundas.",
+        cardSlug: "session-strategy",
+        estimateHours: 3,
+      },
+      {
+        id: "cs-10",
+        titulo: "Zero Trust Architecture — never trust, always verify",
+        tipo: "estudo",
+        descricao:
+          "Entenda o modelo Zero Trust: microsegmentação, mTLS entre serviços, service mesh e como aplicar em sistemas reais sem paralisar o time de desenvolvimento.",
+        cardSlug: "zero-trust-architecture",
+        estimateHours: 4,
+      },
+      {
+        id: "cs-11",
+        titulo: "SAST e DAST no pipeline — Semgrep, ZAP e Trivy",
+        tipo: "pratica",
+        descricao:
+          "Integre Semgrep para análise estática de código, OWASP ZAP para testes dinâmicos em staging e Trivy para container scanning. Configure regras custom e priorize findings sem travar o deploy.",
+        cardSlug: "sast-dast-scanning",
+        estimateHours: 5,
+      },
+      {
+        id: "cs-12",
+        titulo: "Prompt injection — vetor de ataque emergente em sistemas com IA",
+        tipo: "estudo",
+        descricao:
+          "Estude prompt injection direto e indireto, jailbreak e como sistemas LLM criam novos vetores de ataque. Cada vez mais relevante em backends que integram OpenAI ou Anthropic.",
+        cardSlug: "ai-prompt-injection",
+        estimateHours: 3,
+      },
+      {
+        id: "cs-13",
+        titulo: "Threat modeling com STRIDE — prevenir em vez de reagir",
+        tipo: "pratica",
+        descricao:
+          "Execute threat modeling STRIDE em um sistema que você mantém. Identifique ameaças antes de construir, não depois de brechar. Use o Sentinela para estruturar os riscos.",
+        routeHref: "/sentinela",
+        estimateHours: 4,
+      },
+      {
+        id: "cs-14",
+        titulo: "Incident response — runbook de token vazado e breach containment",
+        tipo: "pratica",
+        descricao:
+          "Estude o playbook de resposta a incidente: o que fazer nos primeiros 15 minutos após descobrir um token vazado, como preservar evidências, conter o breach e fazer post-mortem.",
+        cardSlug: "incident-response-playbook",
+        estimateHours: 4,
+      },
+      {
+        id: "cs-15",
+        titulo: "War Game: incidente de segurança sob pressão",
+        tipo: "pratica",
+        descricao:
+          "Simule um incidente real: token de produção vazado no GitHub, acesso suspeito detectado em endpoint de admin, ou tentativa de SQL injection em produção. Treine decisão e comunicação.",
+        routeHref: "/war-game",
+        estimateHours: 2,
+      },
+      {
+        id: "cs-16",
+        titulo: "Mock Interview: Security Engineer pleno",
+        tipo: "entrevista",
+        descricao:
+          "Simule entrevista de segurança focada em design de sistema seguro, trade-offs de autenticação, como você abordaria um code review de segurança e como você comunicaria vulnerabilidades.",
+        routeHref: "/mock-interview",
+        estimateHours: 2,
+      },
+    ],
+    projetoPortfolio: {
+      titulo: "Security review completa de uma aplicação com threat model e pipeline seguro",
+      descricao:
+        "Escolha uma aplicação própria ou open source. Execute: (1) threat modeling STRIDE documentado, (2) análise OWASP Top 10 com código vulnerável identificado e corrigido, (3) pipeline CI com Semgrep + Trivy configurados, (4) secrets management com rotação, (5) runbook de incident response para os 3 cenários mais prováveis da aplicação.",
+      entregaveis: [
+        "Threat model STRIDE cobrindo ao menos 8 ameaças identificadas com mitigações",
+        "PR com correções de vulnerabilidades OWASP encontradas e explicadas",
+        "Pipeline CI com Semgrep, Trivy e npm audit configurados e passando",
+        "Runbook de incident response documentado e testado em simulação",
+      ],
+    },
+    preparacaoEntrevista: {
+      topicos: [
+        "OWASP Top 10: exemplos concretos de cada categoria e como mitigar",
+        "Autenticação: diferença entre stateful e stateless, quando usar cada um",
+        "RBAC vs ABAC: quando um sistema precisa de atributos além de roles",
+        "Criptografia: por que não MD5 pra senha, quando usar simétrico vs assimétrico",
+        "Secrets: por que env var não é suficiente em produção, como fazer rotação",
+        "TLS: o que mTLS adiciona ao TLS normal, quando usar entre serviços",
+        "SAST vs DAST: o que cada um encontra, como integrar sem travar deploy",
+        "Incident response: o que fazer nos primeiros 15 minutos após um breach",
+      ],
+      rotasMock: ["/mock-interview", "/sentinela", "/war-game", "/banco-star"],
+      perguntasComuns: [
+        "Um usuário reporta que consegue acessar notas fiscais de outros clientes apenas mudando o ID na URL. O que está errado e como você corrige?",
+        "Por que você não pode usar SHA-256 diretamente para fazer hash de senhas? O que você usaria?",
+        "Explique o que é PKCE no OAuth 2.1 e por que ele substituiu o client secret em apps públicas.",
+        "Um desenvolvedor commitou uma API key do Stripe no GitHub por acidente. O que você faz nos próximos 15 minutos?",
+        "Como você configuraria CORS em uma API que autentica usuários via cookie httpOnly?",
+        "O que é um timing attack? Como você evita em comparação de tokens de segurança?",
+        "Como você decidiria o que logar num evento de autenticação sem logar dados sensíveis?",
+        "Descreva a diferença entre SAST e DAST. Em que momento do ciclo de dev cada um roda?",
+        "Um colega quer guardar credenciais de banco em variáveis de ambiente do Docker. Qual é o problema e o que você proporia?",
+        "Me fale de uma vulnerabilidade que você encontrou (ou poderia ter encontrado) em código que você revisou.",
+      ],
+    },
+  },
+
+  // ─── 10. Quant / AI Researcher ─────────────────────────────────────────────
   {
     slug: "quant-ai-researcher",
     titulo: "Quant / AI Researcher",

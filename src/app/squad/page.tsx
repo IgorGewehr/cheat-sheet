@@ -11,6 +11,7 @@ import {
   subscribeSquadPresence,
   subscribeSquadActivity,
   subscribeSquadConstraints,
+  subscribeSquadAudits,
   addSquadConstraint,
   deleteSquadConstraint,
   leaveSquad,
@@ -21,14 +22,16 @@ import type {
   SquadPresence,
   SquadActivityEvent,
   SquadConstraint,
+  SquadAudit,
   ConstraintType,
 } from "@/lib/types";
 import { CONSTRAINT_TYPE_LABEL, CONSTRAINT_TYPE_COLOR } from "@/lib/types";
 import {
   Users, Plus, Copy, Check, Trash2, Shield, Activity,
   LogOut, Terminal, AlertTriangle, Zap, CheckCircle,
-  ChevronDown, ChevronUp, Info,
+  ChevronDown, ChevronUp, Info, ShieldCheck,
 } from "lucide-react";
+import Link from "next/link";
 import { clsx } from "clsx";
 
 const CONSTRAINT_CATEGORIES = [
@@ -449,6 +452,34 @@ alias brain-guard='f(){ curl -s -X POST "$BRAIN_API_URL/api/squad/guard" -H "Con
   );
 }
 
+// ── Squad Audit Row ───────────────────────────────────────────
+
+const AUDIT_VEREDITO: Record<string, string> = {
+  PASS: "text-violet-400 border-violet-500/40 bg-violet-500/5",
+  WARN: "text-amber-400 border-amber-500/40 bg-amber-500/5",
+  DENY: "text-red-400 border-red-500/40 bg-red-500/5",
+};
+
+function SquadAuditRow({ audit }: { audit: SquadAudit }) {
+  return (
+    <Link
+      href={`/sentinela/${audit.id}`}
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors"
+    >
+      <span className={clsx("text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0", AUDIT_VEREDITO[audit.veredito])}>
+        {audit.veredito}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-zinc-200 truncate font-medium">{audit.titulo}</p>
+        <p className="text-[10px] text-zinc-500">
+          {audit.sharedByName} · {audit.scoreConfianca}/100 · {audit.achadosCount} achados
+        </p>
+      </div>
+      <span className="text-[10px] text-zinc-600 shrink-0">{timeAgo(audit.sharedAt)}</span>
+    </Link>
+  );
+}
+
 // ── Main Dashboard ────────────────────────────────────────────
 
 export default function SquadPage() {
@@ -459,6 +490,7 @@ export default function SquadPage() {
   const [presence, setPresence] = useState<SquadPresence[]>([]);
   const [activity, setActivity] = useState<SquadActivityEvent[]>([]);
   const [constraints, setConstraints] = useState<SquadConstraint[]>([]);
+  const [audits, setAudits] = useState<SquadAudit[]>([]);
   const [view, setView] = useState<"loading" | "no-squad" | "dashboard">("loading");
   const [showAddConstraint, setShowAddConstraint] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -491,8 +523,9 @@ export default function SquadPage() {
     const u2 = subscribeSquadPresence(squadId, setPresence);
     const u3 = subscribeSquadActivity(squadId, setActivity);
     const u4 = subscribeSquadConstraints(squadId, setConstraints);
+    const u5 = subscribeSquadAudits(squadId, setAudits);
 
-    unsubs.current = [u1, u2, u3, u4];
+    unsubs.current = [u1, u2, u3, u4, u5];
     return () => {
       unsubs.current.forEach((u) => u());
     };
@@ -789,6 +822,26 @@ export default function SquadPage() {
 
       {/* CLI Setup */}
       <CliSetup squadId={squadId!} userId={user.uid} apiUrl={apiUrl} />
+
+      {/* Shared Audits */}
+      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
+          Auditorias do Squad
+          <span className="text-zinc-600 font-normal text-[10px]">({audits.length})</span>
+        </h2>
+        {audits.length === 0 ? (
+          <p className="text-xs text-zinc-600">
+            Nenhuma auditoria compartilhada ainda. Use{" "}
+            <Link href="/sentinela" className="text-violet-400 hover:underline">Sentinela</Link>
+            {" "}e clique em "Compartilhar com Squad" após o veredicto.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {audits.map((a) => <SquadAuditRow key={a.id} audit={a} />)}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

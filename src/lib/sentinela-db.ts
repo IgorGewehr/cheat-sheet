@@ -14,6 +14,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { ensureSignedIn, getFirebase } from "./firebase";
 import { getWorkspaceId } from "./workspace";
+import { logSquadActivity } from "./squad-db";
 import type { SentinelaSession } from "./sentinela-types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +38,7 @@ function docRef(id: string) {
 
 export async function saveSentinelaSession(
   input: Omit<SentinelaSession, "id" | "criadoEm">,
+  squadContext?: { squadId: string; userId: string; displayName: string },
 ): Promise<SentinelaSession> {
   await ensureSignedIn();
   const session: SentinelaSession = {
@@ -45,6 +47,20 @@ export async function saveSentinelaSession(
     criadoEm: Date.now(),
   };
   await setDoc(docRef(session.id), clean(session));
+
+  if (squadContext) {
+    const { squadId, userId, displayName } = squadContext;
+    logSquadActivity(squadId, {
+      userId,
+      displayName,
+      verb: "auditou",
+      entityType: "código",
+      entityId: session.id,
+      entityTitle: session.titulo,
+      url: `/sentinela/${session.id}`,
+    }).catch(() => {});
+  }
+
   return session;
 }
 

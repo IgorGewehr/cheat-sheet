@@ -508,3 +508,15 @@ export interface Squad {
   inviteCode: string;
   createdAt: number;
 }
+
+export interface SquadAudit {
+  id: string;
+  titulo: string;
+  veredito: "PASS" | "WARN" | "DENY";
+  scoreConfianca: number;
+  achadosCount: number;
+  modo: "codigo" | "diff";
+  sharedBy: string;
+  sharedByName: string;
+  sharedAt: number;
+}

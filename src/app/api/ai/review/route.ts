@@ -3,10 +3,10 @@ import { openai, MODELS } from "@/lib/openai";
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, patterns, stack } = await req.json() as {
+    const { code, patterns = [], stack = [] } = await req.json() as {
       code: string;
-      patterns: string[];
-      stack: string[];
+      patterns?: string[];
+      stack?: string[];
     };
 
     if (!code?.trim()) {

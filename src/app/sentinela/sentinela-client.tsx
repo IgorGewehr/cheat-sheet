@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
-import { ChevronDown, ChevronUp, ShieldAlert, Code, GitPullRequest, FileCode, Target, X, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronUp, ShieldAlert, Code, GitPullRequest, FileCode, Target, X, ExternalLink, Users } from "lucide-react";
 import { Button, Card, Input, Label, Select, Tag, Textarea } from "@/components/ui";
 import {
   saveSentinelaSession,
@@ -16,6 +16,9 @@ import { SENTINELA_CHECKLIST } from "@/lib/sentinela-checklist";
 import { getActiveTask, attachSentinelaSession, type ActiveTask } from "@/lib/active-task";
 import { getActiveProject, type ActiveProjectContext } from "@/lib/active-project";
 import { createDecisao } from "@/lib/db";
+import { useAuth } from "@/lib/auth-context";
+import { shareAuditWithSquad } from "@/lib/squad-db";
+import type { SquadAudit } from "@/lib/types";
 import type {
   SentinelaSession,
   SentinelaVeredito,
@@ -222,6 +225,7 @@ function ActiveTaskBanner({ task, onUseContext }: { task: ActiveTask; onUseConte
 
 function SentinelaInner() {
   const params = useSearchParams();
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>("form");
   const [inputMode, setInputMode] = useState<InputMode>("codigo");
 
@@ -244,14 +248,19 @@ function SentinelaInner() {
   const [savedSession, setSavedSession] = useState<SentinelaSession | null>(null);
   const [adrCreatedId, setAdrCreatedId] = useState<string | null>(null);
 
+  const [squadId, setSquadId] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [sharedWithSquad, setSharedWithSquad] = useState(false);
+
   const obrigatoriosOk = SENTINELA_CHECKLIST.filter((i) => i.obrigatorio).every(
     (i) => checklistMap[i.id] === "sim",
   );
 
-  // Load active task / project + handle ?from=clipboard / ?pr=<url>
+  // Load active task / project + squad + handle ?from=clipboard / ?pr=<url>
   useEffect(() => {
     setActiveTaskState(getActiveTask());
     setActiveProjectState(getActiveProject());
+    setSquadId(localStorage.getItem("brain.squadId"));
 
     const fromClipboard = params.get("from") === "clipboard";
     const prParam = params.get("pr");
@@ -345,21 +354,26 @@ function SentinelaInner() {
       }));
       const sentinelaModo: SentinelaModo =
         inputMode === "diff" || inputMode === "pr" ? "diff" : "codigo";
-      const session = await saveSentinelaSession({
-        titulo,
-        contexto: contexto || undefined,
-        codigo,
-        linguagem,
-        modo: sentinelaModo,
-        prUrl: inputMode === "pr" ? prUrl.trim() : undefined,
-        taskId: activeTask?.id,
-        veredito: result.veredito,
-        scoreConfianca: result.scoreConfianca,
-        achados: result.achados,
-        checklistRespondido,
-        decisaoFinal: decisao,
-        reflexao: reflexao || undefined,
-      });
+      const session = await saveSentinelaSession(
+        {
+          titulo,
+          contexto: contexto || undefined,
+          codigo,
+          linguagem,
+          modo: sentinelaModo,
+          prUrl: inputMode === "pr" ? prUrl.trim() : undefined,
+          taskId: activeTask?.id,
+          veredito: result.veredito,
+          scoreConfianca: result.scoreConfianca,
+          achados: result.achados,
+          checklistRespondido,
+          decisaoFinal: decisao,
+          reflexao: reflexao || undefined,
+        },
+        squadId && user
+          ? { squadId, userId: user.uid, displayName: user.displayName ?? "Dev" }
+          : undefined,
+      );
       await updateSentinelaDecisao(session.id, decisao, reflexao || undefined);
 
       // Auto-link to active task
@@ -418,6 +432,31 @@ function SentinelaInner() {
     setReflexao("");
     setSavedSession(null);
     setAdrCreatedId(null);
+    setSharedWithSquad(false);
+  }
+
+  async function compartilharComSquad() {
+    if (!savedSession || !squadId || !user) return;
+    setSharing(true);
+    try {
+      const audit: SquadAudit = {
+        id: savedSession.id,
+        titulo: savedSession.titulo,
+        veredito: savedSession.veredito,
+        scoreConfianca: savedSession.scoreConfianca,
+        achadosCount: savedSession.achados.length,
+        modo: savedSession.modo ?? "codigo",
+        sharedBy: user.uid,
+        sharedByName: user.displayName ?? "Dev",
+        sharedAt: Date.now(),
+      };
+      await shareAuditWithSquad(squadId, audit);
+      setSharedWithSquad(true);
+    } catch {
+      // best-effort
+    } finally {
+      setSharing(false);
+    }
   }
 
   const achadosPorCategoria = result
@@ -800,6 +839,22 @@ function SentinelaInner() {
             >
               ADR draft criado em /decisoes →
             </Link>
+          )}
+          {squadId && (
+            sharedWithSquad ? (
+              <p className="text-xs text-emerald-400 font-mono flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" /> Compartilhado com o squad
+              </p>
+            ) : (
+              <button
+                onClick={compartilharComSquad}
+                disabled={sharing}
+                className="flex items-center gap-2 px-4 py-2 rounded-md text-sm border border-violet-500/40 text-violet-400 hover:bg-violet-500/10 transition disabled:opacity-40"
+              >
+                <Users className="w-4 h-4" />
+                {sharing ? "Compartilhando..." : "Compartilhar com Squad"}
+              </button>
+            )
           )}
           <div className="flex gap-3">
             <Link
