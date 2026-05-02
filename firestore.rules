@@ -1,11 +1,68 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Qualquer usuário autenticado (anônimo) com o ID do workspace pode ler/escrever.
-    // O ID do workspace é um UUID guardado no localStorage — não enumerável na prática.
-    // Para algo realmente sensível, troque por allow if request.auth.uid == workspaceId.
+
+    // ── Workspace (solo) ────────────────────────────────────────
+    // Qualquer usuário autenticado pode ler/escrever no seu workspace.
+    // workspaceId = Firebase UID do dono (ou UUID manual).
     match /workspaces/{workspaceId}/{document=**} {
       allow read, write: if request.auth != null;
     }
+
+    // ── Public profiles (leaderboard) ───────────────────────────
+    match /publicProfiles/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Squad metadata ───────────────────────────────────────────
+    // Qualquer usuário autenticado pode criar; só o owner pode editar/deletar.
+    match /squads/{squadId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Squad members ────────────────────────────────────────────
+    // Cada membro escreve apenas o próprio doc.
+    match /squads/{squadId}/members/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Architecture constraints ─────────────────────────────────
+    // Qualquer membro autenticado pode gerir constraints.
+    match /squads/{squadId}/constraints/{constraintId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── Presence (open) ─────────────────────────────────────────
+    // Não sensível: expira em 5 min. CLI pode escrever sem auth.
+    match /squads/{squadId}/presence/{userId} {
+      allow read, write: if true;
+    }
+
+    // ── Activity feed (open create) ──────────────────────────────
+    // Qualquer um pode criar eventos; leitura aberta para CLI.
+    match /squads/{squadId}/activity/{eventId} {
+      allow read, create: if true;
+    }
+
+    // ── Invite codes (public read) ───────────────────────────────
+    // Precisa do code exato; apenas auth cria.
+    match /squadInvites/{inviteCode} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── Public squad summary (for CLI without auth) ──────────────
+    // Contém name + constraints sem invite code.
+    match /squadPublic/{squadId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
   }
 }

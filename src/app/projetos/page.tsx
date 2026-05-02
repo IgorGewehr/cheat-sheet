@@ -54,7 +54,12 @@ export default function ProjetosPage() {
             Cada projeto guarda seus módulos, padrões adotados e ADRs.
           </p>
         </div>
-        {signedIn && <LinkButton href="/projetos/novo">+ Novo projeto</LinkButton>}
+        {signedIn && (
+          <div className="flex items-center gap-2">
+            <LinkButton href="/projetos/importar" variant="secondary">↑ Importar JSON</LinkButton>
+            <LinkButton href="/projetos/novo">+ Novo projeto</LinkButton>
+          </div>
+        )}
       </header>
 
       <SignedOutBanner />

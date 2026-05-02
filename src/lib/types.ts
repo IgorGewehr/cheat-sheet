@@ -435,3 +435,76 @@ export const LEVEL_TIERS: LevelTier[] = [
   { level: 5, title: "Staff",      min: 2500, max: 5000,     color: "violet", emoji: "🌟" },
   { level: 6, title: "Principal",  min: 5000, max: Infinity, color: "violet", emoji: "👑" },
 ];
+
+// ── Squad / Team Collaboration ────────────────────────────────
+
+export type SquadRole = "owner" | "editor";
+
+export interface SquadMember {
+  userId: string;
+  displayName: string;
+  role: SquadRole;
+  joinedAt: number;
+  avatarColor: string;
+}
+
+export interface SquadPresence {
+  userId: string;
+  displayName: string;
+  currentPage: string;
+  currentTask?: string;
+  lastSeen: number;
+  sessionId: string;
+}
+
+export type ConstraintType = "must" | "should" | "never" | "pattern";
+
+export const CONSTRAINT_TYPE_LABEL: Record<ConstraintType, string> = {
+  must:    "MUST",
+  should:  "SHOULD",
+  never:   "NEVER",
+  pattern: "PATTERN",
+};
+
+export const CONSTRAINT_TYPE_COLOR: Record<ConstraintType, string> = {
+  must:    "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  should:  "bg-sky-500/15 text-sky-400 border-sky-500/30",
+  never:   "bg-red-500/15 text-red-400 border-red-500/30",
+  pattern: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+};
+
+export interface SquadConstraint {
+  id: string;
+  title: string;
+  description: string;
+  type: ConstraintType;
+  category: string;
+  cardSlug?: string;
+  examples?: string[];
+  createdBy: string;
+  createdAt: number;
+  active: boolean;
+}
+
+export interface SquadActivityEvent {
+  id: string;
+  userId: string;
+  displayName: string;
+  verb: string;
+  entityType: string;
+  entityId: string;
+  entityTitle: string;
+  timestamp: number;
+  url?: string;
+}
+
+export interface Squad {
+  id: string;
+  name: string;
+  description?: string;
+  ownerId: string;
+  ownerDisplayName: string;
+  workspaceId: string;
+  inviteCode: string;
+  createdAt: number;
+}

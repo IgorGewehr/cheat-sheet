@@ -865,6 +865,208 @@ export async function importWorkspace(payload: {
   }
 }
 
+// ───── Architecture Import / Export ─────────────────────────
+
+export interface ArchitectureModuloInput {
+  nome: string;
+  tipo: string;
+  status?: ModuloStatus;
+  descricao?: string;
+}
+
+export interface ArchitectureDecisaoInput {
+  titulo: string;
+  contexto: string;
+  decisao: string;
+  consequencias: string;
+  status?: Decisao["status"];
+  cardSlugs?: string[];
+}
+
+export interface ArchitectureAdocaoInput {
+  cardSlug: string;
+  moduloNome?: string;
+  status?: AdocaoStatus;
+  notas?: string;
+}
+
+export interface ArchitectureJSON {
+  version: "1";
+  source?: string;
+  project: {
+    nome: string;
+    descricao?: string;
+    stack: string[];
+    tipo?: Project["tipo"];
+    status?: Project["status"];
+    repoUrl?: string;
+  };
+  modulos?: ArchitectureModuloInput[];
+  decisoes?: ArchitectureDecisaoInput[];
+  adocoes?: ArchitectureAdocaoInput[];
+  squadConstraints?: Array<{
+    title: string;
+    description?: string;
+    type: "must" | "should" | "never" | "pattern";
+    category?: string;
+  }>;
+}
+
+export interface ImportArchitectureResult {
+  projectId: string;
+  moduloCount: number;
+  decisaoCount: number;
+  adocaoCount: number;
+}
+
+export async function importArchitecture(
+  arch: ArchitectureJSON,
+): Promise<ImportArchitectureResult> {
+  await ready();
+  const { db } = getFirebase();
+
+  const projectId = uuidv4();
+  const now = Date.now();
+
+  const project: Project = {
+    id: projectId,
+    nome: arch.project.nome,
+    descricao: arch.project.descricao,
+    stack: arch.project.stack ?? [],
+    tipo: arch.project.tipo,
+    status: arch.project.status ?? "em-desenvolvimento",
+    repoUrl: arch.project.repoUrl,
+    criadoEm: now,
+  };
+
+  // Build modulos — always ensure Core exists
+  const moduloInputs = arch.modulos ?? [];
+  const hasCore = moduloInputs.some((m) => m.nome.toLowerCase() === "core");
+  const allModuloInputs: ArchitectureModuloInput[] = hasCore
+    ? moduloInputs
+    : [{ nome: "Core", tipo: "core", status: "em-desenvolvimento" }, ...moduloInputs];
+
+  // Map moduloNome → moduloId for adocoes
+  const moduloMap = new Map<string, string>();
+
+  const modulos: Modulo[] = allModuloInputs.map((m) => {
+    const id = uuidv4();
+    moduloMap.set(m.nome.toLowerCase(), id);
+    return {
+      id,
+      projetoId: projectId,
+      nome: m.nome,
+      tipo: m.tipo,
+      status: m.status ?? "em-desenvolvimento",
+      descricao: m.descricao,
+      criadoEm: now + moduloMap.size,
+    };
+  });
+
+  const decisoes: Decisao[] = (arch.decisoes ?? []).map((d) => ({
+    id: uuidv4(),
+    projetoId: projectId,
+    titulo: d.titulo,
+    contexto: d.contexto,
+    decisao: d.decisao,
+    consequencias: d.consequencias,
+    status: d.status ?? "aceita",
+    cardSlugs: d.cardSlugs,
+    data: now,
+  }));
+
+  const coreId = moduloMap.get("core") ?? modulos[0]?.id ?? uuidv4();
+  const adocoes: Adocao[] = (arch.adocoes ?? []).map((a) => {
+    const resolvedModuloId = a.moduloNome
+      ? (moduloMap.get(a.moduloNome.toLowerCase()) ?? coreId)
+      : coreId;
+    return {
+      id: uuidv4(),
+      projetoId: projectId,
+      moduloId: resolvedModuloId,
+      cardSlug: a.cardSlug,
+      status: a.status ?? "adotado",
+      notas: a.notas,
+      dataDecisao: now,
+    };
+  });
+
+  type Entry = [ColName, string, object];
+  const entries: Entry[] = [
+    ["projetos", project.id, clean(project)],
+    ...modulos.map((m): Entry => ["modulos", m.id, clean(m)]),
+    ...decisoes.map((d): Entry => ["decisoes", d.id, clean(d)]),
+    ...adocoes.map((a): Entry => ["adocoes", a.id, clean(a)]),
+  ];
+
+  for (let i = 0; i < entries.length; i += 500) {
+    const batch = writeBatch(db);
+    for (const [colName, id, data] of entries.slice(i, i + 500)) {
+      batch.set(docRef(colName, id), data as DocumentData);
+    }
+    await batch.commit();
+  }
+
+  return {
+    projectId,
+    moduloCount: modulos.length,
+    decisaoCount: decisoes.length,
+    adocaoCount: adocoes.length,
+  };
+}
+
+export async function exportProjectAsArchitecture(projectId: string): Promise<ArchitectureJSON> {
+  await ready();
+
+  const [project, modulosList, decisoesList, adocoesList] = await Promise.all([
+    getProject(projectId),
+    getDocs(query(col("modulos"), where("projetoId", "==", projectId), orderBy("criadoEm", "asc"))),
+    getDocs(query(col("decisoes"), where("projetoId", "==", projectId), orderBy("data", "asc"))),
+    getDocs(query(col("adocoes"), where("projetoId", "==", projectId))),
+  ]);
+
+  if (!project) throw new Error("Projeto não encontrado.");
+
+  const modulos = modulosList.docs.map((d) => d.data() as Modulo);
+  const decisoes = decisoesList.docs.map((d) => d.data() as Decisao);
+  const adocoes = adocoesList.docs.map((d) => d.data() as Adocao);
+
+  const moduloById = new Map(modulos.map((m) => [m.id, m]));
+
+  return {
+    version: "1",
+    source: project.repoUrl ?? project.nome,
+    project: {
+      nome: project.nome,
+      descricao: project.descricao,
+      stack: project.stack,
+      tipo: project.tipo,
+      status: project.status,
+      repoUrl: project.repoUrl,
+    },
+    modulos: modulos.map((m) => ({
+      nome: m.nome,
+      tipo: m.tipo,
+      status: m.status,
+      descricao: m.descricao,
+    })),
+    decisoes: decisoes.map((d) => ({
+      titulo: d.titulo,
+      contexto: d.contexto,
+      decisao: d.decisao,
+      consequencias: d.consequencias,
+      status: d.status,
+      cardSlugs: d.cardSlugs,
+    })),
+    adocoes: adocoes.map((a) => ({
+      cardSlug: a.cardSlug,
+      moduloNome: moduloById.get(a.moduloId ?? "")?.nome,
+      status: a.status,
+      notas: a.notas,
+    })),
+  };
+}
+
 // ───── Public Profiles & Leaderboard ────────────────────────
 
 export interface PublicProfile {

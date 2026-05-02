@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import {
   Plus, Trash2, BookOpen, ChevronRight, Circle,
-  CheckCircle2, AlertTriangle, XCircle, GitBranch, Sparkles, Boxes, ArrowUpRight,
+  CheckCircle2, AlertTriangle, XCircle, GitBranch, Sparkles, Boxes, ArrowUpRight, Download,
 } from "lucide-react";
 import { Button, Card, LinkButton, Tag } from "@/components/ui";
 import {
@@ -19,6 +19,7 @@ import {
   deleteModulo,
   updateAdocaoStatus,
   updateModuloStatus,
+  exportProjectAsArchitecture,
 } from "@/lib/db";
 import { DecisoesSection } from "./decisoes-section";
 import { ExtractModal } from "./extract-modal";
@@ -209,6 +210,22 @@ export function ProjetoView({ projetoId, cards }: { projetoId: string; cards: Ca
           <LinkButton href={`/projetos/${projeto.id}/modulos/novo`} variant="secondary">
             <Plus className="w-4 h-4" /> Módulo
           </LinkButton>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              const arch = await exportProjectAsArchitecture(projeto.id);
+              const blob = new Blob([JSON.stringify(arch, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${projeto.nome.toLowerCase().replace(/\s+/g, "-")}-architecture.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            title="Exportar arquitetura como JSON"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
           <Button variant="danger" onClick={deleteProjeto}>
             <Trash2 className="w-4 h-4" />
           </Button>
