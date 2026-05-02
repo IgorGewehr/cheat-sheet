@@ -22,7 +22,7 @@ const STACK_PRESETS = [
 
 const GERABLE_CATEGORIES: CardCategory[] = [
   "arquiteturas", "padroes-frontend", "padroes-backend", "banco",
-  "infra", "testes", "craft", "agentes-ia", "data-science",
+  "infra", "testes", "craft", "agentes-ia", "data-science", "govtech",
 ];
 
 interface CardState {

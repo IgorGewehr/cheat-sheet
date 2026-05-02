@@ -5,7 +5,8 @@ export type JobCategory =
   | "dados"
   | "ia"
   | "seguranca"
-  | "pesquisa";
+  | "pesquisa"
+  | "govtech";
 
 export interface JobTrackMilestone {
   id: string;

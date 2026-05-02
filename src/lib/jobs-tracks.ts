@@ -1900,4 +1900,209 @@ export const JOB_TRACKS: JobTrack[] = [
       ],
     },
   },
+
+  // ─── 5. GovTech Engineer ──────────────────────────────────────────────────
+  {
+    slug: "govtech-engineer",
+    titulo: "GovTech Engineer",
+    papel: "GovTech Engineer",
+    categoria: "engenharia",
+    nivelAlvo: "senior",
+    resumo:
+      "Especialização em sistemas B2G (Business-to-Government) para prefeituras brasileiras. Cobre os requisitos que não existem no mercado privado: Event Sourcing para auditoria imutável exigida por TCEs, Keycloak com federação Gov.br, LGPD em órgãos públicos, PostGIS para dados geoespaciais municipais, Kafka para absorver picos de acesso previsíveis, isolamento single-tenant por exigência de edital, e acessibilidade WCAG obrigatória por lei. Stack: NestJS + Next.js + PostgreSQL + Keycloak.",
+    preRequisitos: [
+      "NestJS: Guards, Interceptors, Modules, providers — sabe construir API sem tutorial",
+      "PostgreSQL: transactions, índices, EXPLAIN — já diagnosticou N+1 em produção",
+      "Next.js App Router: Server Components, SSR, route handlers",
+      "Autenticação: JWT, OAuth 2.0 e OIDC na teoria e na prática",
+      "Docker Compose: sobe ambiente local completo com banco e cache",
+    ],
+    marcos: [
+      {
+        id: "gov-01",
+        titulo: "Keycloak IAM: realm, RBAC hierárquico e SSO",
+        tipo: "estudo",
+        descricao:
+          "Configure Keycloak do zero para uma prefeitura: realm por tenant, roles hierárquicas (prefeito → secretário → servidor), grupos por secretaria e exportação de realm para versionamento em Git. Entenda o ciclo de vida de sessão e token.",
+        cardSlug: "keycloak-sso",
+        estimateHours: 8,
+      },
+      {
+        id: "gov-02",
+        titulo: "Integração Gov.br via OpenID Connect",
+        tipo: "estudo",
+        descricao:
+          "Estude como federar o Keycloak com o IdP nacional Gov.br: configuração de Identity Provider OIDC, mapeamento de claims (confiabilidades, CPF), ambiente de homologação e requisitos de cadastro no BNDES/MP. Prazo de aprovação leva semanas — comece cedo.",
+        cardSlug: "oauth-2-1",
+        estimateHours: 5,
+      },
+      {
+        id: "gov-03",
+        titulo: "RBAC granular com NestJS Guards",
+        tipo: "pratica",
+        descricao:
+          "Implemente Guards e Decorators para RBAC granular: roles no JWT Keycloak, guard que valida hierarquia (secretário só acessa sua secretaria), testes de integração com usuário mockado. Use o Sentinela para revisar o código.",
+        cardSlug: "rbac-vs-abac",
+        routeHref: "/sentinela",
+        estimateHours: 6,
+      },
+      {
+        id: "gov-04",
+        titulo: "LGPD em sistemas públicos: criptografia e DPO",
+        tipo: "estudo",
+        descricao:
+          "Estude as obrigações LGPD específicas de órgãos públicos: base legal 'cumprimento de obrigação legal', criptografia de dados sensíveis (CPF, dados de saúde), pseudonimização para relatórios, prazos de retenção por legislação específica (CTN, CLT) e papel do DPO.",
+        cardSlug: "lgpd-compliance",
+        estimateHours: 6,
+      },
+      {
+        id: "gov-05",
+        titulo: "Criptografia at-rest e in-transit na prática",
+        tipo: "pratica",
+        descricao:
+          "Implemente criptografia AES-256-GCM em colunas sensíveis do PostgreSQL com pgcrypto, serviço de criptografia NestJS com chave derivada via PBKDF2, hash para lookup sem decriptar e política de rotação de chaves. Sem frameworks prontos — implemente do zero.",
+        cardSlug: "token-encryption-at-rest",
+        estimateHours: 6,
+      },
+      {
+        id: "gov-06",
+        titulo: "Event Sourcing para auditoria imutável (TCE)",
+        tipo: "estudo",
+        descricao:
+          "Entenda por que TCEs exigem trilha de auditoria imutável e como Event Sourcing resolve isso: modelagem de eventos financeiros (EmpenhoRegistrado, EmpenhoAnulado, PagamentoAutorizado), Aggregate base class, Event Store em PostgreSQL e replay de estado para qualquer data.",
+        cardSlug: "event-sourcing-govtech",
+        estimateHours: 10,
+      },
+      {
+        id: "gov-07",
+        titulo: "NestJS Audit Interceptor automático",
+        tipo: "pratica",
+        descricao:
+          "Construa o interceptor de auditoria completo: decorator @Audited(), captura de quem/o quê/quando/IP sem bloquear o request, persistência assíncrona via BullMQ e tabela de audit_logs com particionamento mensal por 5 anos. Use o War Game para simular auditoria do TCE.",
+        cardSlug: "nestjs-audit-interceptor",
+        routeHref: "/war-game",
+        estimateHours: 8,
+      },
+      {
+        id: "gov-08",
+        titulo: "PostGIS: dados geoespaciais municipais",
+        tipo: "estudo",
+        descricao:
+          "Estude PostGIS para casos de uso de prefeitura: cálculo de área real de lote para IPTU (ST_Area geodésico), lotes em zona de preservação (ST_Within), buffer de APP em rios (ST_Buffer), SRID SIRGAS 2000 e índice GIST. A diferença entre área planar e geodésica quebra cálculos tributários.",
+        cardSlug: "postgis-spatial",
+        estimateHours: 7,
+      },
+      {
+        id: "gov-09",
+        titulo: "Kafka para resiliência em picos previsíveis",
+        tipo: "estudo",
+        descricao:
+          "Entenda por que Kafka (não RabbitMQ) para sistemas públicos: retenção nativa como camada extra de auditoria, topologia de tópicos para ERP municipal, consumer groups por serviço (contabilidade, fiscal, transparência) e Dead Letter Topics para mensagens que falharam.",
+        cardSlug: "kafka-govtech",
+        estimateHours: 8,
+      },
+      {
+        id: "gov-10",
+        titulo: "Kafka na prática: producer idempotente e consumer com DLT",
+        tipo: "pratica",
+        descricao:
+          "Implemente producer com idempotência (zero duplicatas em finanças), consumer com retry exponencial e Dead Letter Topic, e verificação de correlationId para idempotência no processamento. Configure alerta no DLT.",
+        cardSlug: "outbox-pattern",
+        estimateHours: 6,
+      },
+      {
+        id: "gov-11",
+        titulo: "Single-tenant isolation para prefeituras",
+        tipo: "estudo",
+        descricao:
+          "Entenda por que editais de licitação frequentemente proíbem banco compartilhado entre municípios: isolamento por namespace Kubernetes com ArgoCD ApplicationSet, banco separado por prefeitura, Terraform por tenant. A decisão é legal antes de ser arquitetural.",
+        cardSlug: "single-tenant-govtech",
+        estimateHours: 6,
+      },
+      {
+        id: "gov-12",
+        titulo: "WCAG 2.1 AA/AAA e eMAG — acessibilidade obrigatória",
+        tipo: "estudo",
+        descricao:
+          "Estude os critérios WCAG obrigatórios por lei (LBI 13.146/2015 + eMAG): contraste mínimo 4.5:1, navegação por teclado, ARIA roles corretos, skip links, alternativas textuais. Portais públicos sem acessibilidade estão sujeitos a ação do Ministério Público.",
+        cardSlug: "wcag-govtech",
+        estimateHours: 5,
+      },
+      {
+        id: "gov-13",
+        titulo: "Portal da Transparência: SSR, indexação e dados abertos",
+        tipo: "pratica",
+        descricao:
+          "Implemente o portal de transparência com requisitos da LAI: SSR obrigatório (dados devem aparecer em buscas), sitemap.xml automático, exportação em CSV/JSON/ODS, cache para picos de acesso. Use o System Design para documentar a arquitetura.",
+        cardSlug: "event-driven",
+        routeHref: "/system-design",
+        estimateHours: 8,
+      },
+      {
+        id: "gov-14",
+        titulo: "War Game: incidente em dia de vencimento de IPTU",
+        tipo: "pratica",
+        descricao:
+          "Simule o incidente mais comum em prefeituras: API travada no dia de vencimento de IPTU, fila de Kafka acumulando, portal de pagamento fora. Tome decisões sob pressão com deadline legal. Documente o post-mortem.",
+        routeHref: "/war-game",
+        estimateHours: 3,
+      },
+      {
+        id: "gov-15",
+        titulo: "System Design: ERP municipal completo",
+        tipo: "pratica",
+        descricao:
+          "Projete a arquitetura completa de um ERP municipal: módulos (financeiro, tributação, folha, protocolo), Event Sourcing onde necessário, Kafka entre módulos, Keycloak centralizado, single-tenant K8s, PostGIS, portal de transparência SSR. Documente trade-offs de cada decisão.",
+        routeHref: "/system-design",
+        estimateHours: 5,
+      },
+      {
+        id: "gov-16",
+        titulo: "Mock Interview: GovTech Engineer sênior",
+        tipo: "entrevista",
+        descricao:
+          "Simule entrevista técnica focada em requisitos B2G: Por que Event Sourcing e não audit log simples? Como você isolaria dados de dois municípios? O que acontece se o Keycloak cair? Pratique defender decisões com argumentos legais e técnicos.",
+        routeHref: "/mock-interview",
+        estimateHours: 2,
+      },
+    ],
+    projetoPortfolio: {
+      titulo: "ERP Municipal Mínimo com Auditoria Imutável e Acessibilidade",
+      descricao:
+        "Construa um módulo financeiro municipal com: autenticação Keycloak (realm exportado, RBAC por secretaria), Event Sourcing para empenhos (EmpenhoRegistrado → EmpenhoAnulado → PagamentoAutorizado), Audit Interceptor automático com BullMQ, uma query PostGIS para cálculo de área de lote, e um Portal de Transparência Next.js SSR com score WCAG AA no Lighthouse.",
+      entregaveis: [
+        "Realm Keycloak exportado e versionado no repositório com CI de import",
+        "Event Store PostgreSQL com eventos imutáveis e replay demonstrado em teste",
+        "Audit log de todas as mutações financeiras com particionamento mensal",
+        "Query PostGIS documentada calculando área real de pelo menos 3 lotes de teste",
+        "Portal de transparência Next.js SSR com score Lighthouse Accessibility ≥ 90",
+        "Runbook de incidente simulando auditoria do TCE com replay de estado",
+      ],
+    },
+    preparacaoEntrevista: {
+      topicos: [
+        "Event Sourcing vs CRUD com audit log: quando cada um é suficiente para TCE",
+        "Keycloak: ciclo de vida de token, sessão e revogação imediata de acesso",
+        "LGPD em órgãos públicos: base legal, criptografia obrigatória, prazos de retenção",
+        "PostGIS: diferença entre ST_Area planar e geodésico, SRID SIRGAS 2000",
+        "Kafka vs RabbitMQ: por que retenção nativa importa para auditoria",
+        "Single-tenant vs multi-tenant: quando o edital de licitação decide a arquitetura",
+        "WCAG: critérios AA obrigatórios por lei, eMAG e consequências legais",
+        "Resiliência em picos: vencimento de IPTU, folha de pagamento, fim de exercício",
+      ],
+      rotasMock: ["/mock-interview", "/system-design", "/war-game", "/banco-star", "/rfc-writing"],
+      perguntasComuns: [
+        "O TCE pediu uma auditoria: 'mostre todos os pagamentos autorizados entre 01/03 e 15/03 e quem autorizou cada um'. Como seu sistema atende isso?",
+        "Um servidor foi exonerado hoje. Como você garante que o acesso dele a todos os sistemas da prefeitura é revogado imediatamente?",
+        "O edital exige que 'dados do município X não sejam acessíveis ao município Y'. Como você arquitetaria isso? Quais as implicações operacionais?",
+        "Um empenho foi registrado com valor errado. O contador quer 'desfazer'. Como você modela isso sem violar a imutabilidade exigida pelo TCE?",
+        "É dia 30 de dezembro (deadline de execução orçamentária). O sistema de empenhos está com latência 20x acima do normal. O que você faz?",
+        "A CGU solicitou logs de todos os acessos ao módulo de folha de pagamento dos últimos 3 anos. Sua arquitetura suporta isso? Em quanto tempo você entrega?",
+        "O licitante exige WCAG 2.1 AA no portal do cidadão. Como você verifica conformidade? O que você testa automaticamente vs manualmente?",
+        "Por que você escolheria Kafka em vez de RabbitMQ para integração entre módulos de um ERP municipal?",
+        "Como você calcularia o IPTU de um lote com geometria irregular usando PostGIS? Por que não usar a área declarada pelo contribuinte?",
+        "Explique como o Gov.br funciona como IdP externo no Keycloak. O que acontece se o Gov.br ficar fora do ar?",
+      ],
+    },
+  },
 ];

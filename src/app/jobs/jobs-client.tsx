@@ -29,6 +29,7 @@ const CATEGORY_LABEL: Record<JobCategory, string> = {
   ia: "IA",
   seguranca: "Segurança",
   pesquisa: "Pesquisa",
+  govtech: "GovTech",
 };
 
 const CATEGORY_COLOR: Record<JobCategory, string> = {
@@ -37,6 +38,7 @@ const CATEGORY_COLOR: Record<JobCategory, string> = {
   ia: "border-violet-500/40",
   seguranca: "border-amber-500/40",
   pesquisa: "border-fuchsia-500/40",
+  govtech: "border-cyan-500/40",
 };
 
 type FilterLevel = "all" | JobLevel;
@@ -101,7 +103,7 @@ export function JobsClient() {
         </div>
         <div className="w-px bg-line hidden sm:block" />
         <div className="flex gap-1.5 flex-wrap">
-          {(["all", "engenharia", "dados", "ia", "seguranca", "pesquisa"] as const).map((c) => (
+          {(["all", "engenharia", "govtech", "ia", "seguranca", "dados", "pesquisa"] as const).map((c) => (
             <button
               key={c}
               onClick={() => setFilterCategory(c)}

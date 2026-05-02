@@ -18,7 +18,7 @@ export interface GerarCardResult {
 const VALID_CATEGORIES: CardCategory[] = [
   "arquiteturas", "auth", "padroes-frontend", "padroes-backend",
   "banco", "stack-guides", "infra", "testes", "craft",
-  "agentes-ia", "data-science",
+  "agentes-ia", "data-science", "govtech",
 ];
 
 export async function POST(req: NextRequest) {

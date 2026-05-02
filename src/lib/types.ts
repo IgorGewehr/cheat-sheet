@@ -13,7 +13,8 @@ export type CardCategory =
   | "craft"
   | "agentes-ia"
   | "data-science"
-  | "matematica";
+  | "matematica"
+  | "govtech";
 
 export const CATEGORY_LABEL: Record<CardCategory, string> = {
   arquiteturas: "Arquiteturas",
@@ -31,6 +32,7 @@ export const CATEGORY_LABEL: Record<CardCategory, string> = {
   "agentes-ia": "Agentes de IA",
   "data-science": "Data Science & ML",
   matematica: "Matemática (Bacharelado)",
+  govtech: "GovTech — Sistemas Públicos",
 };
 
 export interface CardFrontmatter {
