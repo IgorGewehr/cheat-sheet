@@ -13,10 +13,10 @@ import { DamageMeter } from "./damage-meter";
 export type Verb = "trabalhar" | "estudar" | "treinar" | "refletir";
 
 const VERB_ROUTES: Record<Verb, string[]> = {
-  trabalhar: ["/sessao", "/comparar", "/fim-do-dia", "/gerar-card", "/projetos", "/sentinela", "/idle", "/claude-code"],
-  estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva"],
+  trabalhar: ["/sessao", "/decisoes", "/comparar", "/fim-do-dia", "/gerar-card", "/projetos", "/sentinela", "/idle", "/claude-code"],
+  estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva", "/matematica", "/jobs"],
   treinar: [
-    "/revisor", "/anti-pattern", "/interrogatorio", "/mentoria", "/war-game",
+    "/debate", "/math-quest", "/anti-pattern", "/war-game",
     "/system-design", "/mock-interview", "/refatoracao", "/architecture-audit",
     "/rfc-writing", "/sprint-sem-ia", "/banco-star",
   ],
@@ -34,7 +34,7 @@ const VERB_LABELS: Record<Verb, string> = {
 export const VERB_PRIMARY: Record<Verb, string> = {
   trabalhar: "/sessao",
   estudar: "/biblioteca",
-  treinar: "/revisor",
+  treinar: "/debate",
   refletir: "/health-score",
 };
 

@@ -691,11 +691,9 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     {
       title: "Treinar",
       links: [
-        { href: "/revisor",        label: "Revisor de Código",      icon: ClipboardCheck, isNew: revisoes.length === 0 },
+        { href: "/debate",         label: "Debate Técnico",      icon: MessageSquareMore, isNew: revisoes.length === 0 },
         { href: "/anti-pattern",   label: "Anti-Padrões", icon: Bug, isNew: true },
-        { href: "/interrogatorio", label: "Interrogatório Técnico",  icon: Brain },
         { href: "/sprint-sem-ia",  label: "Sprint sem IA",           icon: FlaskConical, hot: sprints.some((s) => s.status === "em-andamento") },
-        { href: "/mentoria",       label: "Mentoria Sênior",         icon: Users, isNew: true },
       ],
     },
     {
@@ -757,10 +755,8 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
 
   const WORK_ACTIONS = [
     { href: "/sessao",         label: "Sessão com IA",         desc: "Pergunta livre, brainstorm, dúvida técnica",  icon: Zap,            color: "amber"   },
-    { href: "/revisor",        label: "Revisor de Código",     desc: "Cole código, receba feedback técnico",         icon: ClipboardCheck, color: "sky"     },
+    { href: "/debate",         label: "Debate Técnico",        desc: "Discuta arquitetura, receba code review e mentoria", icon: MessageSquareMore, color: "sky"     },
     { href: "/comparar",       label: "Comparar Arquiteturas", desc: "A vs B — qual usar neste contexto",            icon: Scale,          color: "violet"  },
-    { href: "/interrogatorio", label: "Interrogatório",        desc: "Teste seu entendimento antes de decidir",      icon: Brain,          color: "emerald" },
-    { href: "/mentoria",       label: "Mentoria Sênior",       desc: "Dúvida de carreira ou decisão técnica",        icon: Users,          color: "rose"    },
     { href: "/divida",         label: "Registrar Dívida",      desc: "Usou algo que não entende de verdade? Anota",  icon: AlertCircle,    color: "red"     },
     { href: "/fim-do-dia",    label: "Fim do Dia",            desc: "Capture dívidas e erros de hoje em 5 min",     icon: Moon,           color: "sky"     },
   ] as const;

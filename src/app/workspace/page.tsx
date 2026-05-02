@@ -106,7 +106,7 @@ export default function WorkspacePage() {
         {signedIn && user ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-9 h-9 rounded-full bg-amber-500 text-zinc-950 text-sm font-bold flex items-center justify-center">
+              <span className="w-9 h-9 rounded-full bg-violet-600 text-white text-sm font-bold flex items-center justify-center">
                 {(user.displayName ?? user.email ?? "?")[0]?.toUpperCase()}
               </span>
               <div>
@@ -123,7 +123,7 @@ export default function WorkspacePage() {
               Você não está logado. Clique <strong>Entrar</strong> no rodapé da sidebar
               pra criar conta ou logar com email/senha.
             </p>
-            <Tag color="amber">deslogado</Tag>
+            <Tag color="violet">deslogado</Tag>
           </div>
         )}
       </Card>
@@ -137,7 +137,7 @@ export default function WorkspacePage() {
           </Button>
         </div>
         {signedIn && user && wsId !== user.uid && (
-          <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-sm space-y-2">
+          <div className="mt-3 p-3 rounded-md bg-violet-500/10 border border-violet-500/30 text-sm space-y-2">
             <p>
               Seu workspace ainda não está ligado à sua conta. Clique pra copiar todos os dados
               deste navegador pro workspace do seu UID.

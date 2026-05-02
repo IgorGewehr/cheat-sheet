@@ -41,7 +41,7 @@ export function AuthWidget() {
       <>
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs bg-amber-500 text-zinc-950 font-medium hover:bg-amber-400 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs bg-violet-600 text-white font-medium hover:bg-violet-500 transition"
         >
           <LogIn className="w-3.5 h-3.5" />
           Entrar
@@ -60,7 +60,7 @@ export function AuthWidget() {
         className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-card-hover transition w-full"
         title={user.email ?? user.displayName ?? user.uid}
       >
-        <span className="w-7 h-7 rounded-full bg-amber-500 text-zinc-950 text-xs font-bold flex items-center justify-center shrink-0">
+        <span className="w-7 h-7 rounded-full bg-violet-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
           {initial}
         </span>
         <span className="text-xs text-muted truncate flex-1 text-left">

@@ -23,6 +23,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
   trabalhar: [
     { href: "/sentinela",   label: "Sentinela",         icon: ShieldCheck, hot: true },
     { href: "/sessao",      label: "Sessão IA",        icon: Zap, hot: true },
+    { href: "/decisoes",    label: "Decision Journal",  icon: Scale },
     { href: "/comparar",    label: "Comparar",          icon: Scale, hot: true },
     { href: "/fim-do-dia",  label: "Fim do Dia",        icon: Moon },
     { href: "/gerar-card",  label: "Gerar Card c/ IA",  icon: Sparkles, hot: true },
@@ -40,10 +41,8 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
   ],
   treinar: [
     { href: "/math-quest",        label: "Treinar Mat",         icon: Dices, hot: true },
-    { href: "/revisor",           label: "Revisor Ativo",       icon: Eye },
+    { href: "/debate",            label: "Debate Técnico",      icon: MessageSquareMore },
     { href: "/anti-pattern",      label: "Anti-Pattern",        icon: AlertCircle },
-    { href: "/interrogatorio",    label: "Interrogatório",      icon: MessageSquareMore },
-    { href: "/mentoria",          label: "Mentoria Invertida",  icon: Dumbbell },
     { href: "/war-game",          label: "War Game",            icon: Swords, hot: true },
     { href: "/system-design",     label: "System Design",       icon: GitBranch },
     { href: "/mock-interview",    label: "Mock Interview",      icon: Mic },
@@ -171,7 +170,9 @@ export function Sidebar() {
               <div className="flex items-center gap-1.5">
                 <span className="text-sm leading-none">{progress.levelEmoji}</span>
                 <div>
-                  <p className="text-xs font-medium text-fg leading-tight">{progress.levelTitle}</p>
+                  <p className="text-xs font-medium text-fg leading-tight">
+                    {progress.levelTitle === "Despertado" ? "Iniciante" : progress.levelTitle}
+                  </p>
                   <p className="text-[10px] text-subtle">Nível {progress.level}</p>
                 </div>
               </div>

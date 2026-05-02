@@ -42,12 +42,10 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
   const polygonPoints = dataPoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="relative w-full h-full max-w-[400px] aspect-square mx-auto">
       <svg
-        viewBox={`0 0 ${size} ${size}`}
-        width="100%"
-        height="100%"
-        className="text-fg overflow-visible"
+        viewBox={`-50 -50 ${size + 100} ${size + 100}`}
+        className="w-full h-full text-fg drop-shadow-2xl"
         onMouseLeave={() => setHoveredIdx(null)}
       >
         <defs>
