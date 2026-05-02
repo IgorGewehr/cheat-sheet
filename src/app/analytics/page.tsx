@@ -7,6 +7,7 @@ import { Card, Tag } from "@/components/ui";
 import { listAllAdocoes, listProjects } from "@/lib/db";
 import type { Adocao, AdocaoStatus } from "@/lib/types";
 import { ADOCAO_STATUS_LABEL, CATEGORY_LABEL } from "@/lib/types";
+import { SlopDashboard } from "@/components/slop-dashboard";
 
 type CardSlugStats = {
   slug: string;
@@ -77,6 +78,8 @@ export default function AnalyticsPage() {
           Visão geral de quais padrões você mais adota, onde há dificuldade, e o que precisa de revisão.
         </p>
       </header>
+
+      <SlopDashboard />
 
       {loading ? (
         <p className="text-muted">Carregando dados…</p>

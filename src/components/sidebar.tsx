@@ -27,6 +27,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/fim-do-dia",  label: "Fim do Dia",        icon: Moon },
     { href: "/gerar-card",  label: "Gerar Card c/ IA",  icon: Sparkles, hot: true },
     { href: "/projetos",    label: "Projetos",           icon: FolderKanban },
+    { href: "/claude-code", label: "Claude Code",       icon: Activity, hot: true },
   ],
   estudar: [
     { href: "/matematica",     label: "Matemática",       icon: Sigma },

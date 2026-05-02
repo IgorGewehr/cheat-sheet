@@ -1,48 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
-import { ChevronDown, ChevronUp, ShieldAlert } from "lucide-react";
+import { ChevronDown, ChevronUp, ShieldAlert, Code, GitPullRequest, FileCode, Target, X, ExternalLink } from "lucide-react";
 import { Button, Card, Input, Label, Select, Tag, Textarea } from "@/components/ui";
 import {
   saveSentinelaSession,
   listSentinelaSessions,
   updateSentinelaDecisao,
+  updateSentinelaSession,
 } from "@/lib/sentinela-db";
 import { SENTINELA_CHECKLIST } from "@/lib/sentinela-checklist";
+import { getActiveTask, attachSentinelaSession, type ActiveTask } from "@/lib/active-task";
+import { getActiveProject, type ActiveProjectContext } from "@/lib/active-project";
+import { createDecisao } from "@/lib/db";
 import type {
   SentinelaSession,
   SentinelaVeredito,
   SentinelaCategoria,
   SentinelaAchado,
+  SentinelaModo,
 } from "@/lib/sentinela-types";
 import type { SentinelaResult } from "@/app/api/ai/sentinela/route";
 
 type Step = "form" | "loading" | "verdict" | "checklist" | "saved";
+type InputMode = "codigo" | "diff" | "pr";
 
 type ChecklistResposta = "sim" | "nao" | "nao-sei";
 type DecisaoFinal = "aceito" | "rejeitado" | "corrigir";
 
 const VEREDITO_STYLE: Record<SentinelaVeredito, { border: string; text: string; bg: string; label: string }> = {
-  PASS: {
-    border: "border-violet-500",
-    text: "text-violet-400",
-    bg: "bg-violet-500/5",
-    label: "PASS",
-  },
-  WARN: {
-    border: "border-amber-500",
-    text: "text-amber-400",
-    bg: "bg-amber-500/5",
-    label: "WARN",
-  },
-  DENY: {
-    border: "border-red-500",
-    text: "text-red-400",
-    bg: "bg-red-500/5",
-    label: "DENY",
-  },
+  PASS: { border: "border-violet-500", text: "text-violet-400", bg: "bg-violet-500/5", label: "PASS" },
+  WARN: { border: "border-amber-500", text: "text-amber-400", bg: "bg-amber-500/5", label: "WARN" },
+  DENY: { border: "border-red-500", text: "text-red-400", bg: "bg-red-500/5", label: "DENY" },
 };
 
 const SEVERIDADE_COLOR: Record<string, string> = {
@@ -63,14 +55,22 @@ const CATEGORIA_LABEL: Record<SentinelaCategoria, string> = {
   convencoes: "Convenções",
 };
 
+function looksLikeDiff(s: string): boolean {
+  const lines = s.split("\n").slice(0, 50);
+  return lines.some((l) => /^(diff --git|@@ |\+\+\+ |--- )/.test(l)) ||
+         lines.filter((l) => l.startsWith("+") || l.startsWith("-")).length >= 3;
+}
+
+function looksLikeCode(s: string): boolean {
+  return s.length > 30 && /[{};()=]|function |class |def |import |const /.test(s);
+}
+
 function VeredictoBanner({ veredito }: { veredito: SentinelaVeredito }) {
   const s = VEREDITO_STYLE[veredito];
   return (
     <div className={clsx("rounded-lg border-l-4 p-4", s.border, s.bg)}>
       <p className="text-xs text-muted mb-1">Veredito</p>
-      <p className={clsx("text-3xl font-bold", s.text)}>
-        {s.label}
-      </p>
+      <p className={clsx("text-3xl font-bold", s.text)}>{s.label}</p>
     </div>
   );
 }
@@ -166,6 +166,7 @@ function HistoricoSection() {
             >
               <VeredictoBadge veredito={s.veredito} />
               <span className="text-xs text-fg truncate flex-1">{s.titulo}</span>
+              {s.modo === "diff" && <Tag color="violet">diff</Tag>}
               <span className="text-[10px] text-muted font-mono shrink-0">
                 {new Date(s.criadoEm).toLocaleDateString("pt-BR")}
               </span>
@@ -177,13 +178,61 @@ function HistoricoSection() {
   );
 }
 
-export function SentinelaClient() {
+function ModeTab({ mode, current, onClick, icon: Icon, label, hint }: {
+  mode: InputMode;
+  current: InputMode;
+  onClick: (m: InputMode) => void;
+  icon: typeof Code;
+  label: string;
+  hint: string;
+}) {
+  const active = mode === current;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(mode)}
+      className={clsx(
+        "flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition flex-1 sm:flex-none",
+        active
+          ? "border-violet-500 bg-violet-500/10 text-violet-400"
+          : "border-line bg-card text-muted hover:text-fg hover:border-line-strong",
+      )}
+      title={hint}
+    >
+      <Icon className="w-3.5 h-3.5 shrink-0" />
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+}
+
+function ActiveTaskBanner({ task, onUseContext }: { task: ActiveTask; onUseContext: () => void }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-violet-500/30 bg-violet-500/5 mb-4">
+      <Target className="w-4 h-4 text-violet-500 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-muted">Tarefa atual</p>
+        <p className="text-sm text-fg truncate font-medium">{task.titulo}</p>
+      </div>
+      <Button variant="ghost" onClick={onUseContext} className="text-xs px-2 py-1">
+        Pré-preencher
+      </Button>
+    </div>
+  );
+}
+
+function SentinelaInner() {
+  const params = useSearchParams();
   const [step, setStep] = useState<Step>("form");
+  const [inputMode, setInputMode] = useState<InputMode>("codigo");
 
   const [titulo, setTitulo] = useState("");
   const [contexto, setContexto] = useState("");
   const [linguagem, setLinguagem] = useState("typescript");
   const [codigo, setCodigo] = useState("");
+  const [prUrl, setPrUrl] = useState("");
+
+  const [activeTask, setActiveTaskState] = useState<ActiveTask | null>(null);
+  const [activeProject, setActiveProjectState] = useState<ActiveProjectContext | null>(null);
 
   const [result, setResult] = useState<SentinelaResult | null>(null);
   const [error, setError] = useState("");
@@ -193,27 +242,90 @@ export function SentinelaClient() {
   const [reflexao, setReflexao] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedSession, setSavedSession] = useState<SentinelaSession | null>(null);
+  const [adrCreatedId, setAdrCreatedId] = useState<string | null>(null);
 
   const obrigatoriosOk = SENTINELA_CHECKLIST.filter((i) => i.obrigatorio).every(
     (i) => checklistMap[i.id] === "sim",
   );
 
+  // Load active task / project + handle ?from=clipboard / ?pr=<url>
+  useEffect(() => {
+    setActiveTaskState(getActiveTask());
+    setActiveProjectState(getActiveProject());
+
+    const fromClipboard = params.get("from") === "clipboard";
+    const prParam = params.get("pr");
+
+    if (prParam) {
+      setInputMode("pr");
+      setPrUrl(prParam);
+    } else if (fromClipboard && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.readText().then((text) => {
+        if (!text || text.length < 30) return;
+        if (looksLikeDiff(text)) {
+          setInputMode("diff");
+          setCodigo(text);
+        } else if (looksLikeCode(text)) {
+          setInputMode("codigo");
+          setCodigo(text);
+        }
+      }).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function applyTaskContext() {
+    if (!activeTask) return;
+    if (!titulo.trim()) setTitulo(activeTask.titulo);
+    if (!contexto.trim()) {
+      const parts: string[] = [];
+      if (activeTask.dominios.length) parts.push(`Domínios: ${activeTask.dominios.join(", ")}`);
+      if (activeTask.stack) parts.push(`Stack: ${activeTask.stack}`);
+      if (activeTask.briefing?.systemPrompt) {
+        parts.push(`Briefing resumido: ${activeTask.briefing.systemPrompt.slice(0, 400)}…`);
+      }
+      setContexto(parts.join("\n"));
+    }
+  }
+
   async function invocar() {
-    if (!titulo.trim() || !codigo.trim()) return;
+    const hasInput =
+      inputMode === "pr" ? prUrl.trim().length > 0 : codigo.trim().length > 0;
+    const needsTitleClient = inputMode !== "pr"; // PR mode autofills title
+    if ((needsTitleClient && !titulo.trim()) || !hasInput) return;
     setStep("loading");
     setError("");
     setResult(null);
     try {
+      const payload: Record<string, unknown> = {
+        titulo,
+        contexto: contexto || undefined,
+        linguagem,
+      };
+      if (inputMode === "pr") {
+        payload.prUrl = prUrl.trim();
+      } else {
+        payload.codigo = codigo;
+        payload.modo = inputMode === "diff" ? "diff" : "codigo";
+      }
       const res = await fetch("/api/ai/sentinela", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titulo, contexto: contexto || undefined, codigo, linguagem }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json() as SentinelaResult & { error?: string };
+      const data = await res.json() as SentinelaResult & { error?: string; titulo?: string };
       if (!res.ok || data.error) {
         setError(data.error ?? "Erro desconhecido.");
         setStep("form");
         return;
+      }
+      // PR mode may have filled title server-side
+      if (data.titulo && !titulo.trim()) setTitulo(data.titulo);
+      // PR mode returns the diff inline so we save it
+      if (inputMode === "pr") {
+        // server-fetched diff is not returned to keep response small;
+        // store the URL in the session and a placeholder note
+        setCodigo(prUrl.trim());
       }
       setResult(data);
       setStep("verdict");
@@ -231,11 +343,16 @@ export function SentinelaClient() {
         itemId: i.id,
         resposta: checklistMap[i.id] ?? "nao-sei",
       }));
+      const sentinelaModo: SentinelaModo =
+        inputMode === "diff" || inputMode === "pr" ? "diff" : "codigo";
       const session = await saveSentinelaSession({
         titulo,
         contexto: contexto || undefined,
         codigo,
         linguagem,
+        modo: sentinelaModo,
+        prUrl: inputMode === "pr" ? prUrl.trim() : undefined,
+        taskId: activeTask?.id,
         veredito: result.veredito,
         scoreConfianca: result.scoreConfianca,
         achados: result.achados,
@@ -244,7 +361,42 @@ export function SentinelaClient() {
         reflexao: reflexao || undefined,
       });
       await updateSentinelaDecisao(session.id, decisao, reflexao || undefined);
-      setSavedSession(session);
+
+      // Auto-link to active task
+      if (activeTask) attachSentinelaSession(session.id);
+
+      // DENY → auto-create ADR draft if there's a project
+      let adrId: string | undefined;
+      if (result.veredito === "DENY" && activeProject?.id) {
+        try {
+          const findingsTxt = result.achados
+            .slice(0, 8)
+            .map((a) => `- [${a.severidade}] ${CATEGORIA_LABEL[a.categoria]}: ${a.descricao}`)
+            .join("\n");
+          const adr = await createDecisao({
+            projetoId: activeProject.id,
+            titulo: `[Sentinela DENY] ${titulo}`,
+            contexto: contexto?.trim() ||
+              `Auditoria Sentinela retornou DENY (score ${result.scoreConfianca}/100). ${result.resumo}`,
+            decisao:
+              decisao === "aceito"
+                ? "Aceito apesar do DENY. Justificativa abaixo."
+                : decisao === "rejeitado"
+                ? "Rejeitado conforme veredito."
+                : "A corrigir antes de aceitar.",
+            consequencias: `Achados:\n${findingsTxt}\n\nReflexão: ${reflexao || "—"}`,
+            status: decisao === "aceito" ? "aceita" : "proposta",
+            cardSlugs: [],
+          });
+          adrId = adr.id;
+          setAdrCreatedId(adr.id);
+          await updateSentinelaSession(session.id, { adrId: adr.id });
+        } catch (e) {
+          console.warn("[sentinela] ADR auto-draft falhou", e);
+        }
+      }
+
+      setSavedSession({ ...session, adrId });
       setStep("saved");
     } catch {
       setError("Erro ao salvar sessão.");
@@ -258,12 +410,14 @@ export function SentinelaClient() {
     setTitulo("");
     setContexto("");
     setCodigo("");
+    setPrUrl("");
     setResult(null);
     setError("");
     setChecklistMap({});
     setDecisao("corrigir");
     setReflexao("");
     setSavedSession(null);
+    setAdrCreatedId(null);
   }
 
   const achadosPorCategoria = result
@@ -278,6 +432,11 @@ export function SentinelaClient() {
       )
     : null;
 
+  const inputReady =
+    inputMode === "pr"
+      ? prUrl.trim().length > 0
+      : titulo.trim().length > 0 && codigo.trim().length > 0;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
@@ -286,9 +445,13 @@ export function SentinelaClient() {
           <h1 className="text-xl font-bold text-fg">Sentinela</h1>
         </div>
         <p className="text-sm text-muted mt-0.5">
-          Cole o código gerado por IA. Receba um veredito adversarial antes de aceitar.
+          Cole código, diff ou link do PR. Receba um veredito adversarial antes de aceitar.
         </p>
       </div>
+
+      {activeTask && step === "form" && (
+        <ActiveTaskBanner task={activeTask} onUseContext={applyTaskContext} />
+      )}
 
       <HistoricoSection />
 
@@ -299,15 +462,33 @@ export function SentinelaClient() {
               {error}
             </div>
           )}
+
+          {/* Mode tabs */}
           <div>
-            <Label htmlFor="titulo">Título da revisão *</Label>
-            <Input
-              id="titulo"
-              placeholder="ex: função de autenticação JWT gerada pelo Copilot"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-            />
+            <Label>Modo de entrada</Label>
+            <div className="flex flex-col sm:flex-row gap-2 mt-1.5">
+              <ModeTab mode="codigo" current={inputMode} onClick={setInputMode} icon={FileCode} label="Código" hint="Cole o arquivo/função inteiro" />
+              <ModeTab mode="diff" current={inputMode} onClick={setInputMode} icon={Code} label="Diff" hint="Patch unified-diff (git/PR)" />
+              <ModeTab mode="pr" current={inputMode} onClick={setInputMode} icon={GitPullRequest} label="PR URL" hint="Link de pull request público no GitHub" />
+            </div>
           </div>
+
+          {inputMode !== "pr" && (
+            <div>
+              <Label htmlFor="titulo">Título da revisão *</Label>
+              <Input
+                id="titulo"
+                placeholder={
+                  inputMode === "diff"
+                    ? "ex: diff do PR #312 — refator de auth"
+                    : "ex: função de autenticação JWT gerada pelo Copilot"
+                }
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+              />
+            </div>
+          )}
+
           <div>
             <Label htmlFor="contexto">Contexto (o que você pediu à IA)</Label>
             <Textarea
@@ -318,34 +499,65 @@ export function SentinelaClient() {
               onChange={(e) => setContexto(e.target.value)}
             />
           </div>
-          <div>
-            <Label htmlFor="linguagem">Linguagem</Label>
-            <Select
-              id="linguagem"
-              value={linguagem}
-              onChange={(e) => setLinguagem(e.target.value)}
-            >
-              <option value="typescript">TypeScript</option>
-              <option value="javascript">JavaScript</option>
-              <option value="python">Python</option>
-              <option value="sql">SQL</option>
-              <option value="outro">Outro</option>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="codigo">Código *</Label>
-            <textarea
-              id="codigo"
-              rows={18}
-              placeholder="Cole aqui o código gerado pela IA..."
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              className="w-full rounded-md bg-card border border-line px-3 py-2 text-sm font-mono text-fg outline-none focus:border-violet-500/60 resize-y"
-            />
-          </div>
+
+          {inputMode !== "pr" && (
+            <div>
+              <Label htmlFor="linguagem">Linguagem</Label>
+              <Select id="linguagem" value={linguagem} onChange={(e) => setLinguagem(e.target.value)}>
+                <option value="typescript">TypeScript</option>
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="java">Java</option>
+                <option value="sql">SQL</option>
+                <option value="diff">Diff (multi-arquivo)</option>
+                <option value="outro">Outro</option>
+              </Select>
+            </div>
+          )}
+
+          {inputMode === "pr" && (
+            <div>
+              <Label htmlFor="prUrl">URL do Pull Request *</Label>
+              <Input
+                id="prUrl"
+                placeholder="https://github.com/owner/repo/pull/123"
+                value={prUrl}
+                onChange={(e) => setPrUrl(e.target.value)}
+              />
+              <p className="text-[11px] text-muted mt-1.5">
+                Repos públicos funcionam direto. Privados precisam de <code className="font-mono text-violet-400">GITHUB_TOKEN</code> em <code className="font-mono">.env.local</code>.
+              </p>
+            </div>
+          )}
+
+          {inputMode !== "pr" && (
+            <div>
+              <Label htmlFor="codigo">{inputMode === "diff" ? "Diff *" : "Código *"}</Label>
+              <textarea
+                id="codigo"
+                rows={inputMode === "diff" ? 16 : 18}
+                placeholder={
+                  inputMode === "diff"
+                    ? "diff --git a/src/auth.ts b/src/auth.ts\n@@ -10,3 +10,8 @@\n+ const token = req.headers.token;\n…"
+                    : "Cole aqui o código gerado pela IA..."
+                }
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                className="w-full rounded-md bg-card border border-line px-3 py-2 text-sm font-mono text-fg outline-none focus:border-violet-500/60 resize-y"
+              />
+              {inputMode === "diff" && codigo && !looksLikeDiff(codigo) && (
+                <p className="text-[11px] text-amber-400 mt-1.5">
+                  Não parece um diff unified. Esperando linhas com <code className="font-mono">@@</code> ou <code className="font-mono">+/-</code>.
+                </p>
+              )}
+            </div>
+          )}
+
           <Button
             className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm py-3"
-            disabled={!titulo.trim() || !codigo.trim()}
+            disabled={!inputReady}
             onClick={invocar}
           >
             Invocar Sentinela
@@ -356,7 +568,9 @@ export function SentinelaClient() {
       {step === "loading" && (
         <Card className="py-16 flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted">Auditoria em andamento...</p>
+          <p className="text-sm text-muted">
+            {inputMode === "pr" ? "Buscando PR e auditando…" : "Auditoria em andamento…"}
+          </p>
         </Card>
       )}
 
@@ -377,6 +591,16 @@ export function SentinelaClient() {
             <div className="flex-1">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Resumo</p>
               <p className="text-sm text-fg">{result.resumo}</p>
+              {result.prUrl && (
+                <a
+                  href={result.prUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-violet-400 hover:underline mt-1"
+                >
+                  <GitPullRequest className="w-3 h-3" /> {result.prUrl} <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -500,6 +724,24 @@ export function SentinelaClient() {
                 </label>
               ))}
             </div>
+
+            {result.veredito === "DENY" && activeProject && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 mb-4">
+                <p className="text-xs text-amber-400">
+                  ⚠ Veredito DENY: ao salvar, vou criar um <strong>ADR draft</strong> em{" "}
+                  <code className="font-mono">/decisoes</code> ligado ao projeto{" "}
+                  <strong>{activeProject.nome}</strong>.
+                </p>
+              </div>
+            )}
+            {result.veredito === "DENY" && !activeProject && (
+              <div className="rounded-md border border-zinc-500/30 bg-zinc-500/5 px-3 py-2 mb-4">
+                <p className="text-xs text-muted">
+                  Veredito DENY — defina um projeto ativo no topo para gerar ADR draft automático.
+                </p>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="reflexao">Reflexão (opcional)</Label>
               <Textarea
@@ -551,6 +793,14 @@ export function SentinelaClient() {
             Auditoria de <strong>{savedSession.titulo}</strong> salva com decisão{" "}
             <strong>{savedSession.decisaoFinal}</strong>.
           </p>
+          {adrCreatedId && (
+            <Link
+              href={`/decisoes`}
+              className="text-xs text-amber-400 hover:underline"
+            >
+              ADR draft criado em /decisoes →
+            </Link>
+          )}
           <div className="flex gap-3">
             <Link
               href={`/sentinela/${savedSession.id}`}
@@ -565,5 +815,13 @@ export function SentinelaClient() {
         </Card>
       )}
     </div>
+  );
+}
+
+export function SentinelaClient() {
+  return (
+    <Suspense fallback={<div className="max-w-3xl mx-auto px-4 py-8 text-sm text-muted">Carregando…</div>}>
+      <SentinelaInner />
+    </Suspense>
   );
 }

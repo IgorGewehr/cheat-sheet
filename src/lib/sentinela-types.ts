@@ -25,17 +25,23 @@ export interface SentinelaChecklistItem {
   obrigatorio: boolean;
 }
 
+export type SentinelaModo = "codigo" | "diff";
+
 export interface SentinelaSession {
   id: string;
   titulo: string;
   contexto?: string;
   codigo: string;
   linguagem?: string;
+  modo?: SentinelaModo;
+  prUrl?: string;
+  taskId?: string;
   veredito: SentinelaVeredito;
   scoreConfianca: number;
   achados: SentinelaAchado[];
   checklistRespondido: { itemId: string; resposta: "sim" | "nao" | "nao-sei" }[];
   decisaoFinal?: "aceito" | "rejeitado" | "corrigir";
   reflexao?: string;
+  adrId?: string;
   criadoEm: number;
 }

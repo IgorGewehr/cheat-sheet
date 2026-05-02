@@ -5,6 +5,7 @@ import { SidebarWrapper } from "@/components/sidebar-wrapper";
 import { QuickCapture } from "@/components/quick-capture";
 import { TopNavWrapper } from "@/components/top-nav-wrapper";
 import { IdleTrigger } from "@/components/idle-trigger";
+import { AuditHotkey } from "@/components/audit-hotkey";
 
 export const metadata: Metadata = {
   title: "brain — cheat sheet de engenharia",
@@ -52,6 +53,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Idle Companion floating trigger (hidden on /idle) */}
           <IdleTrigger />
+
+          {/* Global ⌘⇧A → Sentinela with clipboard */}
+          <AuditHotkey />
 
           <main className="lg:pl-14 min-h-screen">
             <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">

@@ -7,11 +7,13 @@ import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthWidget } from "./auth-widget";
 import { ProjectPill } from "./project-pill";
+import { TaskPill } from "./task-pill";
+import { DamageMeter } from "./damage-meter";
 
 export type Verb = "trabalhar" | "estudar" | "treinar" | "refletir";
 
 const VERB_ROUTES: Record<Verb, string[]> = {
-  trabalhar: ["/sessao", "/comparar", "/fim-do-dia", "/gerar-card", "/projetos"],
+  trabalhar: ["/sessao", "/comparar", "/fim-do-dia", "/gerar-card", "/projetos", "/sentinela", "/idle", "/claude-code"],
   estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva"],
   treinar: [
     "/revisor", "/anti-pattern", "/interrogatorio", "/mentoria", "/war-game",
@@ -89,6 +91,8 @@ export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-2 shrink-0">
+          <TaskPill />
+          <DamageMeter />
           <ProjectPill />
 
           {/* Cmd+K trigger */}

@@ -19,6 +19,7 @@ import {
   Bug,
   MicOff,
   FileText,
+  Target,
 } from "lucide-react";
 import { Button, Label, Textarea } from "@/components/ui";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -31,6 +32,7 @@ import {
   listIdleSessions,
 } from "@/lib/db";
 import { getWorkspaceId } from "@/lib/workspace";
+import { getActiveTask, attachIdleSession, onActiveTaskChange, type ActiveTask } from "@/lib/active-task";
 import type { ParsePlanResult } from "@/app/api/idle/parse-plan/route";
 import type { QuestResult } from "@/app/api/idle/quest/route";
 import type { QuestFeedbackResult } from "@/app/api/idle/quest-feedback/route";
@@ -49,6 +51,32 @@ function PlanReviewPanel() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTask, setActiveTaskState] = useState<ActiveTask | null>(null);
+
+  useEffect(() => {
+    setActiveTaskState(getActiveTask());
+    return onActiveTaskChange(() => setActiveTaskState(getActiveTask()));
+  }, []);
+
+  function loadFromActiveTask() {
+    const t = getActiveTask();
+    if (!t) return;
+    const lines: string[] = [];
+    lines.push(`# ${t.titulo}`);
+    if (t.dominios.length) lines.push(`Domínios: ${t.dominios.join(", ")}`);
+    if (t.stack) lines.push(`Stack: ${t.stack}`);
+    if (t.briefing?.checklist?.length) {
+      lines.push("");
+      lines.push("## Checklist do briefing");
+      t.briefing.checklist.forEach((item) => lines.push(`- ${item}`));
+    }
+    if (t.briefing?.systemPrompt) {
+      lines.push("");
+      lines.push("## Briefing original (resumo)");
+      lines.push(t.briefing.systemPrompt.slice(0, 1200));
+    }
+    setPlano(lines.join("\n"));
+  }
 
   async function handleParsePlan() {
     if (!plano.trim()) return;
@@ -85,7 +113,7 @@ function PlanReviewPanel() {
     if (!result) return;
     setSaving(true);
     try {
-      await createIdleSession({
+      const session = await createIdleSession({
         workspaceId: getWorkspaceId(),
         plano,
         riscosIA: result.riscos,
@@ -94,6 +122,7 @@ function PlanReviewPanel() {
         riscosConsiderados: result.riscos.filter((_, i) => riscosConsiderados[i]),
         observacao: observacao.trim() || undefined,
       });
+      if (activeTask) attachIdleSession(session.id);
       setSaved(true);
     } catch {
       setError("Erro ao salvar sessao.");
@@ -115,6 +144,24 @@ function PlanReviewPanel() {
     <div className="flex flex-col gap-4">
       {!result && (
         <div className="flex flex-col gap-3">
+          {activeTask && (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl border border-violet-500/30 bg-violet-500/5">
+              <Target className="w-4 h-4 text-violet-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted">Tarefa atual</p>
+                <p className="text-sm text-fg truncate font-medium">{activeTask.titulo}</p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={loadFromActiveTask}
+                className="text-xs px-2 py-1 h-auto"
+                disabled={!!plano.trim()}
+                title={plano.trim() ? "Limpe o campo antes" : "Pré-carregar plano com base no briefing da Sessão"}
+              >
+                Carregar plano
+              </Button>
+            </div>
+          )}
           <div>
             <Label htmlFor="plano-input">Cole o plano do agente aqui</Label>
             <Textarea

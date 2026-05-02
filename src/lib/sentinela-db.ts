@@ -73,3 +73,11 @@ export async function updateSentinelaDecisao(
   if (reflexao !== undefined) update.reflexao = reflexao;
   await updateDoc(docRef(id), update);
 }
+
+export async function updateSentinelaSession(
+  id: string,
+  patch: Partial<SentinelaSession>,
+): Promise<void> {
+  await ensureSignedIn();
+  await updateDoc(docRef(id), clean(patch));
+}

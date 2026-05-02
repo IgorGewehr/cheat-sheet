@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import {
   Zap, Copy, Check, ChevronRight, AlertTriangle,
-  BookOpen, ListChecks, Sparkles, ExternalLink, GitFork, X, Clock,
+  BookOpen, ListChecks, Sparkles, ExternalLink, GitFork, X, Clock, Wand2, Target,
 } from "lucide-react";
 import { Button, Card, Input, Label, Tag, Textarea } from "@/components/ui";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import Link from "next/link";
 import type { BriefingResult } from "@/app/api/ai/briefing/route";
 import { getActiveProject, setActiveProject, type ActiveProjectContext } from "@/lib/active-project";
+import { startTask, getActiveTask } from "@/lib/active-task";
 
 interface SavedBriefing {
   task: string;
@@ -60,6 +61,9 @@ export function SessaoView() {
   const [mostrarCompreensao, setMostrarCompreensao] = useState(false);
   const [activeProject, setActiveProjectState] = useState<ActiveProjectContext | null>(null);
   const [recentBriefings, setRecentBriefings] = useState<SavedBriefing[]>([]);
+  const [enhancing, setEnhancing] = useState(false);
+  const [enhanceError, setEnhanceError] = useState("");
+  const [taskStarted, setTaskStarted] = useState<string | null>(null);
 
   useEffect(() => {
     const p = getActiveProject();
@@ -68,6 +72,8 @@ export function SessaoView() {
       if (!stack) setStack(p.stack.join(", "));
     }
     setRecentBriefings(loadBriefings());
+    const at = getActiveTask();
+    if (at) setTaskStarted(at.titulo);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -97,6 +103,18 @@ export function SessaoView() {
       const entry: SavedBriefing = { task: task.trim(), domains: selectedDomains, timestamp: Date.now(), result: data };
       saveBriefing(entry);
       setRecentBriefings(loadBriefings());
+      // Start a "work session" tying this briefing to upcoming Idle/Sentinela
+      const t = startTask({
+        titulo: task.trim(),
+        dominios: selectedDomains,
+        stack: stack || undefined,
+        briefing: {
+          systemPrompt: data.systemPrompt,
+          checklist: data.checklist,
+          patternSlugs: data.selectedPatterns.map((p) => p.slug),
+        },
+      });
+      setTaskStarted(t.titulo);
     } catch {
       setError("Erro ao conectar com a API. Tente novamente.");
     } finally {
@@ -112,6 +130,35 @@ export function SessaoView() {
   }
 
   const canGenerate = task.trim().length > 0 && selectedDomains.length > 0;
+
+  async function enhanceTask() {
+    if (!task.trim() || enhancing) return;
+    setEnhancing(true);
+    setEnhanceError("");
+    try {
+      const res = await fetch("/api/ai/enhance-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: task,
+          context: {
+            projectName: activeProject?.nome,
+            stack: activeProject?.stack ?? (stack ? stack.split(",").map((s) => s.trim()) : undefined),
+          },
+        }),
+      });
+      const data = (await res.json()) as { enhanced?: string; error?: string };
+      if (!res.ok || !data.enhanced) {
+        setEnhanceError(data.error ?? "Falha ao polir prompt.");
+        return;
+      }
+      setTask(data.enhanced.trim());
+    } catch {
+      setEnhanceError("Erro de rede ao polir prompt.");
+    } finally {
+      setEnhancing(false);
+    }
+  }
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -183,13 +230,35 @@ export function SessaoView() {
       {/* Form */}
       <Card className="space-y-5">
         <div>
-          <Label>O que você vai pedir pra IA implementar?</Label>
+          <div className="flex items-center justify-between mb-1.5">
+            <Label>O que você vai pedir pra IA implementar?</Label>
+            <Button
+              variant="ghost"
+              onClick={enhanceTask}
+              disabled={!task.trim() || enhancing}
+              className="text-xs px-2 py-1 h-auto"
+              title="Polir o prompt com IA antes de gerar o briefing"
+            >
+              {enhancing ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Polindo…
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-3 h-3" />
+                  Polir prompt
+                </>
+              )}
+            </Button>
+          </div>
           <Textarea
             rows={3}
             value={task}
             onChange={(e) => setTask(e.target.value)}
             placeholder="Ex: Módulo de pagamentos com Stripe — webhook de confirmação, endpoint de reembolso e histórico de transações por cliente"
           />
+          {enhanceError && <p className="text-xs text-red-500 mt-1">{enhanceError}</p>}
         </div>
 
         <div>
@@ -277,6 +346,23 @@ export function SessaoView() {
            (compreensaoRespostas[0].trim().length < 20 || compreensaoRespostas[1].trim().length < 20) && (
             <p className="text-xs text-muted">Mínimo de 20 caracteres em cada resposta para continuar</p>
           )}
+        </div>
+      )}
+
+      {/* Work-session banner — appears once briefing is generated */}
+      {result && taskStarted && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5">
+          <Target className="w-4 h-4 text-violet-500 shrink-0" />
+          <span className="text-sm text-fg flex-1">
+            Tarefa iniciada: <strong>{taskStarted}</strong>
+            <span className="text-muted ml-1.5">— pronto para auditar diffs e abrir Idle.</span>
+          </span>
+          <Link
+            href="/idle"
+            className="text-xs text-violet-500 hover:underline"
+          >
+            Abrir Idle →
+          </Link>
         </div>
       )}
 
