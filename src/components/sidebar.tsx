@@ -9,7 +9,7 @@ import {
   Eye, Swords, MessageSquareMore,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
   Star, GitBranch, Activity, Moon, ShieldCheck, Sigma,
-  Briefcase, Dices, Users, Compass,
+  Briefcase, Dices, Users, Compass, Bug,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
@@ -22,6 +22,7 @@ type Item = { href: string; label: string; icon: typeof BookOpen; hot?: boolean 
 const VERB_ITEMS: Record<Verb, Item[]> = {
   trabalhar: [
     { href: "/quando-usar", label: "O que usar quando?", icon: Compass, hot: true },
+    { href: "/debug",       label: "Debug Assistido",    icon: Bug, hot: true },
     { href: "/squad",       label: "Squad",              icon: Users, hot: true },
     { href: "/sentinela",   label: "Sentinela",         icon: ShieldCheck, hot: true },
     { href: "/sessao",      label: "Sessão IA",        icon: Zap, hot: true },

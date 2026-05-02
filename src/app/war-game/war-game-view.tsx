@@ -5,10 +5,12 @@ import { clsx } from "clsx";
 import {
   Swords, Clock, ChevronLeft, Trophy, AlertTriangle,
   CheckCircle2, XCircle, Lightbulb, Save, RotateCcw, History,
+  Wand2, ChevronDown,
 } from "lucide-react";
-import { Button, Card, Label, Tag, Textarea } from "@/components/ui";
+import { Button, Card, Label, Tag, Textarea, Select } from "@/components/ui";
 import { createWarGame, listWarGames } from "@/lib/db";
 import type { WarGameFeedback } from "@/app/api/ai/war-game/route";
+import type { WarGameGerado } from "@/app/api/ai/war-game-gerar/route";
 import type { WarGameSession } from "@/lib/types";
 
 interface Cenario {
@@ -16,6 +18,7 @@ interface Cenario {
   cenario: string;
   restricoes: string[];
   categoria: "incidente" | "arquitetura" | "performance" | "segurança" | "decisão";
+  personalizado?: boolean;
 }
 
 const CENARIOS: Cenario[] = [
@@ -119,6 +122,15 @@ export function WarGameView() {
   const [history, setHistory] = useState<WarGameSession[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  // Gerador de cenário personalizado
+  const [gerarAberto, setGerarAberto] = useState(false);
+  const [gerarContexto, setGerarContexto] = useState("");
+  const [gerarArea, setGerarArea] = useState<Cenario["categoria"]>("decisão");
+  const [gerarNivel, setGerarNivel] = useState<"pleno" | "senior" | "staff">("senior");
+  const [gerarLoading, setGerarLoading] = useState(false);
+  const [gerarError, setGerarError] = useState("");
+  const [cenariosExtras, setCenariosExtras] = useState<Cenario[]>([]);
+
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -196,6 +208,34 @@ export function WarGameView() {
     }
   }
 
+  async function gerarCenario() {
+    setGerarLoading(true);
+    setGerarError("");
+    try {
+      const res = await fetch("/api/ai/war-game-gerar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contexto: gerarContexto, area: gerarArea, nivel: gerarNivel }),
+      });
+      const data = (await res.json()) as WarGameGerado & { error?: string };
+      if (data.error) { setGerarError(data.error); return; }
+      const novo: Cenario & { personalizado?: true } = {
+        titulo: data.titulo,
+        cenario: data.cenario,
+        restricoes: data.restricoes,
+        categoria: data.categoria,
+        personalizado: true,
+      };
+      setCenariosExtras((prev) => [novo, ...prev]);
+      setGerarAberto(false);
+      setGerarContexto("");
+    } catch {
+      setGerarError("Erro ao conectar com a API.");
+    } finally {
+      setGerarLoading(false);
+    }
+  }
+
   async function loadHistory() {
     setHistoryLoading(true);
     try {
@@ -239,31 +279,121 @@ export function WarGameView() {
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
+        {/* Gerar cenário personalizado */}
+        <div className="rounded-xl border border-line bg-card overflow-hidden">
+          <button
+            onClick={() => setGerarAberto((v) => !v)}
+            className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-card-hover transition text-left"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Wand2 className="w-4 h-4 text-amber-500" />
+              Criar cenário personalizado
+            </span>
+            <ChevronDown className={clsx("w-4 h-4 text-muted transition-transform", gerarAberto && "rotate-180")} />
+          </button>
+
+          {gerarAberto && (
+            <div className="px-5 pb-5 space-y-4 border-t border-line">
+              <div className="pt-4">
+                <Label htmlFor="gerar-contexto">Contexto</Label>
+                <Textarea
+                  id="gerar-contexto"
+                  rows={3}
+                  value={gerarContexto}
+                  onChange={(e) => setGerarContexto(e.target.value)}
+                  placeholder="Ex: backend NestJS de ERP para prefeitura, estou avaliando migração de monolito"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="gerar-area">Área</Label>
+                  <Select
+                    id="gerar-area"
+                    value={gerarArea}
+                    onChange={(e) => setGerarArea(e.target.value as Cenario["categoria"])}
+                  >
+                    <option value="incidente">Incidente</option>
+                    <option value="arquitetura">Arquitetura</option>
+                    <option value="performance">Performance</option>
+                    <option value="segurança">Segurança</option>
+                    <option value="decisão">Decisão</option>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="gerar-nivel">Nível</Label>
+                  <Select
+                    id="gerar-nivel"
+                    value={gerarNivel}
+                    onChange={(e) => setGerarNivel(e.target.value as "pleno" | "senior" | "staff")}
+                  >
+                    <option value="pleno">Pleno</option>
+                    <option value="senior">Sênior</option>
+                    <option value="staff">Staff</option>
+                  </Select>
+                </div>
+              </div>
+              {gerarError && <p className="text-sm text-red-500">{gerarError}</p>}
+              <Button
+                onClick={gerarCenario}
+                disabled={gerarLoading}
+                className="gap-2"
+              >
+                {gerarLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Gerando…
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4" />
+                    Gerar
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {CENARIOS.map((c, i) => (
-            <button
-              key={i}
-              onClick={() => startScenario(c)}
-              className="text-left rounded-xl border border-line bg-card p-5 hover:border-amber-500/50 hover:bg-amber-500/5 transition space-y-3 group"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="font-semibold text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
-                  {c.titulo}
-                </span>
-                <span className={clsx("inline-block px-2 py-0.5 rounded text-[11px] font-medium shrink-0", CATEGORIA_COLOR[c.categoria])}>
-                  {c.categoria}
-                </span>
-              </div>
-              <p className="text-xs text-muted line-clamp-2">{c.cenario}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {c.restricoes.map((r, j) => (
-                  <span key={j} className="px-2 py-0.5 rounded text-[10px] bg-card-hover text-subtle border border-line">
-                    {r}
+          {[...cenariosExtras, ...CENARIOS].map((c, i) => {
+            const isPersonalizado = "personalizado" in c && c.personalizado;
+            return (
+              <button
+                key={i}
+                onClick={() => startScenario(c)}
+                className={clsx(
+                  "text-left rounded-xl border p-5 hover:bg-amber-500/5 transition space-y-3 group",
+                  isPersonalizado
+                    ? "border-amber-500/50 bg-amber-500/5"
+                    : "border-line bg-card hover:border-amber-500/50",
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-semibold text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+                    {c.titulo}
                   </span>
-                ))}
-              </div>
-            </button>
-          ))}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isPersonalizado && (
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                        Personalizado
+                      </span>
+                    )}
+                    <span className={clsx("inline-block px-2 py-0.5 rounded text-[11px] font-medium", CATEGORIA_COLOR[c.categoria])}>
+                      {c.categoria}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted line-clamp-2">{c.cenario}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {c.restricoes.map((r, j) => (
+                    <span key={j} className="px-2 py-0.5 rounded text-[10px] bg-card-hover text-subtle border border-line">
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     );

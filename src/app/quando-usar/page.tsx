@@ -6,7 +6,7 @@ import {
   ShieldCheck, Swords, GitBranch, FileText, FlaskConical,
   MessageSquareMore, Sparkles, Scale, BookOpen, Mic, Star,
   AlertCircle, Zap, Activity, BookMarked, Moon, Map, Eye,
-  Compass,
+  Compass, Bug,
 } from "lucide-react";
 
 interface Tool {
@@ -31,6 +31,13 @@ const GROUPS: Group[] = [
     description: "Uso direto no fluxo de trabalho — abre, faz, fecha.",
     color: "border-violet-500/40 bg-violet-500/5",
     tools: [
+      {
+        href: "/debug",
+        icon: Bug,
+        label: "Debug Assistido",
+        when: "Travou num erro e precisa de diagnóstico de causa raiz + fix acionável",
+        tip: "Cole stack trace para diagnóstico mais preciso",
+      },
       {
         href: "/sentinela",
         icon: ShieldCheck,
