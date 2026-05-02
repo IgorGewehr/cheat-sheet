@@ -26,21 +26,21 @@ type DecisaoFinal = "aceito" | "rejeitado" | "corrigir";
 
 const VEREDITO_STYLE: Record<SentinelaVeredito, { border: string; text: string; bg: string; label: string }> = {
   PASS: {
-    border: "border-cyan-500",
-    text: "text-cyan-400",
-    bg: "bg-cyan-500/10",
+    border: "border-violet-500",
+    text: "text-violet-400",
+    bg: "bg-violet-500/5",
     label: "PASS",
   },
   WARN: {
     border: "border-amber-500",
     text: "text-amber-400",
-    bg: "bg-amber-500/10",
+    bg: "bg-amber-500/5",
     label: "WARN",
   },
   DENY: {
     border: "border-red-500",
     text: "text-red-400",
-    bg: "bg-red-500/10",
+    bg: "bg-red-500/5",
     label: "DENY",
   },
 };
@@ -66,11 +66,9 @@ const CATEGORIA_LABEL: Record<SentinelaCategoria, string> = {
 function VeredictoBanner({ veredito }: { veredito: SentinelaVeredito }) {
   const s = VEREDITO_STYLE[veredito];
   return (
-    <div className={clsx("rounded-none border-l-4 p-4", s.border, s.bg)}>
-      <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">
-        [SYSTEM] · VEREDITO
-      </p>
-      <p className={clsx("font-mono text-4xl font-black tracking-wider", s.text)}>
+    <div className={clsx("rounded-lg border-l-4 p-4", s.border, s.bg)}>
+      <p className="text-xs text-muted mb-1">Veredito</p>
+      <p className={clsx("text-3xl font-bold", s.text)}>
         {s.label}
       </p>
     </div>
@@ -112,8 +110,8 @@ function AchadoCard({ achado }: { achado: SentinelaAchado }) {
             </pre>
           )}
           <p className="text-xs text-fg">{achado.descricao}</p>
-          <div className="border-l-2 border-cyan-500/50 pl-3">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-0.5">Como corrigir</p>
+          <div className="border-l-2 border-violet-500/50 pl-3">
+            <p className="text-xs text-muted mb-0.5 font-medium">Como corrigir</p>
             <p className="text-xs text-fg">{achado.comoCorrigir}</p>
           </div>
         </div>
@@ -125,7 +123,7 @@ function AchadoCard({ achado }: { achado: SentinelaAchado }) {
 function VeredictoBadge({ veredito }: { veredito: SentinelaVeredito }) {
   const s = VEREDITO_STYLE[veredito];
   return (
-    <span className={clsx("inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border", s.border, s.text, s.bg)}>
+    <span className={clsx("inline-block px-2 py-0.5 rounded text-[10px] font-medium border", s.border, s.text, s.bg)}>
       {s.label}
     </span>
   );
@@ -150,10 +148,10 @@ function HistoricoSection() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-muted hover:text-fg transition mb-2"
+        className="flex items-center gap-2 text-xs text-muted hover:text-fg transition mb-2"
       >
         {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        [HISTORICO] · {sessions.length} sessão(ões) recentes
+        {sessions.length} sessão(ões) recentes
       </button>
       {open && (
         <div className="space-y-1.5">
@@ -284,12 +282,9 @@ export function SentinelaClient() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <ShieldAlert className="w-4 h-4 text-cyan-500" />
-          <h1 className="font-mono text-xs uppercase tracking-widest text-muted">
-            [SYSTEM] · SENTINELA
-          </h1>
+          <ShieldAlert className="w-5 h-5 text-violet-500" />
+          <h1 className="text-xl font-bold text-fg">Sentinela</h1>
         </div>
-        <p className="text-lg font-semibold text-fg">Auditoria Forense de Código IA</p>
         <p className="text-sm text-muted mt-0.5">
           Cole o código gerado por IA. Receba um veredito adversarial antes de aceitar.
         </p>
@@ -299,9 +294,6 @@ export function SentinelaClient() {
 
       {step === "form" && (
         <Card className="space-y-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted border-b border-line pb-2">
-            [INPUT] · SUBMISSÃO DE CÓDIGO
-          </p>
           {error && (
             <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
               {error}
@@ -348,26 +340,23 @@ export function SentinelaClient() {
               placeholder="Cole aqui o código gerado pela IA..."
               value={codigo}
               onChange={(e) => setCodigo(e.target.value)}
-              className="w-full rounded-md bg-zinc-950/60 border border-line px-3 py-2 text-sm font-mono text-fg outline-none focus:border-cyan-500 resize-y"
+              className="w-full rounded-md bg-card border border-line px-3 py-2 text-sm font-mono text-fg outline-none focus:border-violet-500/60 resize-y"
             />
           </div>
           <Button
-            className="w-full bg-cyan-600 hover:bg-cyan-500 text-zinc-950 font-black font-mono tracking-widest uppercase text-sm py-3"
+            className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm py-3"
             disabled={!titulo.trim() || !codigo.trim()}
             onClick={invocar}
           >
-            INVOCAR SENTINELA
+            Invocar Sentinela
           </Button>
         </Card>
       )}
 
       {step === "loading" && (
         <Card className="py-16 flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-          <p className="font-mono text-xs uppercase tracking-widest text-cyan-400 animate-pulse">
-            [SYSTEM] · ANALYZING...
-          </p>
-          <p className="text-xs text-muted">Auditoria forense em andamento. Não confie no código.</p>
+          <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted">Auditoria em andamento...</p>
         </Card>
       )}
 
@@ -426,7 +415,7 @@ export function SentinelaClient() {
               Nova auditoria
             </Button>
             <Button
-              className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-zinc-950 font-bold"
+              className="flex-1 bg-violet-600 hover:bg-violet-500 text-white font-semibold"
               onClick={() => setStep("checklist")}
             >
               Prosseguir para checklist
@@ -438,8 +427,8 @@ export function SentinelaClient() {
       {step === "checklist" && result && (
         <div className="space-y-4">
           <Card>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted border-b border-line pb-2 mb-4">
-              [CHECKLIST] · CONFIRMAÇÃO OBRIGATÓRIA
+            <p className="text-xs font-semibold text-muted border-b border-line pb-2 mb-4">
+              Confirmação obrigatória
             </p>
             <div className="space-y-3">
               {SENTINELA_CHECKLIST.map((item) => (
@@ -456,7 +445,7 @@ export function SentinelaClient() {
                           "px-2 py-0.5 rounded text-[10px] font-mono border transition",
                           checklistMap[item.id] === r
                             ? r === "sim"
-                              ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
+                              ? "bg-violet-500/20 border-violet-500 text-violet-400"
                               : r === "nao"
                               ? "bg-red-500/20 border-red-500 text-red-400"
                               : "bg-zinc-500/20 border-zinc-500 text-zinc-400"
@@ -481,8 +470,8 @@ export function SentinelaClient() {
           </Card>
 
           <Card>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted border-b border-line pb-2 mb-4">
-              [DECISAO] · VEREDICTO FINAL
+            <p className="text-xs font-semibold text-muted border-b border-line pb-2 mb-4">
+              Decisão final
             </p>
             <div className="space-y-2 mb-4">
               {([
@@ -495,7 +484,7 @@ export function SentinelaClient() {
                   className={clsx(
                     "flex items-center gap-3 px-3 py-2.5 rounded border cursor-pointer transition",
                     decisao === opt.value
-                      ? "border-cyan-500 bg-cyan-500/10"
+                      ? "border-violet-500 bg-violet-500/10"
                       : "border-line bg-card hover:bg-card-hover",
                   )}
                 >
@@ -505,7 +494,7 @@ export function SentinelaClient() {
                     value={opt.value}
                     checked={decisao === opt.value}
                     onChange={() => setDecisao(opt.value)}
-                    className="accent-cyan-500"
+                    className="accent-violet-500"
                   />
                   <span className="text-sm text-fg">{opt.label}</span>
                 </label>
@@ -535,10 +524,10 @@ export function SentinelaClient() {
             </Button>
             <Button
               className={clsx(
-                "flex-1 font-bold font-mono",
+                "flex-1 font-semibold",
                 obrigatoriosOk
-                  ? "bg-cyan-600 hover:bg-cyan-500 text-zinc-950"
-                  : "bg-zinc-700 text-zinc-400 cursor-not-allowed",
+                  ? "bg-violet-600 hover:bg-violet-500 text-white"
+                  : "bg-card-hover text-muted cursor-not-allowed",
               )}
               disabled={!obrigatoriosOk || saving}
               onClick={salvar}
@@ -556,9 +545,7 @@ export function SentinelaClient() {
 
       {step === "saved" && savedSession && (
         <Card className="py-8 flex flex-col items-center gap-4 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-400">
-            [SYSTEM] · SESSÃO REGISTRADA
-          </p>
+          <p className="text-xs text-muted">Sessão registrada</p>
           <VeredictoBadge veredito={savedSession.veredito} />
           <p className="text-sm text-fg max-w-sm">
             Auditoria de <strong>{savedSession.titulo}</strong> salva com decisão{" "}
@@ -567,7 +554,7 @@ export function SentinelaClient() {
           <div className="flex gap-3">
             <Link
               href={`/sentinela/${savedSession.id}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 transition font-mono"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm border border-violet-500/40 text-violet-400 hover:bg-violet-500/10 transition"
             >
               Ver sessão
             </Link>

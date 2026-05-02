@@ -17,9 +17,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { clsx } from "clsx";
-import { SystemWindow } from "@/components/system-window";
-import { ManaBar, consumeMana } from "@/components/mana-bar";
-import { BossFightBanner } from "@/components/boss-fight-banner";
+import { Card } from "@/components/ui";
 import { pickQuestForRun, listAllProblems } from "@/lib/math-quest-bank";
 import { saveMathQuestRun, listMathQuestRuns } from "@/lib/math-quest-db";
 import type {
@@ -45,13 +43,13 @@ const AREAS: { id: MathArea; label: string; Icon: React.ElementType }[] = [
 
 const RANKS: QuestRank[] = ["E", "D", "C", "B", "A", "S"];
 
-const RANK_COLOR: Record<QuestRank, string> = {
-  E: "bg-zinc-700 text-zinc-300",
-  D: "bg-emerald-900 text-emerald-300",
-  C: "bg-cyan-900 text-cyan-300",
-  B: "bg-violet-900 text-violet-300",
-  A: "bg-fuchsia-900 text-fuchsia-300",
-  S: "bg-amber-900 text-amber-300",
+const RANK_LABEL: Record<QuestRank, string> = {
+  E: "Iniciante",
+  D: "Básico",
+  C: "Intermediário",
+  B: "Avançado",
+  A: "Especialista",
+  S: "Mestre",
 };
 
 type ViewState = "home" | "running" | "finished";
@@ -70,7 +68,7 @@ function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
     return () => clearTimeout(t);
   }, [onClose]);
   return (
-    <div className="fixed bottom-4 right-4 z-50 rounded-lg border border-red-500 bg-red-950/80 px-4 py-2 text-sm text-red-300 font-mono shadow-lg">
+    <div className="fixed bottom-4 right-4 z-50 rounded-lg border border-red-500 bg-red-950/80 px-4 py-2 text-sm text-red-300 shadow-lg">
       {msg}
     </div>
   );
@@ -90,7 +88,6 @@ export function MathQuestClient() {
   const [dica, setDica] = useState<string | null>(null);
   const [dicaOpen, setDicaOpen] = useState(false);
   const [dicasUsadas, setDicasUsadas] = useState(0);
-  const [mpUsado, setMpUsado] = useState(0);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState<"dica" | "verificar" | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -119,7 +116,6 @@ export function MathQuestClient() {
     setDica(null);
     setDicaOpen(false);
     setDicasUsadas(0);
-    setMpUsado(0);
     setVerifyResult(null);
     setView("running");
   }
@@ -128,12 +124,6 @@ export function MathQuestClient() {
 
   async function handleDica() {
     if (!currentProblem) return;
-    const ok = consumeMana(10);
-    if (!ok) {
-      setToast("MP insuficiente para pedir dica.");
-      return;
-    }
-    setMpUsado((p) => p + 10);
     setDicasUsadas((p) => p + 1);
     setLoading("dica");
     try {
@@ -190,7 +180,7 @@ export function MathQuestClient() {
       conceitosCobertos: verifyResult.conceitosCobertos,
       conceitosFaltantes: verifyResult.conceitosFaltantes,
       dicasUsadas,
-      mpFinal: mpUsado,
+      mpFinal: 0,
     };
     const newAnswers = [...answers, answer];
     setAnswers(newAnswers);
@@ -233,19 +223,24 @@ export function MathQuestClient() {
       <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
         {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
 
-        <SystemWindow label="[SYSTEM] · MATH GATE">
-          <div className="space-y-5">
-            <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Selecione a área</p>
+        <Card className="p-5 space-y-5">
+          <div>
+            <h1 className="text-xl font-bold text-fg">Treinar Matemática</h1>
+            <p className="text-sm text-muted mt-0.5">Resolva problemas guiados por IA, com dicas socráticas.</p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted font-medium">Área</p>
             <div className="grid grid-cols-3 gap-2">
               {AREAS.map(({ id, label, Icon }) => (
                 <button
                   key={id}
                   onClick={() => setSelectedArea(id)}
                   className={clsx(
-                    "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-3 text-xs font-mono transition-all",
+                    "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-3 text-xs transition-all",
                     selectedArea === id
-                      ? "border-cyan-500 bg-cyan-950/40 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.3)]"
-                      : "border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200",
+                      ? "border-violet-500 bg-violet-500/10 text-violet-300"
+                      : "border-line bg-card-hover text-muted hover:border-violet-500/30 hover:text-fg",
                   )}
                 >
                   <Icon className="w-5 h-5" />
@@ -253,65 +248,67 @@ export function MathQuestClient() {
                 </button>
               ))}
             </div>
+          </div>
 
-            <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Selecione o rank</p>
+          <div className="space-y-2">
+            <p className="text-xs text-muted font-medium">Dificuldade</p>
             <div className="flex gap-2 flex-wrap">
               {RANKS.map((r) => (
                 <button
                   key={r}
                   onClick={() => setSelectedRank(r)}
                   className={clsx(
-                    "px-3 py-1 rounded text-xs font-mono font-bold border transition-all",
+                    "px-3 py-1 rounded text-xs font-medium border transition-all",
                     selectedRank === r
-                      ? "border-violet-500 bg-violet-950/60 text-violet-200 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
-                      : "border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-500",
+                      ? "border-violet-500 bg-violet-500/15 text-violet-300"
+                      : "border-line bg-card-hover text-muted hover:border-violet-500/30",
                   )}
                 >
-                  {r}
+                  {RANK_LABEL[r]}
                 </button>
               ))}
             </div>
-
-            <button
-              onClick={startRun}
-              className="w-full rounded-lg border border-cyan-500 bg-cyan-950/30 py-3 text-sm font-mono font-bold uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-950/60 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)]"
-            >
-              INICIAR GATE
-            </button>
           </div>
-        </SystemWindow>
 
-        <div className="rounded-lg border border-zinc-700 bg-zinc-900/40">
+          <button
+            onClick={startRun}
+            className="w-full rounded-lg border border-violet-500/40 bg-violet-500/10 py-3 text-sm font-semibold text-violet-300 transition hover:bg-violet-500/20"
+          >
+            Iniciar Sessão
+          </button>
+        </Card>
+
+        <Card className="overflow-hidden">
           <button
             onClick={() => setHistoryOpen((o) => !o)}
-            className="flex w-full items-center justify-between px-4 py-3 text-xs font-mono text-zinc-400 uppercase tracking-widest"
+            className="flex w-full items-center justify-between px-4 py-3 text-xs text-muted hover:text-fg transition"
           >
-            <span>Quests anteriores</span>
+            <span>Sessões anteriores</span>
             {historyOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
           {historyOpen && (
-            <div className="px-4 pb-3 space-y-2">
+            <div className="px-4 pb-3 space-y-2 border-t border-line pt-3">
               {prevRuns.length === 0 && (
-                <p className="text-xs text-zinc-500 font-mono">Nenhuma run anterior.</p>
+                <p className="text-xs text-muted">Nenhuma sessão anterior.</p>
               )}
               {prevRuns.map((r) => (
-                <div key={r.id} className="flex items-center justify-between text-xs font-mono text-zinc-400 border-t border-zinc-800 pt-2">
-                  <span>{AREAS.find((a) => a.id === r.area)?.label ?? r.area} · Rank {r.rank}</span>
-                  <span className="text-zinc-500">{new Date(r.iniciadoEm).toLocaleDateString("pt-BR")} · XP {r.xpGanho}</span>
+                <div key={r.id} className="flex items-center justify-between text-xs text-muted border-b border-line pb-2 last:border-0 last:pb-0">
+                  <span>{AREAS.find((a) => a.id === r.area)?.label ?? r.area} · {RANK_LABEL[r.rank]}</span>
+                  <span>{new Date(r.iniciadoEm).toLocaleDateString("pt-BR")} · +{r.xpGanho} XP</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     );
   }
 
   if (view === "running" && currentProblem) {
     const verdictColor =
-      verifyResult?.veredito === "PASS"    ? "border-cyan-500 bg-cyan-950/30 text-cyan-300" :
-      verifyResult?.veredito === "PARTIAL" ? "border-amber-500 bg-amber-950/30 text-amber-300" :
-      verifyResult?.veredito === "FAIL"    ? "border-red-500 bg-red-950/30 text-red-300" :
+      verifyResult?.veredito === "PASS"    ? "border-violet-500 bg-violet-500/5 text-violet-300" :
+      verifyResult?.veredito === "PARTIAL" ? "border-amber-500 bg-amber-500/5 text-amber-300" :
+      verifyResult?.veredito === "FAIL"    ? "border-red-500 bg-red-500/5 text-red-300" :
       "";
 
     return (
@@ -319,62 +316,43 @@ export function MathQuestClient() {
         {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
 
         <div className="space-y-2">
-          <ManaBar variant="full" />
-          <div className="flex items-center gap-1.5 text-base">
-            {problems.map((p, i) => (
-              <span
-                key={p.id}
-                className={clsx(
-                  "font-mono text-lg select-none",
-                  p.isBoss
-                    ? i <= currentIdx && answers[i] ? "text-fuchsia-400" : i === currentIdx ? "text-fuchsia-500 animate-pulse" : "text-fuchsia-900"
-                    : i < currentIdx ? "text-cyan-400" : i === currentIdx ? "text-cyan-500" : "text-zinc-700",
-                )}
-              >
-                {p.isBoss ? "✦" : "◇"}
-              </span>
-            ))}
-            <span className="ml-2 text-xs font-mono text-zinc-500">
-              {currentIdx + 1}/{problems.length}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-fg">
+              {currentIdx + 1} / {problems.length}
             </span>
+            <div className="flex-1 h-1.5 rounded-full bg-card-hover overflow-hidden">
+              <div
+                className="h-full rounded-full bg-violet-500 transition-all"
+                style={{ width: `${((currentIdx + 1) / problems.length) * 100}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        {currentProblem.isBoss && (
-          <BossFightBanner
-            headline="BOSS FIGHT"
-            subtitle={`Área ${AREAS.find((a) => a.id === selectedArea)?.label} — Rank ${currentProblem.rank}`}
-          />
-        )}
-
-        <SystemWindow
-          variant={currentProblem.isBoss ? "alert" : "default"}
-          label={`[PROBLEMA ${currentIdx + 1}]`}
-          subtitle={`Área: ${AREAS.find((a) => a.id === selectedArea)?.label} · Rank: ${currentProblem.rank}`}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <span className={clsx("px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase", RANK_COLOR[currentProblem.rank])}>
-              RANK {currentProblem.rank}
+        <Card className="p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted">
+              {AREAS.find((a) => a.id === selectedArea)?.label} · {RANK_LABEL[selectedRank]}
             </span>
             {currentProblem.isBoss && (
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-fuchsia-900 text-fuchsia-300">
-                BOSS
+              <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-violet-500/15 border border-violet-500/30 text-violet-300">
+                Desafio
               </span>
             )}
           </div>
-          <pre className="text-sm text-zinc-100 font-mono whitespace-pre-wrap leading-relaxed">
+          <pre className="text-sm text-fg whitespace-pre-wrap leading-relaxed">
             {currentProblem.enunciado}
           </pre>
-        </SystemWindow>
+        </Card>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">Sua resposta</label>
+          <label className="text-xs text-muted font-medium">Sua resposta</label>
           <textarea
             value={resposta}
             onChange={(e) => setResposta(e.target.value)}
             rows={8}
             placeholder="Escreva sua solução aqui..."
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-cyan-500 focus:outline-none resize-y"
+            className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-violet-500/60 focus:outline-none resize-y"
           />
         </div>
 
@@ -382,60 +360,60 @@ export function MathQuestClient() {
           <button
             onClick={handleDica}
             disabled={loading !== null}
-            className="rounded border border-violet-600 bg-violet-950/40 px-3 py-1.5 text-xs font-mono text-violet-300 hover:bg-violet-950/70 disabled:opacity-50 transition-all"
+            className="rounded border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs text-violet-300 hover:bg-violet-500/20 disabled:opacity-50 transition"
           >
-            {loading === "dica" ? "..." : "DICA (−10 MP)"}
+            {loading === "dica" ? "..." : "Dica"}
           </button>
           <button
             onClick={handleVerificar}
             disabled={loading !== null || !resposta.trim()}
-            className="rounded border border-cyan-600 bg-cyan-950/40 px-3 py-1.5 text-xs font-mono text-cyan-300 hover:bg-cyan-950/70 disabled:opacity-50 transition-all"
+            className="rounded border border-violet-500/40 bg-violet-500/15 px-3 py-1.5 text-xs text-violet-200 hover:bg-violet-500/25 disabled:opacity-50 transition"
           >
-            {loading === "verificar" ? "VERIFICANDO..." : "VERIFICAR"}
+            {loading === "verificar" ? "Verificando..." : "Verificar"}
           </button>
           <button
             onClick={handleNext}
             disabled={!verifyResult}
-            className="rounded border border-emerald-600 bg-emerald-950/40 px-3 py-1.5 text-xs font-mono text-emerald-300 hover:bg-emerald-950/70 disabled:opacity-50 transition-all"
+            className="rounded border border-line bg-card-hover px-3 py-1.5 text-xs text-fg hover:bg-card-hover disabled:opacity-50 transition"
           >
-            {currentIdx >= problems.length - 1 ? "FINALIZAR" : "PRÓXIMO →"}
+            {currentIdx >= problems.length - 1 ? "Finalizar" : "Próximo →"}
           </button>
         </div>
 
         {dica && (
-          <div className="rounded-lg border border-cyan-700/50 bg-cyan-950/20">
+          <Card className="overflow-hidden">
             <button
               onClick={() => setDicaOpen((o) => !o)}
-              className="flex w-full items-center justify-between px-4 py-2 text-[10px] font-mono uppercase tracking-widest text-cyan-400"
+              className="flex w-full items-center justify-between px-4 py-2 text-xs text-muted hover:text-fg transition"
             >
               <span>Dica socrática</span>
               {dicaOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </button>
             {dicaOpen && (
-              <p className="px-4 pb-3 text-sm font-mono text-cyan-200 leading-relaxed border-t border-cyan-700/30 pt-2">
+              <p className="px-4 pb-3 text-sm text-fg leading-relaxed border-t border-line pt-2">
                 {dica}
               </p>
             )}
-          </div>
+          </Card>
         )}
 
         {verifyResult && (
           <div className={clsx("rounded-lg border p-4 space-y-3", verdictColor)}>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest">
-                VEREDITO: {verifyResult.veredito}
+              <span className="text-xs font-semibold">
+                {verifyResult.veredito === "PASS" ? "Correto" : verifyResult.veredito === "PARTIAL" ? "Parcialmente correto" : "Incorreto"}
               </span>
-              <span className="text-xs font-mono font-bold ml-auto">
+              <span className="text-xs font-medium ml-auto text-muted">
                 {verifyResult.score}/100
               </span>
             </div>
-            <p className="text-sm font-mono whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">
               {verifyResult.feedback}
             </p>
             {verifyResult.conceitosCobertos.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {verifyResult.conceitosCobertos.map((c) => (
-                  <span key={c} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-900/50 text-cyan-400 border border-cyan-700/40">
+                  <span key={c} className="px-1.5 py-0.5 rounded text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/20">
                     {c}
                   </span>
                 ))}
@@ -444,7 +422,7 @@ export function MathQuestClient() {
             {verifyResult.conceitosFaltantes.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {verifyResult.conceitosFaltantes.map((c) => (
-                  <span key={c} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-red-900/50 text-red-400 border border-red-700/40">
+                  <span key={c} className="px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 border border-red-500/20">
                     {c}
                   </span>
                 ))}
@@ -462,43 +440,45 @@ export function MathQuestClient() {
       <div className="mx-auto max-w-lg px-4 py-8 space-y-6">
         {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
 
-        <SystemWindow
-          variant={passed ? "success" : "alert"}
-          label={passed ? "[SYSTEM] · DUNGEON CLEARED" : "[SYSTEM] · DUNGEON FAILED"}
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Score Total", value: `${totalScore}/100` },
-                { label: "Problemas", value: `${answers.length}/${problems.length}` },
-                { label: "MP Usado", value: `${mpUsado} MP` },
-                { label: "Dicas", value: String(dicasUsadas) },
-                { label: "XP MAT", value: `+${xpGanho} XP` },
-                { label: "Rank", value: selectedRank },
-              ].map(({ label, value }) => (
-                <div key={label} className="rounded border border-zinc-700 bg-zinc-900/60 p-2">
-                  <p className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 mb-0.5">{label}</p>
-                  <p className="text-base font-mono font-bold text-zinc-100">{value}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              {answers.map((a, i) => (
-                <div key={a.problemId} className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-zinc-400">#{i + 1} {a.problemId}</span>
-                  <span className={clsx(
-                    "font-bold",
-                    a.veredito === "PASS" ? "text-cyan-400" :
-                    a.veredito === "PARTIAL" ? "text-amber-400" : "text-red-400",
-                  )}>
-                    {a.veredito} · {a.scoreAvaliacao}pts
-                  </span>
-                </div>
-              ))}
-            </div>
+        <Card className="p-5 space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-fg">
+              {passed ? "Sessão concluída" : "Sessão incompleta"}
+            </h2>
+            <p className="text-sm text-muted mt-0.5">
+              {passed ? "Bom desempenho nesta sessão." : "Continue praticando para melhorar."}
+            </p>
           </div>
-        </SystemWindow>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Score Total", value: `${totalScore}/100` },
+              { label: "Problemas", value: `${answers.length}/${problems.length}` },
+              { label: "Dicas usadas", value: String(dicasUsadas) },
+              { label: "XP MAT", value: `+${xpGanho} XP` },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded border border-line bg-card-hover p-2">
+                <p className="text-[10px] text-muted mb-0.5">{label}</p>
+                <p className="text-base font-semibold text-fg">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {answers.map((a, i) => (
+              <div key={a.problemId} className="flex items-center justify-between text-xs">
+                <span className="text-muted">#{i + 1}</span>
+                <span className={clsx(
+                  "font-medium",
+                  a.veredito === "PASS" ? "text-violet-400" :
+                  a.veredito === "PARTIAL" ? "text-amber-400" : "text-red-400",
+                )}>
+                  {a.veredito === "PASS" ? "Correto" : a.veredito === "PARTIAL" ? "Parcial" : "Incorreto"} · {a.scoreAvaliacao}pts
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         <div className="flex gap-3">
           <button
@@ -506,15 +486,15 @@ export function MathQuestClient() {
               savedRef.current = false;
               setView("home");
             }}
-            className="flex-1 rounded border border-cyan-600 bg-cyan-950/30 py-2.5 text-xs font-mono font-bold uppercase tracking-widest text-cyan-300 hover:bg-cyan-950/60 transition-all"
+            className="flex-1 rounded border border-violet-500/40 bg-violet-500/10 py-2.5 text-xs font-medium text-violet-300 hover:bg-violet-500/20 transition"
           >
-            NOVO GATE
+            Nova Sessão
           </button>
           <button
             onClick={() => router.push("/matematica")}
-            className="flex-1 rounded border border-zinc-600 bg-zinc-900/40 py-2.5 text-xs font-mono font-bold uppercase tracking-widest text-zinc-300 hover:bg-zinc-800/60 transition-all"
+            className="flex-1 rounded border border-line bg-card-hover py-2.5 text-xs font-medium text-muted hover:text-fg transition"
           >
-            VOLTAR
+            Voltar
           </button>
         </div>
       </div>

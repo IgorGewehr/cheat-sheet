@@ -7,9 +7,6 @@ import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthWidget } from "./auth-widget";
 import { ProjectPill } from "./project-pill";
-import { ManaBar } from "./mana-bar";
-import { StatusWindow } from "./status-window";
-import { useEffect, useState } from "react";
 
 export type Verb = "trabalhar" | "estudar" | "treinar" | "refletir";
 
@@ -56,26 +53,14 @@ interface TopNavProps {
 export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
   const pathname = usePathname();
   const activeVerb = getActiveVerb(pathname);
-  const [statusOpen, setStatusOpen] = useState(false);
-
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (e.key === "?") setStatusOpen((v) => !v);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, []);
 
   return (
     <>
-    <StatusWindow open={statusOpen} onClose={() => setStatusOpen(false)} />
     <header className="sticky top-0 z-40 w-full border-b border-line bg-card/95 backdrop-blur">
       <div className="flex items-center gap-2 px-4 h-12 max-w-screen-2xl mx-auto">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2 group mr-2 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm group-hover:shadow-amber-500/30 group-hover:shadow-md transition-shadow">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-400 to-violet-700 flex items-center justify-center shadow-sm group-hover:shadow-violet-500/30 group-hover:shadow-md transition-shadow">
             <Brain className="w-4 h-4 text-zinc-950" />
           </div>
           <span className="text-sm font-semibold tracking-tight hidden sm:block">brain</span>
@@ -92,7 +77,7 @@ export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
                 className={clsx(
                   "px-3 py-1.5 rounded-md text-sm transition",
                   isActive
-                    ? "font-bold text-amber-600 dark:text-amber-400 underline underline-offset-4 decoration-amber-500"
+                    ? "font-bold text-violet-600 dark:text-violet-300 underline underline-offset-4 decoration-violet-500"
                     : "text-muted hover:text-fg hover:bg-card-hover",
                 )}
               >
@@ -110,7 +95,7 @@ export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
           {cmdKTrigger ?? (
             <button
               onClick={onCmdK}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-line text-xs text-muted hover:text-fg hover:border-amber-500/40 hover:bg-card-hover transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-line text-xs text-muted hover:text-fg hover:border-violet-500/40 hover:bg-card-hover transition"
               title="Buscar (Cmd+K)"
             >
               <Search className="w-3.5 h-3.5" />
@@ -118,16 +103,6 @@ export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
               <kbd className="hidden sm:inline px-1 py-0.5 rounded bg-card-hover text-[10px] font-mono text-subtle">⌘K</kbd>
             </button>
           )}
-
-          <ManaBar variant="compact" />
-
-          <button
-            onClick={() => setStatusOpen(true)}
-            className="px-2.5 py-1.5 rounded-lg border border-cyan-500/30 text-[11px] font-mono font-bold text-cyan-500 dark:text-[var(--hunter-cyan)] hover:bg-cyan-500/10 hover:border-cyan-500/60 transition"
-            title="Status Window (?)"
-          >
-            STATUS
-          </button>
 
           <AuthWidget />
           <ThemeToggle />

@@ -98,12 +98,12 @@ function MilestoneRow({
           className={clsx(
             "w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0",
             concluded
-              ? "bg-[var(--hunter-cyan)] border-[var(--hunter-cyan)]"
-              : "border-line-strong hover:border-[var(--hunter-cyan)]",
+              ? "bg-violet-500 border-violet-500"
+              : "border-line-strong hover:border-violet-500",
           )}
           aria-label={concluded ? "Desmarcar como concluído" : "Marcar como concluído"}
         >
-          {concluded && <Check className="w-3 h-3 text-zinc-950" strokeWidth={3} />}
+          {concluded && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
         </button>
       </div>
 
@@ -132,7 +132,7 @@ function MilestoneRow({
           {href && (
             <Link
               href={href}
-              className="inline-flex items-center gap-1 text-xs text-[var(--hunter-cyan)] hover:underline"
+              className="inline-flex items-center gap-1 text-xs text-violet-400 hover:underline"
             >
               {marco.cardSlug ? "Ver card" : "Abrir ferramenta"}
               <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
@@ -143,7 +143,7 @@ function MilestoneRow({
               href={marco.externalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-[var(--hunter-cyan)] hover:underline"
+              className="inline-flex items-center gap-1 text-xs text-violet-400 hover:underline"
             >
               Link externo
               <ExternalLink className="w-3 h-3" />
@@ -169,11 +169,11 @@ function ExpandableQuestion({ pergunta }: { pergunta: string }) {
       {open && (
         <div className="px-4 pb-3 text-xs text-muted leading-relaxed border-t border-line pt-3">
           Responda usando o{" "}
-          <Link href="/interrogatorio" className="text-[var(--hunter-cyan)] hover:underline">
+          <Link href="/interrogatorio" className="text-violet-400 hover:underline">
             Interrogatório Socrático
           </Link>{" "}
           ou simule no{" "}
-          <Link href="/mock-interview" className="text-[var(--hunter-cyan)] hover:underline">
+          <Link href="/mock-interview" className="text-violet-400 hover:underline">
             Mock Interview
           </Link>
           .
@@ -245,13 +245,10 @@ export function TrackClient({ track }: { track: JobTrack }) {
       </Link>
 
       {/* ── Header ── */}
-      <div className="hunter-window p-5 hunter-glow-cyan space-y-4">
+      <div className="rounded-xl border border-line bg-card p-5 space-y-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <span
-            className="hunter-text-system text-[10px] font-semibold"
-            style={{ color: "var(--hunter-cyan)" }}
-          >
-            [SYSTEM] · {track.papel.toUpperCase()}
+          <span className="text-xs font-medium text-violet-400">
+            {track.papel}
           </span>
           <span
             className={clsx(
@@ -280,10 +277,10 @@ export function TrackClient({ track }: { track: JobTrack }) {
                 width: `${pct}%`,
                 background:
                   pct === 100
-                    ? "var(--hunter-cyan)"
+                    ? "#8b5cf6"
                     : pct > 50
-                    ? "var(--hunter-violet)"
-                    : "var(--hunter-fuchsia)",
+                    ? "#7c3aed"
+                    : "#6d28d9",
               }}
             />
           </div>
@@ -299,7 +296,7 @@ export function TrackClient({ track }: { track: JobTrack }) {
           <ul className="space-y-2">
             {track.preRequisitos.map((req, i) => (
               <li key={i} className="flex gap-2 text-sm">
-                <span className="text-[var(--hunter-cyan)] mt-0.5 shrink-0">-</span>
+                <span className="text-violet-400 mt-0.5 shrink-0">-</span>
                 <span>{req}</span>
               </li>
             ))}
@@ -333,18 +330,10 @@ export function TrackClient({ track }: { track: JobTrack }) {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           Projeto Portfolio
         </h2>
-        <div
-          className="rounded-xl border p-5 space-y-4"
-          style={{ borderColor: "var(--hunter-fuchsia)", background: "rgba(217,70,239,0.05)" }}
-        >
+        <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <FolderGit2 className="w-4 h-4" style={{ color: "var(--hunter-fuchsia)" }} />
-            <span
-              className="hunter-text-system text-[10px] font-semibold"
-              style={{ color: "var(--hunter-fuchsia)" }}
-            >
-              [SYSTEM] · PROJETO FINAL
-            </span>
+            <FolderGit2 className="w-4 h-4 text-violet-400" />
+            <span className="text-xs font-medium text-violet-400">Projeto final</span>
           </div>
           <h3 className="text-base font-bold">{track.projetoPortfolio.titulo}</h3>
           <p className="text-sm text-muted leading-relaxed">{track.projetoPortfolio.descricao}</p>
@@ -355,7 +344,7 @@ export function TrackClient({ track }: { track: JobTrack }) {
             <ul className="space-y-2">
               {track.projetoPortfolio.entregaveis.map((e, i) => (
                 <li key={i} className="flex gap-2 text-sm">
-                  <span style={{ color: "var(--hunter-fuchsia)" }} className="shrink-0">
+                  <span className="text-violet-400 shrink-0">
                     {i + 1}.
                   </span>
                   <span>{e}</span>
@@ -378,7 +367,7 @@ export function TrackClient({ track }: { track: JobTrack }) {
           <ul className="space-y-1.5">
             {track.preparacaoEntrevista.topicos.map((t, i) => (
               <li key={i} className="flex gap-2 text-sm">
-                <span className="text-[var(--hunter-violet)] shrink-0">-</span>
+                <span className="text-violet-400 shrink-0">-</span>
                 <span>{t}</span>
               </li>
             ))}
@@ -393,7 +382,7 @@ export function TrackClient({ track }: { track: JobTrack }) {
               <Link
                 key={rota}
                 href={rota}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium border border-[var(--hunter-violet)]/30 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium border border-violet-500/30 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition"
               >
                 {rota}
                 <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
@@ -425,7 +414,7 @@ export function TrackClient({ track }: { track: JobTrack }) {
         </Button>
         <Link
           href="/mock-interview"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition bg-[var(--hunter-cyan)]/15 hover:bg-[var(--hunter-cyan)]/25 border border-[var(--hunter-cyan)]/30 text-[var(--hunter-cyan)]"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/25 text-violet-400"
         >
           Iniciar Mock Interview
           <ChevronDown className="w-4 h-4 rotate-[-90deg]" />

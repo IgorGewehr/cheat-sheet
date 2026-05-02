@@ -28,7 +28,7 @@ export default async function SentinelaSessionPage({
         <p className="text-sm text-muted font-mono">
           Sessão não pôde ser carregada. Faça login e tente novamente.
         </p>
-        <Link href="/sentinela" className="mt-4 inline-block text-xs text-cyan-400 hover:underline font-mono">
+        <Link href="/sentinela" className="mt-4 inline-block text-xs text-violet-400 hover:underline">
           Voltar ao Sentinela
         </Link>
       </div>
@@ -38,7 +38,7 @@ export default async function SentinelaSessionPage({
   if (!session) notFound();
 
   const VEREDITO_COLOR: Record<string, string> = {
-    PASS: "text-cyan-400 border-cyan-500",
+    PASS: "text-violet-400 border-violet-500",
     WARN: "text-amber-400 border-amber-500",
     DENY: "text-red-400 border-red-500",
   };
@@ -54,9 +54,9 @@ export default async function SentinelaSessionPage({
       <div className="mb-6">
         <Link
           href="/sentinela"
-          className="text-[10px] font-mono uppercase tracking-widest text-muted hover:text-fg transition"
+          className="text-xs text-muted hover:text-fg transition"
         >
-          [SYSTEM] · SENTINELA
+          ← Sentinela
         </Link>
         <h1 className="text-xl font-semibold text-fg mt-1">{session.titulo}</h1>
         <p className="text-xs text-muted mt-0.5">

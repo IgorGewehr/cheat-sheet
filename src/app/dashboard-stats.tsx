@@ -46,7 +46,6 @@ import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
 import { useAuth } from "@/lib/auth-context";
 import { RadarChart, computeRadarAxes } from "@/components/radar-chart";
-import { resetManaIfNewDay } from "@/components/mana-bar";
 import {
   listProjects,
   listAllAdocoes,
@@ -66,7 +65,7 @@ import {
   syncPublicProfile,
 } from "@/lib/db";
 import { DailyQuestWidget } from "@/components/daily-quest-widget";
-import { HUNTER_RANKS } from "@/lib/types";
+import { LEVEL_TIERS } from "@/lib/types";
 import { listDisciplinas } from "@/lib/matematica-db";
 import { computeMatScore } from "@/lib/matematica-stats";
 import type { Disciplina } from "@/lib/matematica-types";
@@ -108,10 +107,9 @@ const XP_TABLE = {
 
 const WORK_XP_DAILY_GOAL = 30;
 
-// ─── Hunter Ranks ────────────────────────────────────────────
+// ─── Level Tiers ─────────────────────────────────────────────
 
-// LEVELS alias kept so helpers (getLevel/getNextLevel/getLevelProgress) need no change
-const LEVELS = HUNTER_RANKS;
+const LEVELS = LEVEL_TIERS;
 
 // ─── Achievements ────────────────────────────────────────────
 
@@ -496,9 +494,6 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   const [comparacoes, setComparacoes] = useState<SavedComparison[]>([]);
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
 
-  // Reset mana on mount (once)
-  useEffect(() => { resetManaIfNewDay(); }, []);
-
   useEffect(() => {
     if (!signedIn) {
       setLoadingCore(false);
@@ -584,43 +579,8 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         updatedAt: Date.now(),
       }));
 
-      const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes, computeMatScore(disciplinas, trilha, allCards));
-
-      // Achievement snapshot for StatusWindow
-      const xpData2 = { cardProgresso, warGames, interviews, systemDesigns, sprints, retrospectivas, dividas, revisoes, rfcs, erros, adocoes, comparacoes };
-      const stk2 = computeStreak(cardProgresso);
-      const agentSlugs2 = new Set(allCards.filter((c) => c.category === "agentes-ia").map((c) => c.slug));
-      const agentCardsCompleted2 = trilha.filter((t) => t.dominado && agentSlugs2.has(t.cardSlug)).length;
-      const achData = {
-        cardsCompleted: cardProgresso.filter((p) => p.completado).length,
-        streak: stk2,
-        warGames: warGames.length,
-        interviews: interviews.filter((i) => i.status === "concluido").length,
-        systemDesigns: systemDesigns.filter((s) => s.status === "avaliado").length,
-        sprintsSemIA: sprints.filter((s) => s.status === "concluido").length,
-        dividasRegistradas: dividas.length,
-        dividasPagas: dividas.filter((d) => d.status === "paga").length,
-        errosRegistrados: erros.length,
-        conceitosDominados: trilha.filter((t) => t.dominado).length,
-        rfcsRevisados: rfcs.filter((r) => r.status === "revisado").length,
-        agentCardsCompleted: agentCardsCompleted2,
-      };
-      const earned = ACHIEVEMENTS.filter((a) => a.condition(achData));
-      const mpCurrent = parseInt(typeof window !== "undefined" ? localStorage.getItem("brain.mp.current") ?? "100" : "100", 10);
-      const mpMax     = parseInt(typeof window !== "undefined" ? localStorage.getItem("brain.mp.max")     ?? "100" : "100", 10);
-      localStorage.setItem("brain.statusSnapshot", JSON.stringify({
-        totalXP: currentXP,
-        level: lvl.level,
-        rank: lvl.rank,
-        streak: stk,
-        xpPercent: getLevelProgress(currentXP),
-        radarAxes: rAxes,
-        topAchievements: earned.map(({ id, icon, title, desc }) => ({ id, icon, title, desc })),
-        mp: { current: mpCurrent, max: mpMax },
-        updatedAt: Date.now(),
-      }));
-
       if (user) {
+        const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes, computeMatScore(disciplinas, trilha, allCards));
         const topAxis = [...rAxes].sort((a,b) => b.value - a.value)[0];
         syncPublicProfile({
           userId: user.uid,
@@ -712,11 +672,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     "text-red-500";
 
   const levelColor =
-    level.color === "amber"   ? "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400" :
-    level.color === "fuchsia" ? "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-600 dark:text-fuchsia-400" :
     level.color === "violet"  ? "bg-violet-500/15 border-violet-500/30 text-violet-600 dark:text-violet-400" :
-    level.color === "blue"    ? "bg-blue-500/15 border-blue-500/30 text-blue-600 dark:text-blue-400" :
-    level.color === "cyan"    ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400" :
     level.color === "slate"   ? "bg-slate-500/15 border-slate-500/30 text-slate-600 dark:text-slate-400" :
     "bg-card-hover border-line text-muted";
 
@@ -736,7 +692,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
       title: "Treinar",
       links: [
         { href: "/revisor",        label: "Revisor de Código",      icon: ClipboardCheck, isNew: revisoes.length === 0 },
-        { href: "/anti-pattern",   label: "Caçador de Anti-Padrões", icon: Bug, isNew: true },
+        { href: "/anti-pattern",   label: "Anti-Padrões", icon: Bug, isNew: true },
         { href: "/interrogatorio", label: "Interrogatório Técnico",  icon: Brain },
         { href: "/sprint-sem-ia",  label: "Sprint sem IA",           icon: FlaskConical, hot: sprints.some((s) => s.status === "em-andamento") },
         { href: "/mentoria",       label: "Mentoria Sênior",         icon: Users, isNew: true },
@@ -1184,13 +1140,12 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
       {loading ? (
         <Skeleton className="h-36" />
       ) : (
-        <div className="rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-5 md:p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent border border-violet-500/20 p-5 md:p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <p className="hunter-text-system text-[10px] text-muted mb-1">[SYSTEM] · STATUS</p>
-              <h1 className="text-2xl font-semibold mt-0.5 text-fg">brain</h1>
+              <h1 className="text-2xl font-semibold text-fg">brain</h1>
               <p className="text-xs text-muted mt-1">
-                Sua jornada até Caçador de Rank S
+                Progresso como engenheiro sênior
               </p>
             </div>
             <div className="text-right flex flex-col items-end gap-2">
@@ -1199,8 +1154,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
                 levelColor,
               )}>
                 <Trophy className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-sm font-semibold">{level.glyph} Rank {level.rank}</span>
-                <span className="text-sm">{level.title}</span>
+                <span className="text-sm font-semibold">{level.emoji} {level.title}</span>
               </div>
               {xpToday > 0 && (
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
@@ -1214,14 +1168,14 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
             <div className="flex justify-between text-xs text-muted mb-1.5">
               <span>{totalXP} XP total</span>
               {level.level < 6 ? (
-                <span>{nextLevel.min - totalXP} XP para {nextLevel.title} (Rank {nextLevel.rank})</span>
+                <span>{nextLevel.min - totalXP} XP para {nextLevel.title}</span>
               ) : (
-                <span>Rank máximo — Soberano</span>
+                <span>Nível máximo — Principal</span>
               )}
             </div>
             <div className="h-2 rounded-full bg-card-hover overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-700"
+                className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-700"
                 style={{ width: `${xpPercent}%` }}
               />
             </div>
@@ -1318,9 +1272,8 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="hunter-text-system text-[10px] text-muted mb-1">[SYSTEM] · ATRIBUTOS</p>
-              <h2 className="text-lg font-bold tracking-tight text-fg flex items-center gap-2">
-                Especialidades do Caçador
+              <h2 className="text-lg font-bold tracking-tight text-fg">
+                Atributos
               </h2>
               <p className="text-sm text-muted">Complete cards, sprints e entrevistas para evoluir cada atributo.</p>
             </div>
@@ -1329,10 +1282,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
             </Link>
           </div>
           
-          <Card className="flex flex-col items-center gap-10 p-6 md:p-10 border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 relative overflow-hidden">
-            {/* Background glowing effect */}
-            <div className="absolute -top-32 -left-32 w-80 h-80 bg-amber-500/20 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <Card className="flex flex-col items-center gap-10 p-6 md:p-10 border-violet-500/15 bg-gradient-to-br from-card to-violet-500/5 relative overflow-hidden">
 
             {/* Chart */}
             <div className="w-full max-w-[400px] aspect-square mx-auto relative z-10 flex items-center justify-center">
@@ -1347,33 +1297,33 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
                 const isSilver = axis.value >= 20 && axis.value < 50;
                 
                 const mastery = isDiamond ? "Mestre" : isGold ? "Avançado" : isSilver ? "Intermediário" : "Iniciante";
-                const masteryColor = isDiamond ? "text-cyan-500 dark:text-cyan-400" : isGold ? "text-amber-500 dark:text-amber-400" : isSilver ? "text-zinc-500 dark:text-zinc-300" : "text-amber-900/40 dark:text-amber-900/60";
-                
+                const masteryColor = isDiamond ? "text-violet-500 dark:text-violet-400" : isGold ? "text-violet-400" : isSilver ? "text-zinc-500 dark:text-zinc-300" : "text-muted";
+
                 return (
-                  <div key={axis.label} className="flex flex-col gap-1.5 p-3 rounded-xl bg-card border border-line shadow-sm hover:border-amber-500/30 transition group text-center items-center justify-center">
-                    <p className="text-sm font-semibold text-fg flex items-center gap-1.5 group-hover:text-amber-500 transition">
+                  <div key={axis.label} className="flex flex-col gap-1.5 p-3 rounded-xl bg-card border border-line shadow-sm hover:border-violet-500/30 transition group text-center items-center justify-center">
+                    <p className="text-sm font-semibold text-fg flex items-center gap-1.5 group-hover:text-violet-400 transition">
                       <span className="opacity-80 text-base">{axis.emoji}</span> {axis.label}
-                      {axis.decaying && <span title="Skill em deterioração" className="text-red-500 animate-pulse">🔥</span>}
+                      {axis.decaying && <span title="Skill em deterioração" className="text-red-500">↓</span>}
                     </p>
-                    <p className={clsx("text-[10px] font-bold uppercase tracking-wider", masteryColor)}>
+                    <p className={clsx("text-[10px] font-medium", masteryColor)}>
                       {mastery}
                     </p>
                     <span className={clsx(
                       "text-xl font-bold mt-1",
-                      isDiamond ? "text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]" :
-                      isGold ? "text-amber-500 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" :
+                      isDiamond ? "text-violet-500 dark:text-violet-400" :
+                      isGold ? "text-violet-400" :
                       isSilver ? "text-fg" :
                       "text-muted"
                     )}>{axis.value}%</span>
-                    
+
                     <div className="w-full h-1.5 rounded-full bg-card-hover overflow-hidden mt-1">
                       <div
                         className={clsx(
                           "h-full rounded-full transition-all duration-1000",
-                          isDiamond ? "bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" :
-                          isGold ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" :
+                          isDiamond ? "bg-violet-500" :
+                          isGold ? "bg-violet-400" :
                           isSilver ? "bg-zinc-400 dark:bg-zinc-300" :
-                          "bg-amber-900/20 dark:bg-amber-900/40"
+                          "bg-zinc-300/20"
                         )}
                         style={{ width: `${Math.max(2, axis.value)}%` }}
                       />

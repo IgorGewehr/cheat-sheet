@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Target, AlertTriangle, ShieldCheck, Zap } from "lucide-react";
+import { Target, AlertTriangle, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui";
 import { clsx } from "clsx";
 import type { RadarAxis } from "@/components/radar-chart";
@@ -20,8 +20,8 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
 
     if (decayingAxis) {
       setQuest({
-        title: `Atributo em Declínio: ${decayingAxis.label}`,
-        subtitle: `Você não pratica ${decayingAxis.label} há mais de 30 dias. Revise ou adote uma tecnologia hoje!`,
+        title: `Atributo em declínio: ${decayingAxis.label}`,
+        subtitle: `Você não pratica ${decayingAxis.label} há mais de 30 dias. Revise ou adote uma tecnologia hoje.`,
         icon: AlertTriangle,
         color: "text-red-500",
         border: "border-l-red-500",
@@ -31,7 +31,7 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
       });
     } else if (pendingDivida) {
       setQuest({
-        title: "Dívida Técnica Pendente",
+        title: "Dívida técnica pendente",
         subtitle: "Você tem um débito técnico precisando de atenção. Vá até a aba Accountability.",
         icon: Target,
         color: "text-amber-500",
@@ -41,12 +41,12 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
       });
     } else {
       setQuest({
-        title: "Rotina de Excelência",
+        title: "Rotina de excelência",
         subtitle: "Seus atributos estão afiados. Estude 1 card hoje para manter seu bônus de consistência.",
         icon: ShieldCheck,
-        color: "text-emerald-500",
-        border: "border-l-emerald-500",
-        bg: "bg-emerald-500/5",
+        color: "text-violet-500",
+        border: "border-l-violet-500",
+        bg: "bg-violet-500/5",
         done: isDone,
       });
     }
@@ -54,51 +54,26 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
 
   if (!quest) return null;
 
-  const systemLabel = quest.done
-    ? "[SYSTEM] · QUEST CLEARED"
-    : "[SYSTEM] · DAILY QUEST";
-
-  const systemLabelColor = quest.done
-    ? "text-emerald-500"
-    : "text-cyan-600 dark:text-cyan-400";
-
   return (
-    <Card className={clsx("p-4 border-l-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors", quest.done ? "border-l-emerald-500 bg-emerald-500/5 opacity-70" : `${quest.border} ${quest.bg}`)}>
+    <Card className={clsx("p-4 border-l-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors", quest.done ? "border-l-violet-500/50 opacity-70" : `${quest.border} ${quest.bg}`)}>
       <div className="flex items-center gap-4">
         <div className={clsx("p-2.5 rounded-xl bg-card shadow-sm border border-line", quest.color)}>
           <quest.icon className="w-5 h-5" />
         </div>
         <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span
-              className={clsx("px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider font-mono uppercase border border-line shadow-sm", systemLabelColor, "bg-card-hover")}
-              style={quest.done ? undefined : { boxShadow: "var(--hunter-glow-cyan)" }}
-            >
-              {systemLabel}
-            </span>
-            {quest.decayingAxis && !quest.done && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-red-500 font-mono">
-                ⚠ PENALTY ZONE
-              </span>
-            )}
-          </div>
-          <h3 className="font-bold text-fg leading-tight">{quest.title}</h3>
+          <h3 className="font-semibold text-fg leading-tight">{quest.title}</h3>
           <p className="text-sm text-muted">{quest.subtitle}</p>
         </div>
       </div>
       <div className="shrink-0 flex items-center justify-end w-full md:w-auto border-t border-line md:border-t-0 pt-3 md:pt-0">
         {quest.done ? (
-          <span className="text-sm font-semibold text-emerald-500 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 rounded-lg font-mono uppercase tracking-wide text-xs">
-            <ShieldCheck className="w-4 h-4" /> Quest Cleared
+          <span className="text-sm font-medium text-violet-500 flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 rounded-lg">
+            <CheckCircle2 className="w-4 h-4" /> Concluída
           </span>
         ) : (
-          <div className="text-right flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-sm font-bold text-amber-500 flex items-center justify-end gap-1">
-                +150 <Zap className="w-3.5 h-3.5 fill-amber-500" />
-              </p>
-              <p className="text-[10px] text-muted uppercase font-medium font-mono">Recompensa</p>
-            </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-violet-400">+150 XP</p>
+            <p className="text-[10px] text-muted">Recompensa</p>
           </div>
         )}
       </div>

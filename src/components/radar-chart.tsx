@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import type { TrilhaProgresso, MockInterviewSession, SprintSemIA, WarGameSession, RFCSession, Adocao, Decisao } from "@/lib/types";
 import type { Card } from "@/lib/types";
-import { RADAR_STAT_SHORT } from "@/lib/types";
 
 export interface RadarAxis {
   label: string;
@@ -53,13 +52,9 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
       >
         <defs>
           <linearGradient id="radar-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgb(245 158 11)" stopOpacity={0.6} />
-            <stop offset="100%" stopColor="rgb(245 158 11)" stopOpacity={0.1} />
+            <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.6} />
+            <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.1} />
           </linearGradient>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
 
         {/* Concentric rings */}
@@ -103,7 +98,7 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
               strokeWidth={isHovered ? 1.5 : 0.5}
               className={clsx(
                 "transition-all duration-300 ease-out",
-                isHovered ? "text-amber-500 opacity-80" : "text-line opacity-30",
+                isHovered ? "text-violet-400 opacity-80" : "text-line opacity-30",
                 !mounted && "opacity-0"
               )}
             />
@@ -118,10 +113,9 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
           <polygon
             points={polygonPoints}
             fill="url(#radar-gradient)"
-            stroke="#f59e0b"
+            stroke="#a78bfa"
             strokeWidth={2}
             strokeLinejoin="round"
-            filter="url(#glow)"
           />
 
           {/* Dots at each axis point */}
@@ -133,7 +127,7 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
                 cx={p.x}
                 cy={p.y}
                 r={isHovered ? 6 : 4}
-                fill="#f59e0b"
+                fill="#a78bfa"
                 stroke="var(--card)"
                 strokeWidth={1.5}
                 className="transition-all duration-300 cursor-pointer"
@@ -148,7 +142,7 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
           cx={cx}
           cy={cy}
           r={3}
-          fill="#f59e0b"
+          fill="#a78bfa"
           className={clsx("transition-opacity duration-700", mounted ? "opacity-100" : "opacity-0")}
         />
 
@@ -173,41 +167,29 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
             >
               <text
                 x={lp.x}
-                y={lp.y - 14}
+                y={lp.y - 6}
                 textAnchor={textAnchor}
-                fontSize={isHovered ? 13 : 11}
-                fontWeight={700}
-                fontFamily="ui-monospace, monospace"
+                fontSize={isHovered ? 11 : 10}
+                fontWeight={600}
                 fill="currentColor"
                 className={clsx(
                   "transition-colors duration-300",
-                  isHovered ? "text-amber-500" : axis.decaying ? "text-amber-400" : "text-fg"
+                  isHovered ? "text-violet-400" : axis.decaying ? "text-amber-400" : "text-fg"
                 )}
                 dominantBaseline="auto"
               >
-                {RADAR_STAT_SHORT[axis.label] ?? axis.label} {axis.decaying && (axis.diasInativo && axis.diasInativo > 60 ? "⚠️" : "🔥")}
+                {axis.emoji} {axis.label} {axis.decaying && (axis.diasInativo && axis.diasInativo > 60 ? "⚠️" : "↓")}
               </text>
               <text
                 x={lp.x}
-                y={lp.y + 1}
+                y={lp.y + 8}
                 textAnchor={textAnchor}
                 fontSize={9}
                 fill="currentColor"
-                className={clsx("transition-colors duration-300", isHovered ? "text-amber-400" : "text-muted")}
+                className={clsx("transition-colors duration-300", isHovered ? "text-violet-300" : "text-muted")}
                 dominantBaseline="auto"
               >
-                {axis.emoji} {axis.label}
-              </text>
-              <text
-                x={lp.x}
-                y={lp.y + 13}
-                textAnchor={textAnchor}
-                fontSize={10}
-                fill="currentColor"
-                className={clsx("transition-colors duration-300", isHovered ? "text-amber-400" : "text-muted")}
-                dominantBaseline="auto"
-              >
-                {Math.round(axis.value)}%
+                {Math.round(axis.value)}
               </text>
             </g>
           );

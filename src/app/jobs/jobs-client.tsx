@@ -68,15 +68,10 @@ export function JobsClient() {
   return (
     <div className="space-y-8">
       {/* ── Header ── */}
-      <div className="hunter-window p-5 hunter-glow-cyan">
+      <div className="rounded-xl border border-line bg-card p-5">
         <div className="flex items-center gap-3 mb-2">
-          <Briefcase className="w-5 h-5 text-[var(--hunter-cyan)]" />
-          <span
-            className="hunter-text-system text-xs font-semibold"
-            style={{ color: "var(--hunter-cyan)" }}
-          >
-            [SYSTEM] · JOB PREP TRACKS
-          </span>
+          <Briefcase className="w-5 h-5 text-violet-500" />
+          <h1 className="text-lg font-bold text-fg">Carreira</h1>
         </div>
         <h1 className="text-2xl font-bold mb-1">Trilhas de Preparação para Vagas</h1>
         <p className="text-sm text-muted max-w-2xl">
@@ -96,7 +91,7 @@ export function JobsClient() {
               className={clsx(
                 "px-3 py-1 rounded text-xs font-medium transition border",
                 filterLevel === l
-                  ? "bg-[var(--hunter-cyan)]/20 border-[var(--hunter-cyan)]/60 text-[var(--hunter-cyan)]"
+                  ? "bg-violet-500/15 border-violet-500/40 text-violet-400"
                   : "border-line bg-card-hover text-muted hover:border-line-strong",
               )}
             >
@@ -143,11 +138,8 @@ export function JobsClient() {
               {/* Header */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span
-                    className="hunter-text-system text-[10px] font-semibold"
-                    style={{ color: "var(--hunter-cyan)" }}
-                  >
-                    [SYSTEM] · {track.papel.toUpperCase()}
+                  <span className="text-xs font-medium text-violet-400">
+                    {track.papel}
                   </span>
                   <span
                     className={clsx(
@@ -184,10 +176,10 @@ export function JobsClient() {
                     style={{
                       width: `${pct}%`,
                       background: pct === 100
-                        ? "var(--hunter-cyan)"
+                        ? "#8b5cf6"
                         : pct > 50
-                        ? "var(--hunter-violet)"
-                        : "var(--hunter-fuchsia)",
+                        ? "#7c3aed"
+                        : "#6d28d9",
                     }}
                   />
                 </div>
@@ -200,7 +192,7 @@ export function JobsClient() {
                   "mt-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition",
                   started
                     ? "bg-violet-500/15 hover:bg-violet-500/25 text-violet-400 border border-violet-500/30"
-                    : "bg-[var(--hunter-cyan)]/15 hover:bg-[var(--hunter-cyan)]/25 border border-[var(--hunter-cyan)]/30 text-[var(--hunter-cyan)]",
+                    : "bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/25 text-violet-400",
                 )}
               >
                 {started ? "Continuar Trilha" : "Iniciar Trilha"}

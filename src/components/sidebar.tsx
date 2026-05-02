@@ -8,7 +8,7 @@ import {
   Scale, Flame, CalendarDays, TrendingUp, AlertCircle,
   Eye, Swords, MessageSquareMore,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
-  Star, GitBranch, Activity, Moon, ShieldCheck, Compass, Footprints, Sigma,
+  Star, GitBranch, Activity, Moon, ShieldCheck, Sigma,
   Briefcase, Dices,
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -29,10 +29,8 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/projetos",    label: "Projetos",           icon: FolderKanban },
   ],
   estudar: [
-    { href: "/awakening",      label: "Awakening",        icon: Compass, hot: true },
-    { href: "/trilha-entry",   label: "Trilha Entry",     icon: Footprints, hot: true },
-    { href: "/matematica",     label: "Matemática",       icon: Sigma, hot: true },
-    { href: "/jobs",           label: "Job Tracks",       icon: Briefcase, hot: true },
+    { href: "/matematica",     label: "Matemática",       icon: Sigma },
+    { href: "/jobs",           label: "Carreira",         icon: Briefcase },
     { href: "/biblioteca",     label: "Biblioteca",       icon: BookOpen },
     { href: "/trilha",         label: "Trilha Sênior",    icon: TrendingUp },
     { href: "/card-do-dia",    label: "Card do Dia",      icon: CalendarDays, hot: true },
@@ -40,7 +38,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/retrospectiva",  label: "Retrospectiva",    icon: BookMarked },
   ],
   treinar: [
-    { href: "/math-quest",        label: "Math Quest",          icon: Dices, hot: true },
+    { href: "/math-quest",        label: "Treinar Mat",         icon: Dices, hot: true },
     { href: "/revisor",           label: "Revisor Ativo",       icon: Eye },
     { href: "/anti-pattern",      label: "Anti-Pattern",        icon: AlertCircle },
     { href: "/interrogatorio",    label: "Interrogatório",      icon: MessageSquareMore },
@@ -142,19 +140,19 @@ export function Sidebar() {
                 "relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all",
                 collapsed ? "justify-center" : "",
                 active
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium"
+                  ? "bg-violet-500/10 text-violet-600 dark:text-violet-300 font-medium"
                   : "text-muted hover:text-fg hover:bg-card-hover",
               )}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-amber-500" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-violet-500" />
               )}
-              <Icon className={clsx("w-4 h-4 shrink-0", active && "text-amber-500")} />
+              <Icon className={clsx("w-4 h-4 shrink-0", active && "text-violet-500")} />
               {!collapsed && (
                 <>
                   <span className="flex-1 truncate">{label}</span>
                   {hot && !active && (
-                    <Flame className="w-3 h-3 text-amber-500 opacity-70 shrink-0" />
+                    <Flame className="w-3 h-3 text-violet-500 opacity-70 shrink-0" />
                   )}
                 </>
               )}
@@ -173,24 +171,24 @@ export function Sidebar() {
                 <span className="text-sm leading-none">{progress.levelEmoji}</span>
                 <div>
                   <p className="text-xs font-medium text-fg leading-tight">{progress.levelTitle}</p>
-                  <p className="text-[10px] text-subtle font-mono uppercase tracking-wider">Rank {progress.level}</p>
+                  <p className="text-[10px] text-subtle">Nível {progress.level}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-amber-500">
+              <div className="flex items-center gap-1 text-violet-500">
                 <Flame className="w-3 h-3 shrink-0" />
                 <span className="text-xs font-semibold">{progress.streak}d</span>
               </div>
             </div>
             <div className="h-1 rounded-full bg-card-hover overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all"
                 style={{ width: `${progress.xpPercent}%` }}
               />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {!progress.cardDoneToday && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wide bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium">
-                  [QUEST PENDING]
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-300 font-medium">
+                  Card pendente
                 </span>
               )}
               {progress.pendingDividas > 0 && (
@@ -205,7 +203,7 @@ export function Sidebar() {
         {/* Collapsed: streak indicator only */}
         {progress && collapsed && (
           <div className="flex justify-center py-1">
-            <div className="flex items-center gap-0.5 text-amber-500" title={`Streak: ${progress.streak} dias`}>
+            <div className="flex items-center gap-0.5 text-violet-500" title={`Streak: ${progress.streak} dias`}>
               <Flame className="w-3.5 h-3.5" />
               <span className="text-[10px] font-bold">{progress.streak}</span>
             </div>
