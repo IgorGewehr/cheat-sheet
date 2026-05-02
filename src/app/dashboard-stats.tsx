@@ -46,6 +46,7 @@ import { Card } from "@/components/ui";
 import { SignedOutBanner } from "@/components/signed-out-banner";
 import { useAuth } from "@/lib/auth-context";
 import { RadarChart, computeRadarAxes } from "@/components/radar-chart";
+import { resetManaIfNewDay } from "@/components/mana-bar";
 import {
   listProjects,
   listAllAdocoes,
@@ -65,6 +66,10 @@ import {
   syncPublicProfile,
 } from "@/lib/db";
 import { DailyQuestWidget } from "@/components/daily-quest-widget";
+import { HUNTER_RANKS } from "@/lib/types";
+import { listDisciplinas } from "@/lib/matematica-db";
+import { computeMatScore } from "@/lib/matematica-stats";
+import type { Disciplina } from "@/lib/matematica-types";
 import type {
   Card as CardType,
   Project,
@@ -103,17 +108,10 @@ const XP_TABLE = {
 
 const WORK_XP_DAILY_GOAL = 30;
 
-// ─── Levels ─────────────────────────────────────────────────
+// ─── Hunter Ranks ────────────────────────────────────────────
 
-const LEVELS = [
-  { level: 0, title: "Aprendiz",   min: 0,    max: 50,        color: "zinc",    emoji: "🌱" },
-  { level: 1, title: "Estagiário", min: 50,   max: 200,       color: "zinc",    emoji: "📚" },
-  { level: 2, title: "Júnior",     min: 200,  max: 500,       color: "sky",     emoji: "💡" },
-  { level: 3, title: "Pleno",      min: 500,  max: 1100,      color: "emerald", emoji: "⚡" },
-  { level: 4, title: "Sênior",     min: 1100, max: 2500,      color: "amber",   emoji: "🔥" },
-  { level: 5, title: "Staff",      min: 2500, max: 5000,      color: "violet",  emoji: "🚀" },
-  { level: 6, title: "Principal",  min: 5000, max: Infinity,  color: "rose",    emoji: "👑" },
-];
+// LEVELS alias kept so helpers (getLevel/getNextLevel/getLevelProgress) need no change
+const LEVELS = HUNTER_RANKS;
 
 // ─── Achievements ────────────────────────────────────────────
 
@@ -496,6 +494,10 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   const [trilha, setTrilha] = useState<TrilhaProgresso[]>([]);
   const [decisoes, setDecisoes] = useState<Decisao[]>([]);
   const [comparacoes, setComparacoes] = useState<SavedComparison[]>([]);
+  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+
+  // Reset mana on mount (once)
+  useEffect(() => { resetManaIfNewDay(); }, []);
 
   useEffect(() => {
     if (!signedIn) {
@@ -527,7 +529,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
     // Wave 2: data needed for XP, radar, achievements
     (async () => {
       try {
-        const [ps, ads, err, wg, iv, sd, rfc, rev, tr, comp, decs] = await Promise.all([
+        const [ps, ads, err, wg, iv, sd, rfc, rev, tr, comp, decs, disc] = await Promise.all([
           listProjects(),
           listAllAdocoes(),
           listErrosPersonais(),
@@ -539,6 +541,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
           listTrilhaProgresso(),
           listComparacoes(),
           listAllDecisoes(),
+          listDisciplinas().catch(() => [] as Disciplina[]),
         ]);
         setProjects(ps);
         setAdocoes(ads);
@@ -551,6 +554,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         setTrilha(tr);
         setComparacoes(comp);
         setDecisoes(decs);
+        setDisciplinas(disc);
 
       } catch (err) {
         console.error(err);
@@ -580,8 +584,43 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         updatedAt: Date.now(),
       }));
 
+      const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes, computeMatScore(disciplinas, trilha, allCards));
+
+      // Achievement snapshot for StatusWindow
+      const xpData2 = { cardProgresso, warGames, interviews, systemDesigns, sprints, retrospectivas, dividas, revisoes, rfcs, erros, adocoes, comparacoes };
+      const stk2 = computeStreak(cardProgresso);
+      const agentSlugs2 = new Set(allCards.filter((c) => c.category === "agentes-ia").map((c) => c.slug));
+      const agentCardsCompleted2 = trilha.filter((t) => t.dominado && agentSlugs2.has(t.cardSlug)).length;
+      const achData = {
+        cardsCompleted: cardProgresso.filter((p) => p.completado).length,
+        streak: stk2,
+        warGames: warGames.length,
+        interviews: interviews.filter((i) => i.status === "concluido").length,
+        systemDesigns: systemDesigns.filter((s) => s.status === "avaliado").length,
+        sprintsSemIA: sprints.filter((s) => s.status === "concluido").length,
+        dividasRegistradas: dividas.length,
+        dividasPagas: dividas.filter((d) => d.status === "paga").length,
+        errosRegistrados: erros.length,
+        conceitosDominados: trilha.filter((t) => t.dominado).length,
+        rfcsRevisados: rfcs.filter((r) => r.status === "revisado").length,
+        agentCardsCompleted: agentCardsCompleted2,
+      };
+      const earned = ACHIEVEMENTS.filter((a) => a.condition(achData));
+      const mpCurrent = parseInt(typeof window !== "undefined" ? localStorage.getItem("brain.mp.current") ?? "100" : "100", 10);
+      const mpMax     = parseInt(typeof window !== "undefined" ? localStorage.getItem("brain.mp.max")     ?? "100" : "100", 10);
+      localStorage.setItem("brain.statusSnapshot", JSON.stringify({
+        totalXP: currentXP,
+        level: lvl.level,
+        rank: lvl.rank,
+        streak: stk,
+        xpPercent: getLevelProgress(currentXP),
+        radarAxes: rAxes,
+        topAchievements: earned.map(({ id, icon, title, desc }) => ({ id, icon, title, desc })),
+        mp: { current: mpCurrent, max: mpMax },
+        updatedAt: Date.now(),
+      }));
+
       if (user) {
-        const rAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes);
         const topAxis = [...rAxes].sort((a,b) => b.value - a.value)[0];
         syncPublicProfile({
           userId: user.uid,
@@ -622,7 +661,8 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
   const conceitosDominados = trilha.filter((t) => t.dominado).length;
   const healthScore = computeHealthScore(adocoes, cardProgresso);
   const todayActions = getTodayActions({ cardProgresso, dividas, sprints, retrospectivas });
-  const radarAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes);
+  const matScore = computeMatScore(disciplinas, trilha, allCards);
+  const radarAxes = computeRadarAxes(trilha, allCards, interviews, sprints, warGames, rfcs, adocoes, decisoes, matScore);
 
   const lastCard = cardProgresso[0];
   const lastCardDaysAgo = lastCard
@@ -673,10 +713,11 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
 
   const levelColor =
     level.color === "amber"   ? "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400" :
-    level.color === "emerald" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" :
-    level.color === "sky"     ? "bg-sky-500/15 border-sky-500/30 text-sky-600 dark:text-sky-400" :
+    level.color === "fuchsia" ? "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-600 dark:text-fuchsia-400" :
     level.color === "violet"  ? "bg-violet-500/15 border-violet-500/30 text-violet-600 dark:text-violet-400" :
-    level.color === "rose"    ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400" :
+    level.color === "blue"    ? "bg-blue-500/15 border-blue-500/30 text-blue-600 dark:text-blue-400" :
+    level.color === "cyan"    ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400" :
+    level.color === "slate"   ? "bg-slate-500/15 border-slate-500/30 text-slate-600 dark:text-slate-400" :
     "bg-card-hover border-line text-muted";
 
   // ── Feature sections ─────────────────────────────────────────
@@ -1146,10 +1187,10 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         <div className="rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-5 md:p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-sm text-muted">Bem-vindo de volta</p>
+              <p className="hunter-text-system text-[10px] text-muted mb-1">[SYSTEM] · STATUS</p>
               <h1 className="text-2xl font-semibold mt-0.5 text-fg">brain</h1>
               <p className="text-xs text-muted mt-1">
-                Sua jornada de mid-level a sênior engineer
+                Sua jornada até Caçador de Rank S
               </p>
             </div>
             <div className="text-right flex flex-col items-end gap-2">
@@ -1158,7 +1199,7 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
                 levelColor,
               )}>
                 <Trophy className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-sm font-semibold">{level.emoji} Nível {level.level}</span>
+                <span className="text-sm font-semibold">{level.glyph} Rank {level.rank}</span>
                 <span className="text-sm">{level.title}</span>
               </div>
               {xpToday > 0 && (
@@ -1173,9 +1214,9 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
             <div className="flex justify-between text-xs text-muted mb-1.5">
               <span>{totalXP} XP total</span>
               {level.level < 6 ? (
-                <span>{nextLevel.min - totalXP} XP para {nextLevel.title}</span>
+                <span>{nextLevel.min - totalXP} XP para {nextLevel.title} (Rank {nextLevel.rank})</span>
               ) : (
-                <span>Nível máximo alcançado</span>
+                <span>Rank máximo — Soberano</span>
               )}
             </div>
             <div className="h-2 rounded-full bg-card-hover overflow-hidden">
@@ -1277,10 +1318,11 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <div>
+              <p className="hunter-text-system text-[10px] text-muted mb-1">[SYSTEM] · ATRIBUTOS</p>
               <h2 className="text-lg font-bold tracking-tight text-fg flex items-center gap-2">
-                Evolução de Especialidades
+                Especialidades do Caçador
               </h2>
-              <p className="text-sm text-muted">Complete cards, sprints e entrevistas para subir de rank em cada área.</p>
+              <p className="text-sm text-muted">Complete cards, sprints e entrevistas para evoluir cada atributo.</p>
             </div>
             <Link href="/mapa-dominio" className="text-sm font-medium text-amber-600 dark:text-amber-400 hover:underline">
               ver mapa completo →

@@ -8,7 +8,8 @@ import {
   Scale, Flame, CalendarDays, TrendingUp, AlertCircle,
   Eye, Swords, MessageSquareMore,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
-  Star, GitBranch, Activity, Moon,
+  Star, GitBranch, Activity, Moon, ShieldCheck, Compass, Footprints, Sigma,
+  Briefcase, Dices,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
@@ -20,6 +21,7 @@ type Item = { href: string; label: string; icon: typeof BookOpen; hot?: boolean 
 
 const VERB_ITEMS: Record<Verb, Item[]> = {
   trabalhar: [
+    { href: "/sentinela",   label: "Sentinela",         icon: ShieldCheck, hot: true },
     { href: "/sessao",      label: "Sessão IA",        icon: Zap, hot: true },
     { href: "/comparar",    label: "Comparar",          icon: Scale, hot: true },
     { href: "/fim-do-dia",  label: "Fim do Dia",        icon: Moon },
@@ -27,6 +29,10 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/projetos",    label: "Projetos",           icon: FolderKanban },
   ],
   estudar: [
+    { href: "/awakening",      label: "Awakening",        icon: Compass, hot: true },
+    { href: "/trilha-entry",   label: "Trilha Entry",     icon: Footprints, hot: true },
+    { href: "/matematica",     label: "Matemática",       icon: Sigma, hot: true },
+    { href: "/jobs",           label: "Job Tracks",       icon: Briefcase, hot: true },
     { href: "/biblioteca",     label: "Biblioteca",       icon: BookOpen },
     { href: "/trilha",         label: "Trilha Sênior",    icon: TrendingUp },
     { href: "/card-do-dia",    label: "Card do Dia",      icon: CalendarDays, hot: true },
@@ -34,6 +40,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/retrospectiva",  label: "Retrospectiva",    icon: BookMarked },
   ],
   treinar: [
+    { href: "/math-quest",        label: "Math Quest",          icon: Dices, hot: true },
     { href: "/revisor",           label: "Revisor Ativo",       icon: Eye },
     { href: "/anti-pattern",      label: "Anti-Pattern",        icon: AlertCircle },
     { href: "/interrogatorio",    label: "Interrogatório",      icon: MessageSquareMore },
@@ -166,7 +173,7 @@ export function Sidebar() {
                 <span className="text-sm leading-none">{progress.levelEmoji}</span>
                 <div>
                   <p className="text-xs font-medium text-fg leading-tight">{progress.levelTitle}</p>
-                  <p className="text-[10px] text-subtle">Nível {progress.level}</p>
+                  <p className="text-[10px] text-subtle font-mono uppercase tracking-wider">Rank {progress.level}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1 text-amber-500">
@@ -182,8 +189,8 @@ export function Sidebar() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {!progress.cardDoneToday && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium">
-                  card do dia
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wide bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium">
+                  [QUEST PENDING]
                 </span>
               )}
               {progress.pendingDividas > 0 && (

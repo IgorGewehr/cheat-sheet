@@ -8,10 +8,9 @@ import type { RadarAxis } from "@/components/radar-chart";
 import type { DividaConhecimento } from "@/lib/types";
 
 export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas: DividaConhecimento[] }) {
-  const [quest, setQuest] = useState<{ title: string; subtitle: string; icon: any; color: string; done?: boolean; border: string; bg: string } | null>(null);
+  const [quest, setQuest] = useState<{ title: string; subtitle: string; icon: any; color: string; done?: boolean; border: string; bg: string; decayingAxis?: string } | null>(null);
 
   useEffect(() => {
-    // Generate Quest deterministically based on date and props
     const today = new Date().toISOString().split("T")[0];
     const storageKey = `brain.dailyQuestDone_${today}`;
     const isDone = localStorage.getItem(storageKey) === "true";
@@ -21,13 +20,14 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
 
     if (decayingAxis) {
       setQuest({
-        title: `Alerta de Deterioração: ${decayingAxis.label}`,
+        title: `Atributo em Declínio: ${decayingAxis.label}`,
         subtitle: `Você não pratica ${decayingAxis.label} há mais de 30 dias. Revise ou adote uma tecnologia hoje!`,
         icon: AlertTriangle,
         color: "text-red-500",
         border: "border-l-red-500",
         bg: "bg-red-500/5",
-        done: isDone
+        done: isDone,
+        decayingAxis: decayingAxis.label,
       });
     } else if (pendingDivida) {
       setQuest({
@@ -37,22 +37,30 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
         color: "text-amber-500",
         border: "border-l-amber-500",
         bg: "bg-amber-500/5",
-        done: isDone
+        done: isDone,
       });
     } else {
       setQuest({
         title: "Rotina de Excelência",
-        subtitle: "Suas skills estão afiadas. Estude 1 card hoje para manter seu bônus de consistência.",
+        subtitle: "Seus atributos estão afiados. Estude 1 card hoje para manter seu bônus de consistência.",
         icon: ShieldCheck,
         color: "text-emerald-500",
         border: "border-l-emerald-500",
         bg: "bg-emerald-500/5",
-        done: isDone
+        done: isDone,
       });
     }
   }, [axes, dividas]);
 
   if (!quest) return null;
+
+  const systemLabel = quest.done
+    ? "[SYSTEM] · QUEST CLEARED"
+    : "[SYSTEM] · DAILY QUEST";
+
+  const systemLabelColor = quest.done
+    ? "text-emerald-500"
+    : "text-cyan-600 dark:text-cyan-400";
 
   return (
     <Card className={clsx("p-4 border-l-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors", quest.done ? "border-l-emerald-500 bg-emerald-500/5 opacity-70" : `${quest.border} ${quest.bg}`)}>
@@ -61,17 +69,27 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
           <quest.icon className="w-5 h-5" />
         </div>
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-bold text-fg leading-tight">{quest.title}</h3>
-            <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-card-hover text-muted border border-line shadow-sm">Daily Quest</span>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span
+              className={clsx("px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider font-mono uppercase border border-line shadow-sm", systemLabelColor, "bg-card-hover")}
+              style={quest.done ? undefined : { boxShadow: "var(--hunter-glow-cyan)" }}
+            >
+              {systemLabel}
+            </span>
+            {quest.decayingAxis && !quest.done && (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-red-500 font-mono">
+                ⚠ PENALTY ZONE
+              </span>
+            )}
           </div>
+          <h3 className="font-bold text-fg leading-tight">{quest.title}</h3>
           <p className="text-sm text-muted">{quest.subtitle}</p>
         </div>
       </div>
       <div className="shrink-0 flex items-center justify-end w-full md:w-auto border-t border-line md:border-t-0 pt-3 md:pt-0">
         {quest.done ? (
-          <span className="text-sm font-semibold text-emerald-500 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 rounded-lg">
-            <ShieldCheck className="w-4 h-4" /> Concluída
+          <span className="text-sm font-semibold text-emerald-500 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 rounded-lg font-mono uppercase tracking-wide text-xs">
+            <ShieldCheck className="w-4 h-4" /> Quest Cleared
           </span>
         ) : (
           <div className="text-right flex items-center gap-3">
@@ -79,7 +97,7 @@ export function DailyQuestWidget({ axes, dividas }: { axes: RadarAxis[]; dividas
               <p className="text-sm font-bold text-amber-500 flex items-center justify-end gap-1">
                 +150 <Zap className="w-3.5 h-3.5 fill-amber-500" />
               </p>
-              <p className="text-[10px] text-muted uppercase font-medium">Recompensa</p>
+              <p className="text-[10px] text-muted uppercase font-medium font-mono">Recompensa</p>
             </div>
           </div>
         )}

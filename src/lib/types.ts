@@ -12,7 +12,8 @@ export type CardCategory =
   | "armadilhas-ia"
   | "craft"
   | "agentes-ia"
-  | "data-science";
+  | "data-science"
+  | "matematica";
 
 export const CATEGORY_LABEL: Record<CardCategory, string> = {
   arquiteturas: "Arquiteturas",
@@ -29,6 +30,7 @@ export const CATEGORY_LABEL: Record<CardCategory, string> = {
   craft: "Craft & Julgamento Sênior",
   "agentes-ia": "Agentes de IA",
   "data-science": "Data Science & ML",
+  matematica: "Matemática (Bacharelado)",
 };
 
 export interface CardFrontmatter {
@@ -412,3 +414,40 @@ export interface QuestSession {
   duracaoMs: number;
   criadoEm: number;
 }
+
+// ── Hunter Ranks (Solo Leveling aesthetic layer) ──────────────
+
+export interface HunterRank {
+  level: number;
+  rank: string;
+  title: string;
+  min: number;
+  max: number;
+  color: string;
+  glyph: string;
+  emoji: string;
+}
+
+export const HUNTER_RANKS: HunterRank[] = [
+  { level: 0, rank: "E",      title: "Despertado",        min: 0,    max: 50,       color: "zinc",    glyph: "▼",  emoji: "▼"  },
+  { level: 1, rank: "D",      title: "Caçador Iniciante", min: 50,   max: 200,      color: "slate",   glyph: "◆",  emoji: "◆"  },
+  { level: 2, rank: "C",      title: "Caçador",           min: 200,  max: 500,      color: "cyan",    glyph: "◇",  emoji: "◇"  },
+  { level: 3, rank: "B",      title: "Caçador Elite",     min: 500,  max: 1100,     color: "blue",    glyph: "◈",  emoji: "◈"  },
+  { level: 4, rank: "A",      title: "Caçador Avançado",  min: 1100, max: 2500,     color: "violet",  glyph: "✦",  emoji: "✦"  },
+  { level: 5, rank: "S",      title: "Caçador Especial",  min: 2500, max: 5000,     color: "fuchsia", glyph: "✧",  emoji: "✧"  },
+  { level: 6, rank: "Monarca", title: "Soberano",         min: 5000, max: Infinity, color: "amber",   glyph: "👑", emoji: "👑" },
+];
+
+export const RADAR_STAT_SHORT: Record<string, string> = {
+  "Arquitetura":   "STR",
+  "Frontend":      "AGI",
+  "Banco & DB":    "INT",
+  "Infra & Deploy":"VIT",
+  "Backend":       "PER",
+  "Auth & Sec":    "SEN",
+  "Entrevista":    "TEN",
+  "Autonomia":     "WIL",
+  "Agentes IA":    "ARC",
+  "Data Science":  "LOG",
+  "Matemática":    "MAT",
+};

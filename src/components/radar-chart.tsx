@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import type { TrilhaProgresso, MockInterviewSession, SprintSemIA, WarGameSession, RFCSession, Adocao, Decisao } from "@/lib/types";
 import type { Card } from "@/lib/types";
+import { RADAR_STAT_SHORT } from "@/lib/types";
 
 export interface RadarAxis {
   label: string;
@@ -172,10 +173,11 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
             >
               <text
                 x={lp.x}
-                y={lp.y - 6}
+                y={lp.y - 14}
                 textAnchor={textAnchor}
-                fontSize={isHovered ? 12 : 11}
-                fontWeight={isHovered ? 600 : 400}
+                fontSize={isHovered ? 13 : 11}
+                fontWeight={700}
+                fontFamily="ui-monospace, monospace"
                 fill="currentColor"
                 className={clsx(
                   "transition-colors duration-300",
@@ -183,11 +185,22 @@ export function RadarChart({ axes, size = 280 }: { axes: RadarAxis[]; size?: num
                 )}
                 dominantBaseline="auto"
               >
-                {axis.emoji} {axis.label} {axis.decaying && (axis.diasInativo && axis.diasInativo > 60 ? "⚠️" : "🔥")}
+                {RADAR_STAT_SHORT[axis.label] ?? axis.label} {axis.decaying && (axis.diasInativo && axis.diasInativo > 60 ? "⚠️" : "🔥")}
               </text>
               <text
                 x={lp.x}
-                y={lp.y + 8}
+                y={lp.y + 1}
+                textAnchor={textAnchor}
+                fontSize={9}
+                fill="currentColor"
+                className={clsx("transition-colors duration-300", isHovered ? "text-amber-400" : "text-muted")}
+                dominantBaseline="auto"
+              >
+                {axis.emoji} {axis.label}
+              </text>
+              <text
+                x={lp.x}
+                y={lp.y + 13}
                 textAnchor={textAnchor}
                 fontSize={10}
                 fill="currentColor"
@@ -214,7 +227,8 @@ export function computeRadarAxes(
   warGames: WarGameSession[],
   rfcs: RFCSession[],
   adocoes: Adocao[],
-  decisoes: Decisao[]
+  decisoes: Decisao[],
+  matScore = 0
 ): RadarAxis[] {
   const DAY_MS = 24 * 60 * 60 * 1000;
   const THIRTY_DAYS_MS  = 30 * DAY_MS;
@@ -343,5 +357,6 @@ export function computeRadarAxes(
     },
     { label: "Agentes IA",   emoji: "🤖",  ...agentResult },
     { label: "Data Science", emoji: "📊",  ...categoryScore("data-science") },
+    { label: "Matemática",   emoji: "📐",  value: matScore, decaying: false },
   ];
 }

@@ -7,6 +7,9 @@ import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthWidget } from "./auth-widget";
 import { ProjectPill } from "./project-pill";
+import { ManaBar } from "./mana-bar";
+import { StatusWindow } from "./status-window";
+import { useEffect, useState } from "react";
 
 export type Verb = "trabalhar" | "estudar" | "treinar" | "refletir";
 
@@ -53,8 +56,21 @@ interface TopNavProps {
 export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
   const pathname = usePathname();
   const activeVerb = getActiveVerb(pathname);
+  const [statusOpen, setStatusOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "?") setStatusOpen((v) => !v);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
 
   return (
+    <>
+    <StatusWindow open={statusOpen} onClose={() => setStatusOpen(false)} />
     <header className="sticky top-0 z-40 w-full border-b border-line bg-card/95 backdrop-blur">
       <div className="flex items-center gap-2 px-4 h-12 max-w-screen-2xl mx-auto">
         {/* Brand */}
@@ -103,10 +119,21 @@ export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
             </button>
           )}
 
+          <ManaBar variant="compact" />
+
+          <button
+            onClick={() => setStatusOpen(true)}
+            className="px-2.5 py-1.5 rounded-lg border border-cyan-500/30 text-[11px] font-mono font-bold text-cyan-500 dark:text-[var(--hunter-cyan)] hover:bg-cyan-500/10 hover:border-cyan-500/60 transition"
+            title="Status Window (?)"
+          >
+            STATUS
+          </button>
+
           <AuthWidget />
           <ThemeToggle />
         </div>
       </div>
     </header>
+    </>
   );
 }
