@@ -323,6 +323,7 @@ export function computeRadarAxes(
     { label: "Auth & Sec",    emoji: "🔐",  ...categoryScore("auth") },
     { label: "Frontend",      emoji: "🎨",  ...categoryScore("padroes-frontend") },
     { label: "Infra & Deploy",emoji: "☁️",  ...categoryScore("infra") },
+    { label: "GovTech",       emoji: "🏛️",  ...categoryScore("govtech") },
     {
       label: "Entrevista",
       emoji: "🎤",

@@ -40,6 +40,7 @@ import {
   CheckCircle2,
   Wrench,
   AlertTriangle,
+  Eye,
 } from "lucide-react";
 import { computeNextReview } from "@/lib/srs";
 import { Card } from "@/components/ui";
@@ -467,6 +468,50 @@ function computeHealthScore(adocoes: Adocao[], cardProgresso: CardDoDiaProgresso
   ).length;
   const cardRate = completedLast7 / 7;
   return Math.round(((adocaoRate + cardRate) / 2) * 100);
+}
+
+// ─── Industry Level Card (reads from localStorage cache) ─────
+
+const LEVEL_TEXT: Record<string, string> = {
+  entry: "text-amber-500", junior: "text-yellow-500",
+  pleno: "text-sky-500", senior: "text-violet-500", staff: "text-emerald-500",
+};
+const LEVEL_LABEL: Record<string, string> = {
+  entry: "Entry Level", junior: "Junior", pleno: "Pleno", senior: "Sênior", staff: "Staff",
+};
+
+function IndustryLevelCard() {
+  const [cached, setCached] = useState<{ nivel: string; score: number } | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("brain.industryLevel");
+      if (raw) setCached(JSON.parse(raw) as { nivel: string; score: number });
+    } catch {}
+  }, []);
+
+  return (
+    <Link href="/nivel" className="block group">
+      <Card className="p-4 h-full hover:border-violet-500/40 transition-colors">
+        <div className="flex items-center gap-2 mb-1">
+          <Eye className="w-4 h-4 text-muted shrink-0" />
+          <span className="text-xs uppercase text-muted font-medium">Nível</span>
+        </div>
+        {cached ? (
+          <>
+            <p className={clsx("text-2xl font-bold", LEVEL_TEXT[cached.nivel] ?? "text-fg")}>
+              {LEVEL_LABEL[cached.nivel] ?? cached.nivel}
+            </p>
+            <p className="text-xs text-muted mt-1">score {cached.score}/100</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-fg mt-1">Calcular →</p>
+            <p className="text-xs text-muted mt-1">baseado em comportamento</p>
+          </>
+        )}
+      </Card>
+    </Link>
+  );
 }
 
 // ─── Main component ──────────────────────────────────────────
@@ -1188,11 +1233,11 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
 
       {/* ── 4 Metric cards ──────────────────────────────────── */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Streak */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -1258,6 +1303,9 @@ export function DashboardStats({ totalCards, allCards }: { totalCards: number; a
               {xpToday === 0 ? "nenhuma atividade hoje" : "ótimo trabalho hoje"}
             </p>
           </Card>
+
+          {/* Nível de Indústria */}
+          <IndustryLevelCard />
         </div>
       )}
 

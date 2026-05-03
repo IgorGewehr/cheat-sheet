@@ -9,7 +9,7 @@ import {
   Eye, Swords, MessageSquareMore,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
   Star, GitBranch, Activity, Moon, ShieldCheck, Sigma,
-  Briefcase, Dices, Users, Compass, Bug,
+  Briefcase, Dices, Users, Compass, Bug, Network,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
@@ -34,6 +34,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/claude-code", label: "Claude Code",       icon: Activity, hot: true },
   ],
   estudar: [
+    { href: "/skills",         label: "Skill Tracker",    icon: Network, hot: true },
     { href: "/matematica",     label: "Matemática",       icon: Sigma },
     { href: "/jobs",           label: "Carreira",         icon: Briefcase },
     { href: "/biblioteca",     label: "Biblioteca",       icon: BookOpen },
@@ -56,6 +57,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
     { href: "/banco-star",        label: "Banco STAR",          icon: Star },
   ],
   refletir: [
+    { href: "/nivel",             label: "Nível de Indústria",      icon: Eye, hot: true },
     { href: "/health-score",      label: "Health Score",            icon: Activity },
     { href: "/divida",            label: "Dívida de Conhecimento",  icon: AlertCircle },
     { href: "/biblioteca-erros",  label: "Erros Pessoais",          icon: BookOpen },

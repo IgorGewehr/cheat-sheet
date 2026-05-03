@@ -56,6 +56,10 @@ export const SEED_DISCIPLINAS: SeedDisciplina[] = [
   d("Eletromagnetismo", "fisica", "futuro", undefined, "fisica-mecanica-classica"),
   d("Análise Funcional / Medida e Integração", "analise", "futuro", undefined, "medida-integracao"),
   d("Teoria de Galois", "algebra", "futuro", undefined, "algebra-galois"),
+  d("Mecânica Lagrangiana e Hamiltoniana", "fisica", "futuro", undefined, "mecanica-lagrangiana-hamiltoniana"),
+  d("Topologia Algébrica", "analise", "futuro", undefined, "topologia-algebrica"),
+  d("Processos Estocásticos", "prob-stat", "futuro", undefined, "processos-estocasticos"),
+  d("Análise de Fourier", "analise", "futuro", undefined, "analise-fourier"),
   d("TCC — Trabalho de Conclusão de Curso", "meta", "futuro"),
   d("Estágio Supervisionado", "meta", "futuro"),
 
