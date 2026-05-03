@@ -22,11 +22,14 @@ const CATEGORY_ORDER: CardCategory[] = [
   "infra",
   "stack-guides",
   "testes",
-  "checklists",
+  "agentes-ia",
+  "data-science",
+  "matematica",
+  "govtech",
   "armadilhas-ia",
+  "checklists",
   "prompts",
   "craft",
-  "agentes-ia",
 ];
 
 const CATEGORY_COLORS: Record<CardCategory, string> = {

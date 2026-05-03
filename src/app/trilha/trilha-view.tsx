@@ -32,6 +32,12 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     "pandas-patterns",
     "data-cleaning",
     "statistical-thinking",
+    // Matemática
+    "logica-matematica",
+    "probabilidade",
+    // GovTech
+    "lgpd-compliance",
+    "wcag-govtech",
   ],
   pleno: [
     "modular-monolith",
@@ -66,6 +72,19 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     "sklearn-patterns",
     "data-leakage",
     "overfitting-strategies",
+    // Matemática
+    "algebra-linear",
+    "calculo-1-variavel",
+    "estatistica-inferencia",
+    "teoria-grafos-mat",
+    // GovTech
+    "keycloak-sso",
+    "govbr-sso",
+    "nfse-padrao-nacional",
+    "single-tenant-govtech",
+    // Infra/Segurança
+    "container-security",
+    "github-actions-cicd",
   ],
   senior: [
     "cqrs-lite",
@@ -95,6 +114,24 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     // Data Science
     "ml-pipeline-production",
     "mlops-basics",
+    // Matemática
+    "calculo-multivariavel",
+    "otimizacao-pesquisa-op",
+    "processos-estocasticos",
+    "analise-numerica",
+    "teoria-da-informacao",
+    "teoria-dos-jogos",
+    // GovTech
+    "event-sourcing-govtech",
+    "kafka-govtech",
+    "tce-audit-compliance",
+    "xml-json-digital-signature",
+    "postgis-spatial",
+    "nestjs-audit-interceptor",
+    // Infra/Segurança
+    "kubernetes-workloads",
+    "sre-reliability",
+    "terraform-iac",
   ],
   staff: [
     "multi-filial",
@@ -113,6 +150,20 @@ const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
     "claude-code-sdk",
     "agente-financeiro-erp",
     "ai-agent-architecture",
+    // Matemática
+    "computabilidade-complexidade",
+    "modelagem-matematica",
+    "grupos-de-lie",
+    "calculo-das-variacoes",
+    "algebra-comutativa",
+    // GovTech
+    "dispensa-licitacao-govtech",
+    "reforma-tributaria-2026",
+    "portal-transparencia",
+    "nfse-contingencia",
+    // Infra
+    "argocd-gitops",
+    "helm-charts",
   ],
 };
 
@@ -121,25 +172,25 @@ const NIVEL_META: Record<NivelTrilha, { label: string; color: string; textColor:
     label: "Júnior",
     color: "bg-sky-500",
     textColor: "text-sky-600 dark:text-sky-400",
-    description: "Fundamentos sólidos: validação, repositórios, auth básica, banco, containers + fundamentos de LLMs e prompt engineering",
+    description: "Fundamentos sólidos: validação, repositórios, auth básica, banco, containers, LLMs e prompt engineering + lógica matemática, probabilidade, LGPD e WCAG",
   },
   pleno: {
     label: "Pleno",
     color: "bg-emerald-500",
     textColor: "text-emerald-600 dark:text-emerald-400",
-    description: "Arquitetura aplicada: monólito modular, DDD leve, clean arch, infra avançada + agentes com LangChain, RAG e observabilidade",
+    description: "Arquitetura aplicada: monólito modular, DDD leve, clean arch, infra avançada, LangChain, RAG + álgebra linear, cálculo, Keycloak, NFS-e e segurança de containers",
   },
   senior: {
     label: "Sênior",
     color: "bg-amber-500",
     textColor: "text-amber-600 dark:text-amber-400",
-    description: "Sistemas distribuídos: CQRS, Event-Driven, microsserviços, multi-tenant, compliance + LangGraph, RAG avançado, MCP e orquestração multi-agente",
+    description: "Sistemas distribuídos: CQRS, Event-Driven, microsserviços, multi-tenant, LangGraph, MCP + otimização matemática, GovTech avançado (auditoria TCE, event sourcing) e Kubernetes/SRE",
   },
   staff: {
     label: "Staff",
     color: "bg-violet-500",
     textColor: "text-violet-600 dark:text-violet-400",
-    description: "Liderança técnica: multi-filial, IA com auditoria, design de plataformas complexas + avaliação, segurança e deploy de agentes em produção",
+    description: "Liderança técnica: multi-filial, IA com auditoria, design de plataformas complexas, agentes em produção + computabilidade, GovTech estratégico (dispensa, reforma tributária) e GitOps",
   },
 };
 
