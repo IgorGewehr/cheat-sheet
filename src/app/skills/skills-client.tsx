@@ -80,20 +80,19 @@ function AreaCard({
         style={{ borderBottom: `1px solid ${colors.border}` }}
       >
         <div
-          className="rounded-lg flex items-center justify-center font-mono text-lg"
+          className="rounded-lg flex items-center justify-center font-mono text-lg flex-shrink-0"
           style={{
             width: 40,
             height: 40,
             background: colors.bgMedium,
             color: colors.primary,
             border: `1px solid ${colors.border}`,
-            flexShrink: 0,
           }}
         >
           {area.emoji}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm truncate" style={{ color: colors.text }}>
+          <div className="font-semibold text-sm leading-snug" style={{ color: colors.text }}>
             {area.name}
           </div>
           <div className="text-xs mt-0.5" style={{ color: "#52525b" }}>
@@ -141,9 +140,9 @@ function AreaCard({
   );
 }
 
-// ─── Radar (all areas) ────────────────────────────────────────────────────────
+// ─── Full-width coverage panel ────────────────────────────────────────────────
 
-function MasterRadar({
+function CoveragePanel({
   allProgress,
 }: {
   allProgress: Record<string, SkillAreaProgress>;
@@ -153,15 +152,19 @@ function MasterRadar({
     const mastered = area.nodes.filter((n) => (allProgress[area.id] ?? {})[n.id] === "mastered").length;
     return {
       label: area.emoji + " " + area.name.split(" ")[0],
+      fullName: area.name,
       value: total > 0 ? Math.round((mastered / total) * 100) : 0,
       color: area.colors.primary,
+      mastered,
+      total,
+      area,
     };
   });
 
   const n = axes.length;
-  const cx = 160;
-  const cy = 160;
-  const r = 120;
+  const cx = 200;
+  const cy = 200;
+  const r = 155;
   const rings = [0.25, 0.5, 0.75, 1];
 
   function angleOf(i: number) {
@@ -182,78 +185,163 @@ function MasterRadar({
 
   return (
     <div
-      className="rounded-xl p-6"
+      className="rounded-xl w-full"
       style={{
         background: "rgba(15,15,18,0.7)",
         border: "1px solid rgba(63,63,70,0.5)",
         backdropFilter: "blur(8px)",
       }}
     >
-      <h3 className="text-sm font-semibold mb-4" style={{ color: "#a1a1aa" }}>
-        Cobertura Total
-      </h3>
-      <div className="flex items-center justify-center">
-        <svg width={320} height={320} viewBox="0 0 320 320">
-          {/* Rings */}
-          {rings.map((f) => (
-            <polygon
-              key={f}
-              points={axes
-                .map((_, i) => {
-                  const p = point(i, r * f);
-                  return `${p.x},${p.y}`;
-                })
-                .join(" ")}
-              fill="none"
-              stroke="rgba(63,63,70,0.4)"
-              strokeWidth={1}
-            />
-          ))}
-          {/* Axis lines */}
-          {axes.map((_, i) => {
-            const p = point(i, r);
-            return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(63,63,70,0.25)" strokeWidth={1} />;
-          })}
-          {/* Data polygon */}
-          <polygon
-            points={polygonPoints}
-            fill="rgba(139,92,246,0.12)"
-            stroke="rgba(139,92,246,0.6)"
-            strokeWidth={1.5}
-          />
-          {/* Data points */}
-          {axes.map((ax, i) => {
-            const p = point(i, (ax.value / 100) * r);
-            return (
-              <circle
-                key={i}
-                cx={p.x}
-                cy={p.y}
-                r={4}
-                fill={ax.color}
-                style={{ filter: `drop-shadow(0 0 4px ${ax.color}80)` }}
+      <div className="flex flex-col lg:flex-row gap-0">
+        {/* Radar SVG */}
+        <div className="flex items-center justify-center p-6 lg:border-r border-b lg:border-b-0" style={{ borderColor: "rgba(63,63,70,0.4)" }}>
+          <svg width={400} height={400} viewBox="0 0 400 400">
+            {/* Rings */}
+            {rings.map((f) => (
+              <polygon
+                key={f}
+                points={axes
+                  .map((_, i) => {
+                    const p = point(i, r * f);
+                    return `${p.x},${p.y}`;
+                  })
+                  .join(" ")}
+                fill="none"
+                stroke="rgba(63,63,70,0.4)"
+                strokeWidth={1}
               />
-            );
-          })}
-          {/* Labels */}
-          {axes.map((ax, i) => {
-            const p = point(i, r + 20);
-            const anchor = p.x < cx - 5 ? "end" : p.x > cx + 5 ? "start" : "middle";
-            return (
-              <text
-                key={i}
-                x={p.x}
-                y={p.y + 4}
-                textAnchor={anchor}
-                fontSize={10}
-                fill={ax.value > 0 ? "#a1a1aa" : "#52525b"}
-                fontFamily="monospace"
-              >
-                {ax.label}
-              </text>
-            );
-          })}
-        </svg>
+            ))}
+            {/* Ring labels */}
+            {rings.map((f) => {
+              const p = point(0, r * f);
+              return (
+                <text
+                  key={f}
+                  x={p.x + 4}
+                  y={p.y - 3}
+                  fontSize={9}
+                  fill="rgba(82,82,91,0.8)"
+                  fontFamily="monospace"
+                >
+                  {Math.round(f * 100)}%
+                </text>
+              );
+            })}
+            {/* Axis lines */}
+            {axes.map((_, i) => {
+              const p = point(i, r);
+              return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(63,63,70,0.25)" strokeWidth={1} />;
+            })}
+            {/* Data polygon */}
+            <polygon
+              points={polygonPoints}
+              fill="rgba(139,92,246,0.12)"
+              stroke="rgba(139,92,246,0.6)"
+              strokeWidth={1.5}
+            />
+            {/* Data points */}
+            {axes.map((ax, i) => {
+              const p = point(i, (ax.value / 100) * r);
+              return (
+                <circle
+                  key={i}
+                  cx={p.x}
+                  cy={p.y}
+                  r={4}
+                  fill={ax.color}
+                  style={{ filter: `drop-shadow(0 0 4px ${ax.color}80)` }}
+                />
+              );
+            })}
+            {/* Labels */}
+            {axes.map((ax, i) => {
+              const p = point(i, r + 22);
+              const anchor = p.x < cx - 8 ? "end" : p.x > cx + 8 ? "start" : "middle";
+              return (
+                <text
+                  key={i}
+                  x={p.x}
+                  y={p.y + 4}
+                  textAnchor={anchor}
+                  fontSize={11}
+                  fill={ax.value > 0 ? "#a1a1aa" : "#52525b"}
+                  fontFamily="monospace"
+                >
+                  {ax.label}
+                </text>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Right panel: header + per-area bars + legend */}
+        <div className="flex-1 p-6 flex flex-col gap-5 min-w-0">
+          <div>
+            <h3 className="text-base font-semibold mb-0.5" style={{ color: "#a1a1aa" }}>
+              Cobertura Total
+            </h3>
+            <p className="text-xs" style={{ color: "#52525b" }}>
+              Progresso por área de conhecimento
+            </p>
+          </div>
+
+          {/* Per-area breakdown */}
+          <div className="space-y-3 flex-1">
+            {axes.map((ax) => (
+              <div key={ax.area.id} className="flex items-center gap-3">
+                <span className="text-base w-6 text-center flex-shrink-0">{ax.area.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium truncate pr-2" style={{ color: ax.value > 0 ? "#d4d4d8" : "#71717a" }}>
+                      {ax.fullName}
+                    </span>
+                    <span className="text-xs tabular-nums font-bold flex-shrink-0" style={{ color: ax.color }}>
+                      {ax.value}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)" }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${ax.value}%`,
+                        background: ax.color,
+                        boxShadow: ax.value > 0 ? `0 0 6px ${ax.color}60` : "none",
+                      }}
+                    />
+                  </div>
+                </div>
+                <span className="text-xs tabular-nums flex-shrink-0" style={{ color: "#52525b" }}>
+                  {ax.mastered}/{ax.total}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Legend */}
+          <div
+            className="rounded-lg p-3 text-xs space-y-1.5"
+            style={{
+              background: "rgba(9,9,11,0.5)",
+              border: "1px solid rgba(63,63,70,0.4)",
+              color: "#52525b",
+            }}
+          >
+            <div className="font-semibold mb-2" style={{ color: "#71717a" }}>
+              Status dos nodes
+            </div>
+            {[
+              ["▷ Disponível", "pré-requisitos cumpridos"],
+              ["⚡ Estudando", "em progresso ativo"],
+              ["✦ Dominada", "skill dominada"],
+              ["🔒 Bloqueada", "pré-requisitos pendentes"],
+            ].map(([icon, desc]) => (
+              <div key={icon} className="flex gap-2">
+                <span style={{ color: "#a1a1aa", minWidth: 80 }}>{icon}</span>
+                <span>{desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -297,105 +385,73 @@ export function SkillsClient() {
       : "Iniciante";
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 py-8 max-w-7xl mx-auto">
+    <div className="min-h-screen px-4 sm:px-6 py-8 max-w-7xl mx-auto space-y-8">
       {/* Hero */}
-      <div className="mb-10">
-        <div className="flex items-start gap-6 flex-wrap">
-          {/* Overall progress ring */}
-          <div className="relative flex-shrink-0">
-            <ProgressRing pct={overallPct} color="#8b5cf6" size={100} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold tabular-nums" style={{ color: "#c4b5fd" }}>
-                {overallPct}%
-              </span>
-            </div>
+      <div className="flex items-start gap-6 flex-wrap">
+        <div className="relative flex-shrink-0">
+          <ProgressRing pct={overallPct} color="#8b5cf6" size={100} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-xl font-bold tabular-nums" style={{ color: "#c4b5fd" }}>
+              {overallPct}%
+            </span>
           </div>
+        </div>
 
-          <div className="flex-1 min-w-0 pt-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold" style={{ color: "#f4f4f5" }}>
-                Skill Tracker
-              </h1>
-              <span
-                className="text-xs font-bold px-2.5 py-1 rounded-full"
-                style={{
-                  background: "rgba(139,92,246,0.15)",
-                  color: "#c4b5fd",
-                  border: "1px solid rgba(139,92,246,0.4)",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                {rankLabel}
+        <div className="flex-1 min-w-0 pt-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold" style={{ color: "#f4f4f5" }}>
+              Skill Tracker
+            </h1>
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-full"
+              style={{
+                background: "rgba(139,92,246,0.15)",
+                color: "#c4b5fd",
+                border: "1px solid rgba(139,92,246,0.4)",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {rankLabel}
+            </span>
+          </div>
+          <p className="text-sm mb-3" style={{ color: "#71717a" }}>
+            {SKILL_AREAS.length} áreas · {totalNodes} skills mapeadas
+          </p>
+          <div className="flex items-center gap-6 text-sm">
+            <div>
+              <span className="font-bold tabular-nums" style={{ color: "#c4b5fd" }}>
+                {totalMastered}
               </span>
+              <span style={{ color: "#71717a" }}> dominadas</span>
             </div>
-            <p className="text-sm mb-3" style={{ color: "#71717a" }}>
-              {SKILL_AREAS.length} áreas · {totalNodes} skills mapeadas
-            </p>
-            <div className="flex items-center gap-6 text-sm">
-              <div>
-                <span className="font-bold tabular-nums" style={{ color: "#c4b5fd" }}>
-                  {totalMastered}
-                </span>
-                <span style={{ color: "#71717a" }}> dominadas</span>
-              </div>
-              <div>
-                <span className="font-bold tabular-nums" style={{ color: "#a78bfa" }}>
-                  {totalLearning}
-                </span>
-                <span style={{ color: "#71717a" }}> estudando</span>
-              </div>
-              <div>
-                <span className="font-bold tabular-nums" style={{ color: "#52525b" }}>
-                  {totalNodes - totalMastered - totalLearning}
-                </span>
-                <span style={{ color: "#52525b" }}> não iniciadas</span>
-              </div>
+            <div>
+              <span className="font-bold tabular-nums" style={{ color: "#a78bfa" }}>
+                {totalLearning}
+              </span>
+              <span style={{ color: "#71717a" }}> estudando</span>
+            </div>
+            <div>
+              <span className="font-bold tabular-nums" style={{ color: "#52525b" }}>
+                {totalNodes - totalMastered - totalLearning}
+              </span>
+              <span style={{ color: "#52525b" }}> não iniciadas</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Area grid + Radar */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-        {/* Areas grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {SKILL_AREAS.map((area) => (
-            <AreaCard
-              key={area.id}
-              area={area}
-              progress={loading ? {} : (allProgress[area.id] ?? {})}
-            />
-          ))}
-        </div>
+      {/* Coverage panel — full width */}
+      <CoveragePanel allProgress={loading ? {} : allProgress} />
 
-        {/* Radar */}
-        <div className="flex flex-col gap-4">
-          <MasterRadar allProgress={loading ? {} : allProgress} />
-          {/* Quick legend */}
-          <div
-            className="rounded-xl p-4 text-xs space-y-2"
-            style={{
-              background: "rgba(15,15,18,0.7)",
-              border: "1px solid rgba(63,63,70,0.5)",
-              color: "#52525b",
-            }}
-          >
-            <div className="font-semibold mb-2" style={{ color: "#71717a" }}>
-              Como funciona
-            </div>
-            {[
-              ["▷ Disponível", "pré-requisitos cumpridos"],
-              ["⚡ Estudando", "em progresso ativo"],
-              ["✦ Dominada", "skill dominada"],
-              ["🔒 Bloqueada", "pré-requisitos pendentes"],
-            ].map(([icon, desc]) => (
-              <div key={icon} className="flex gap-2">
-                <span style={{ color: "#a1a1aa", minWidth: 80 }}>{icon}</span>
-                <span>{desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Area cards — full width grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {SKILL_AREAS.map((area) => (
+          <AreaCard
+            key={area.id}
+            area={area}
+            progress={loading ? {} : (allProgress[area.id] ?? {})}
+          />
+        ))}
       </div>
     </div>
   );
