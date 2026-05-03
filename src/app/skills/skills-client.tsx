@@ -76,14 +76,14 @@ function AreaCard({
     >
       {/* Card header */}
       <div
-        className="px-5 py-4 flex items-center gap-3"
+        className="px-6 py-5 flex items-center gap-4"
         style={{ borderBottom: `1px solid ${colors.border}` }}
       >
         <div
-          className="rounded-lg flex items-center justify-center font-mono text-lg flex-shrink-0"
+          className="rounded-xl flex items-center justify-center font-mono text-2xl flex-shrink-0"
           style={{
-            width: 40,
-            height: 40,
+            width: 52,
+            height: 52,
             background: colors.bgMedium,
             color: colors.primary,
             border: `1px solid ${colors.border}`,
@@ -92,15 +92,15 @@ function AreaCard({
           {area.emoji}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm leading-snug" style={{ color: colors.text }}>
+          <div className="font-semibold text-base leading-snug" style={{ color: colors.text }}>
             {area.name}
           </div>
-          <div className="text-xs mt-0.5" style={{ color: "#52525b" }}>
+          <div className="text-xs mt-1" style={{ color: "#52525b" }}>
             {total} skills · {area.tierNames.length} tiers
           </div>
         </div>
         <div className="flex-shrink-0 relative">
-          <ProgressRing pct={pct} color={colors.primary} size={52} />
+          <ProgressRing pct={pct} color={colors.primary} size={58} />
           <div
             className="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums"
             style={{ color: colors.text }}
@@ -111,13 +111,13 @@ function AreaCard({
       </div>
 
       {/* Mini preview */}
-      <div className="px-4 py-3">
+      <div className="px-5 py-4">
         <SkillTreeMiniPreview area={area} progress={progress} />
       </div>
 
       {/* Stats + CTA */}
-      <div className="px-5 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${colors.border}` }}>
-        <div className="flex items-center gap-3 text-xs" style={{ color: "#52525b" }}>
+      <div className="px-6 py-4 flex items-center justify-between" style={{ borderTop: `1px solid ${colors.border}` }}>
+        <div className="flex items-center gap-4 text-sm" style={{ color: "#52525b" }}>
           <span>
             <span style={{ color: colors.text, fontWeight: 600 }}>{mastered}</span>
             {" dominadas"}
@@ -130,10 +130,10 @@ function AreaCard({
           )}
         </div>
         <div
-          className="flex items-center gap-1 text-xs font-medium group-hover:gap-2 transition-all"
+          className="flex items-center gap-1 text-sm font-medium group-hover:gap-2 transition-all"
           style={{ color: colors.textMuted }}
         >
-          Ver árvore <ChevronRight size={12} />
+          Ver árvore <ChevronRight size={14} />
         </div>
       </div>
     </Link>
@@ -385,7 +385,7 @@ export function SkillsClient() {
       : "Iniciante";
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 py-8 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen px-4 sm:px-8 lg:px-12 py-8 space-y-8">
       {/* Hero */}
       <div className="flex items-start gap-6 flex-wrap">
         <div className="relative flex-shrink-0">
@@ -443,9 +443,9 @@ export function SkillsClient() {
       {/* Coverage panel — full width */}
       <CoveragePanel allProgress={loading ? {} : allProgress} />
 
-      {/* Area cards — full width grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {SKILL_AREAS.map((area) => (
+      {/* Area cards — 3 per row, no GovTech card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {SKILL_AREAS.filter((a) => a.id !== "govtech").map((area) => (
           <AreaCard
             key={area.id}
             area={area}
