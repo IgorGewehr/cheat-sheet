@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Card, Input, Label, Tag } from "@/components/ui";
-import { exportWorkspace, importWorkspace } from "@/lib/db";
+import { exportWorkspace, importWorkspace, saveIntegracao, getIntegracao, deleteIntegracao } from "@/lib/db";
 import { getWorkspaceId, resetWorkspaceId, setWorkspaceId } from "@/lib/workspace";
 import { useAuth } from "@/lib/auth-context";
 
@@ -13,9 +13,51 @@ export default function WorkspacePage() {
   const [msg, setMsg] = useState("");
   const [migrating, setMigrating] = useState(false);
 
+  const [githubToken, setGithubToken] = useState("");
+  const [githubSaved, setGithubSaved] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
+  const [githubMsg, setGithubMsg] = useState("");
+
   useEffect(() => {
     setWsId(getWorkspaceId());
   }, [user]);
+
+  useEffect(() => {
+    if (!signedIn) return;
+    getIntegracao<{ token: string }>("github").then((data) => {
+      if (data?.token) setGithubSaved(true);
+    });
+  }, [signedIn]);
+
+  async function salvarGithubToken() {
+    if (!githubToken.trim()) return;
+    setGithubLoading(true);
+    setGithubMsg("");
+    try {
+      await saveIntegracao("github", { token: githubToken.trim() });
+      setGithubSaved(true);
+      setGithubToken("");
+      setGithubMsg("Token salvo.");
+    } catch (e) {
+      setGithubMsg("Erro: " + (e instanceof Error ? e.message : "falha ao salvar"));
+    } finally {
+      setGithubLoading(false);
+    }
+  }
+
+  async function removerGithubToken() {
+    setGithubLoading(true);
+    setGithubMsg("");
+    try {
+      await deleteIntegracao("github");
+      setGithubSaved(false);
+      setGithubMsg("Token removido.");
+    } catch (e) {
+      setGithubMsg("Erro: " + (e instanceof Error ? e.message : "falha ao remover"));
+    } finally {
+      setGithubLoading(false);
+    }
+  }
 
   async function exportar() {
     const data = await exportWorkspace();
@@ -167,6 +209,52 @@ export default function WorkspacePage() {
         <p className="text-xs text-subtle mt-2">
           A página recarrega e você passa a ver os dados daquele workspace.
         </p>
+      </Card>
+
+      <Card>
+        <h2 className="font-semibold mb-3">Integrações</h2>
+        <div className="space-y-4">
+          <div>
+            <Label>GitHub Personal Access Token</Label>
+            <p className="text-xs text-subtle mb-3">
+              Salvo por workspace no Firestore. Usado para importar repos via URL.
+              Gere em GitHub → Settings → Developer settings → Fine-grained tokens
+              com permissão <code className="text-violet-400">Contents: Read-only</code>.
+            </p>
+            {githubSaved ? (
+              <div className="flex items-center gap-3">
+                <Tag color="emerald">token configurado</Tag>
+                <Button
+                  variant="danger"
+                  onClick={removerGithubToken}
+                  disabled={githubLoading}
+                >
+                  {githubLoading ? "Removendo…" : "Remover token"}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  value={githubToken}
+                  onChange={(e) => setGithubToken(e.target.value)}
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                />
+                <Button
+                  onClick={salvarGithubToken}
+                  disabled={!githubToken.trim() || githubLoading}
+                >
+                  {githubLoading ? "Salvando…" : "Salvar"}
+                </Button>
+              </div>
+            )}
+            {githubMsg && (
+              <p className={`text-xs mt-2 ${githubMsg.startsWith("Erro") ? "text-red-400" : "text-emerald-400"}`}>
+                {githubMsg}
+              </p>
+            )}
+          </div>
+        </div>
       </Card>
 
       <Card>

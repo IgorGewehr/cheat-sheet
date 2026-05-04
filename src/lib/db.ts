@@ -55,7 +55,8 @@ type ColName =
   | "cardDoDia" | "dividas" | "retrospectivas" | "sprintsSemIA"
   | "errosPersonais" | "experienciasSTAR" | "systemDesigns"
   | "mockInterviews" | "rfcSessions" | "warGames" | "revisoesCodigo"
-  | "trilhaProgresso" | "idleSessions" | "questSessions";
+  | "trilhaProgresso" | "idleSessions" | "questSessions"
+  | "integracoes";
 
 function col(name: ColName) {
   const { db } = getFirebase();
@@ -1198,4 +1199,29 @@ export async function markDecisaoRevisitada(decisaoId: string, ts: number): Prom
   const current = snap.data() as Decisao;
   const revisitadoEm = [...(current.revisitadoEm ?? []), ts];
   await setDoc(ref, { revisitadoEm }, { merge: true });
+}
+
+// ───── Integrações (tokens por workspace) ───────────────────
+
+export type IntegracaoId = "github";
+
+export interface GithubIntegracao {
+  token: string;
+  atualizadoEm: number;
+}
+
+export async function saveIntegracao(id: IntegracaoId, data: Record<string, unknown>): Promise<void> {
+  await ready();
+  await setDoc(docRef("integracoes", id), { ...data, atualizadoEm: Date.now() });
+}
+
+export async function getIntegracao<T = Record<string, unknown>>(id: IntegracaoId): Promise<T | null> {
+  await ready();
+  const snap = await getDoc(docRef("integracoes", id));
+  return snap.exists() ? (snap.data() as T) : null;
+}
+
+export async function deleteIntegracao(id: IntegracaoId): Promise<void> {
+  await ready();
+  await deleteDoc(docRef("integracoes", id));
 }
