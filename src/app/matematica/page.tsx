@@ -1,10 +1,5 @@
-import { MatematicaClient } from "./matematica-client";
-
-export const metadata = {
-  title: "Matemática — Brain",
-  description: "Grade do Bacharelado em Matemática — tracker de disciplinas e progresso.",
-};
+import { redirect } from "next/navigation";
 
 export default function MatematicaPage() {
-  return <MatematicaClient />;
+  redirect("/skills/matematica");
 }

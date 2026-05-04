@@ -35,7 +35,7 @@ const VERB_ITEMS: Record<Verb, Item[]> = {
   ],
   estudar: [
     { href: "/skills",         label: "Skill Tracker",    icon: Network, hot: true },
-    { href: "/matematica",     label: "Matemática",       icon: Sigma },
+    { href: "/skills/matematica", label: "Matemática",    icon: Sigma },
     { href: "/jobs",           label: "Carreira",         icon: Briefcase },
     { href: "/biblioteca",     label: "Biblioteca",       icon: BookOpen },
     { href: "/trilha",         label: "Trilha Sênior",    icon: TrendingUp },

@@ -14,7 +14,7 @@ export type Verb = "trabalhar" | "estudar" | "treinar" | "refletir";
 
 const VERB_ROUTES: Record<Verb, string[]> = {
   trabalhar: ["/sessao", "/decisoes", "/comparar", "/fim-do-dia", "/gerar-card", "/projetos", "/sentinela", "/idle", "/claude-code"],
-  estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva", "/matematica", "/jobs"],
+  estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva", "/skills", "/jobs"],
   treinar: [
     "/debate", "/math-quest", "/anti-pattern", "/war-game",
     "/system-design", "/mock-interview", "/refatoracao", "/architecture-audit",
