@@ -18,6 +18,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { ensureSignedIn, getFirebase } from "./firebase";
 import { getWorkspaceId } from "./workspace";
+import { syncTrilhaToNodes } from "./progress-bridge";
 import { computeNextReview } from "./srs";
 import type {
   Adocao,
@@ -552,10 +553,13 @@ export async function saveTrilhaProgresso(
   const current: TrilhaProgresso = existing.exists()
     ? (existing.data() as TrilhaProgresso)
     : { cardSlug, dominado: false, tentativas: 0, melhorScore: 0 };
-  await setDoc(
-    docRef("trilhaProgresso", cardSlug),
-    clean({ ...current, ...update }) as DocumentData,
-  );
+  const merged = clean({ ...current, ...update }) as TrilhaProgresso;
+  await setDoc(docRef("trilhaProgresso", cardSlug), merged as DocumentData);
+
+  // Sync bidirecional: propaga dominado para skillProgress (sem bloquear)
+  if (typeof merged.dominado === "boolean") {
+    syncTrilhaToNodes(cardSlug, merged.dominado).catch(() => {});
+  }
 }
 
 // ───── Dívida de Conhecimento ────────────────────────────────

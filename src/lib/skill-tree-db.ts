@@ -11,6 +11,7 @@ import {
 import { ensureSignedIn, getFirebase } from "./firebase";
 import { getWorkspaceId } from "./workspace";
 import type { SkillAreaProgress, PersistedLevel } from "./skill-tree-types";
+import { syncNodeToTrilha } from "./progress-bridge";
 
 function areaRef(areaId: string) {
   const { db } = getFirebase();
@@ -48,6 +49,9 @@ export async function setNodeLevel(
       { nodes: { ...current, [nodeId]: level }, updatedAt: Date.now() } as DocumentData,
     );
   }
+
+  // Sync bidirecional: propaga o estado para trilhaProgresso (sem bloquear)
+  syncNodeToTrilha(areaId, nodeId, level).catch(() => {});
 }
 
 export async function getAllProgress(): Promise<Record<string, SkillAreaProgress>> {
