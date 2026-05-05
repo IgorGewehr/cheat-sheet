@@ -148,10 +148,11 @@ const SOFTWARE: SkillArea = {
     { id: "se-http", name: "HTTP & Redes", description: "TCP/IP, HTTP/1.1, HTTP/2, TLS, DNS, REST semântica.", tier: 0, prerequisites: [] },
 
     // ── Tier 1 ──
-    { id: "se-patterns", name: "Design Patterns & NestJS DI", description: "GoF: factory, strategy, observer. NestJS: DI container, providers, escopos, tokens, forRoot.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["repository-pattern", "cqrs-lite", "saga-pattern", "nest-module-organization", "nestjs-guards-interceptors", "nestjs-di-providers"] },
+    { id: "se-patterns", name: "Design Patterns & NestJS DI", description: "GoF: factory, strategy, observer. NestJS: DI container, providers, escopos, tokens, forRoot.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["repository-pattern", "cqrs-lite", "saga-pattern", "nest-module-organization", "nestjs-guards-interceptors", "nestjs-di-providers", "prompt-modulo-crud-nest", "prompt-modulo-financeiro"] },
     { id: "se-clean-code", name: "Clean Code & SOLID", description: "Naming, SRP, OCP, LSP, ISP, DIP — código como documentação.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["clean-architecture", "use-cases", "como-auditar-codigo-ia", "ai-monolito-arquivo-unico", "ai-sem-tratamento-erro"] },
+    { id: "se-frontend", name: "Next.js & RSC", description: "App Router, React Server Components, Server Actions, streaming com Suspense, os 4 caches do Next.js 15.", tier: 1, prerequisites: ["se-http"], cardSlugs: ["app-router", "server-components", "server-actions", "streaming-suspense", "nextjs-caching-model"] },
     { id: "se-testing", name: "TDD & Testing", description: "TDD Red/Green/Refactor, unit tests com Jest, integration tests, pirâmide de testes, E2E Playwright.", tier: 1, prerequisites: ["se-clean-code"], cardSlugs: ["tdd-red-green-refactor", "jest-unit-nestjs", "nestjs-integration-testing", "testing-pyramid-nestjs", "playwright-nextjs", "test-data-builders"] },
-    { id: "se-api", name: "REST API Design & SDD", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI spec-first.", tier: 1, prerequisites: ["se-http", "se-sql"], cardSlugs: ["dto-validation", "sdd-openapi-nestjs", "gateway-compliance", "audit-api-endpoint", "golang-chi-gin-fiber", "ai-sem-paginacao", "ai-sem-validacao"] },
+    { id: "se-api", name: "REST API Design & SDD", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI spec-first com NestJS.", tier: 1, prerequisites: ["se-http", "se-sql"], cardSlugs: ["dto-validation", "sdd-openapi-nestjs", "gateway-compliance", "audit-api-endpoint", "ai-sem-paginacao", "ai-sem-validacao"] },
     { id: "se-ci-cd", name: "CI/CD & Config", description: "Pipelines, Github Actions, build, lint, test, deploy, variáveis de ambiente com validação.", tier: 1, prerequisites: ["se-git", "se-testing"], cardSlugs: ["github-actions-cicd", "monorepo-turborepo", "nestjs-config-env", "ai-config-hardcoded"] },
 
     // ── Tier 2 ──
@@ -165,7 +166,7 @@ const SOFTWARE: SkillArea = {
     { id: "se-arq-dist", name: "Arquitetura Distribuída", description: "CAP, consensus, particionamento, replicação, SLA/SLO.", tier: 3, prerequisites: ["se-microsserv", "se-event-driven"], cardSlugs: ["multi-filial", "multi-tenant-strategies"] },
     { id: "se-performance", name: "Performance & Escalabilidade", description: "Caching, sharding, load balancing, profiling, N+1, PostgreSQL query tuning.", tier: 3, prerequisites: ["se-observ", "se-arq-dist"], cardSlugs: ["caching-layers", "rate-limit-distribuido", "n-plus-1", "postgres-indexes-explain", "nextjs-caching-model", "ai-n-plus-1", "firestore-cost-optimization"] },
     { id: "se-security", name: "AppSec & OWASP", description: "SAST/DAST, threat modeling, OWASP Top 10 avançado, WAF.", tier: 3, prerequisites: ["se-auth", "se-api"], cardSlugs: ["owasp-top10", "sast-dast-scanning", "ai-prompt-injection"] },
-    { id: "se-system-design", name: "System Design", description: "URL shortener, Twitter, WhatsApp — prática completa.", tier: 3, prerequisites: ["se-arq-dist", "se-performance"] },
+    { id: "se-system-design", name: "System Design", description: "URL shortener, Twitter, WhatsApp — prática completa.", tier: 3, prerequisites: ["se-arq-dist", "se-performance"], routeHref: "/system-design" },
     { id: "se-iac", name: "Infraestrutura como Código", description: "Terraform, Pulumi, Helm, GitOps, ambientes efêmeros.", tier: 3, prerequisites: ["se-ci-cd", "se-observ"], cardSlugs: ["terraform-iac", "argocd-gitops"] },
 
     // ── Tier 4 ──
