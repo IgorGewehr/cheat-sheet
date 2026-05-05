@@ -1,17 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { SkillArea, SkillNode, SkillLevel, SkillAreaProgress } from "@/lib/skill-tree-types";
 
 // ─── Layout constants ────────────────────────────────────────────────────────
 
-const NW = 176;          // node width
+const NW_DEFAULT = 176;  // node width fallback (before container measured)
+const NW_MIN = 140;      // minimum node width
 const NH = 72;           // node height
-const GAP_X = 20;        // horizontal gap between nodes in same tier
+const GAP_X = 16;        // horizontal gap between nodes in same tier
 const GAP_Y = 56;        // vertical gap between tier rows
 const PAD_X = 24;
 const PAD_Y = 24;
-const TIER_LABEL_H = 32; // height of tier label row
+const TIER_LABEL_H = 32;
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -30,7 +31,8 @@ type NodePos = { x: number; y: number };
 
 function computeLayout(
   nodes: SkillNode[],
-): { positions: Map<string, NodePos>; canvasW: number; canvasH: number } {
+  nw: number,
+): { positions: Map<string, NodePos>; canvasH: number } {
   const tiers = [...new Set(nodes.map((n) => n.tier))].sort((a, b) => a - b);
   const numTiers = tiers.length;
 
@@ -38,22 +40,21 @@ function computeLayout(
   for (const t of tiers) tierNodeMap.set(t, nodes.filter((n) => n.tier === t));
 
   const maxCount = Math.max(...[...tierNodeMap.values()].map((ns) => ns.length));
-  const totalContentW = maxCount * NW + Math.max(0, maxCount - 1) * GAP_X;
+  const totalContentW = maxCount * nw + Math.max(0, maxCount - 1) * GAP_X;
 
   const positions = new Map<string, NodePos>();
   for (const [tier, tierNodes] of tierNodeMap) {
     const tierIndex = tiers.indexOf(tier);
-    const tierW = tierNodes.length * NW + Math.max(0, tierNodes.length - 1) * GAP_X;
+    const tierW = tierNodes.length * nw + Math.max(0, tierNodes.length - 1) * GAP_X;
     const startX = PAD_X + (totalContentW - tierW) / 2;
     const y = PAD_Y + tierIndex * (TIER_LABEL_H + NH + GAP_Y) + TIER_LABEL_H;
     tierNodes.forEach((node, i) => {
-      positions.set(node.id, { x: startX + i * (NW + GAP_X), y });
+      positions.set(node.id, { x: startX + i * (nw + GAP_X), y });
     });
   }
 
   return {
     positions,
-    canvasW: PAD_X * 2 + totalContentW,
     canvasH: PAD_Y * 2 + numTiers * (TIER_LABEL_H + NH) + Math.max(0, numTiers - 1) * GAP_Y,
   };
 }
@@ -77,11 +78,12 @@ interface NodeProps {
   node: SkillNode;
   level: SkillLevel;
   colors: SkillArea["colors"];
+  nw: number;
   onClick: () => void;
   style: React.CSSProperties;
 }
 
-function SkillNodeCard({ node, level, colors, onClick, style }: NodeProps) {
+function SkillNodeCard({ node, level, colors, nw, onClick, style }: NodeProps) {
   const [hovered, setHovered] = useState(false);
 
   const isLocked = level === "locked";
@@ -124,7 +126,7 @@ function SkillNodeCard({ node, level, colors, onClick, style }: NodeProps) {
       className="absolute text-left group"
       style={{
         ...style,
-        width: NW,
+        width: nw,
         height: NH,
         borderRadius: 10,
         border: `1px solid ${isLearning ? "transparent" : borderColor}`,
@@ -228,17 +230,44 @@ interface Props {
 }
 
 export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
-  const { nodes, colors, tierNames } = area;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  const { positions, canvasW, canvasH } = useMemo(
-    () => computeLayout(nodes),
-    [nodes],
-  );
+  // Measure container width synchronously before first paint, then track resizes
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerWidth(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0]?.contentRect.width ?? el.clientWidth);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const { nodes, colors, tierNames } = area;
 
   const tiers = useMemo(() => {
     const s = new Set(nodes.map((n) => n.tier));
     return [...s].sort((a, b) => a - b);
   }, [nodes]);
+
+  const maxTierCount = useMemo(
+    () => Math.max(...tiers.map((t) => nodes.filter((n) => n.tier === t).length)),
+    [nodes, tiers],
+  );
+
+  // Node width that fills the container exactly (min NW_MIN)
+  const nw = useMemo(() => {
+    if (containerWidth === 0) return NW_DEFAULT;
+    const available = containerWidth - PAD_X * 2 - Math.max(0, maxTierCount - 1) * GAP_X;
+    return Math.max(NW_MIN, Math.floor(available / maxTierCount));
+  }, [containerWidth, maxTierCount]);
+
+  const { positions, canvasH } = useMemo(
+    () => computeLayout(nodes, nw),
+    [nodes, nw],
+  );
 
   const levels = useMemo(() => {
     const m = new Map<string, SkillLevel>();
@@ -267,20 +296,17 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
   }
 
   function edgeWidth(fromId: string, toId: string): number {
-    const fromLevel = levels.get(fromId) ?? "locked";
-    const toLevel = levels.get(toId) ?? "locked";
-    return fromLevel === "mastered" && toLevel === "mastered" ? 1.5 : 1;
+    return levels.get(fromId) === "mastered" && levels.get(toId) === "mastered" ? 1.5 : 1;
   }
 
   function edgeGlow(fromId: string, toId: string): boolean {
     return levels.get(fromId) === "mastered" && levels.get(toId) === "mastered";
   }
 
-  const totalW = canvasW - 2 * PAD_X;
-
   return (
     <div
-      className="relative overflow-auto rounded-xl"
+      ref={containerRef}
+      className="relative rounded-xl overflow-hidden"
       style={{
         background: "rgba(9,9,11,0.85)",
         border: `1px solid ${colors.border}`,
@@ -289,8 +315,8 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
         backgroundSize: "28px 28px",
       }}
     >
-      <div style={{ width: canvasW, height: canvasH, position: "relative", minWidth: canvasW }}>
-        {/* Tier labels — horizontal strip above each row */}
+      <div style={{ width: "100%", height: canvasH, position: "relative" }}>
+        {/* Tier labels — full-width strip above each row */}
         {tiers.map((tier, tierIndex) => {
           const labelY = PAD_Y + tierIndex * (TIER_LABEL_H + NH + GAP_Y);
           return (
@@ -298,9 +324,9 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
               key={tier}
               style={{
                 position: "absolute",
-                left: PAD_X,
+                left: 0,
+                right: 0,
                 top: labelY,
-                width: totalW,
                 height: TIER_LABEL_H,
                 display: "flex",
                 alignItems: "center",
@@ -329,7 +355,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
         {/* SVG connections — vertical beziers (bottom-center → top-center) */}
         <svg
           style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }}
-          width={canvasW}
+          width="100%"
           height={canvasH}
         >
           <defs>
@@ -344,9 +370,9 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
           {edges.map(({ from, to }) => {
             const fp = positions.get(from)!;
             const tp = positions.get(to)!;
-            const x1 = fp.x + NW / 2;
+            const x1 = fp.x + nw / 2;
             const y1 = fp.y + NH;
-            const x2 = tp.x + NW / 2;
+            const x2 = tp.x + nw / 2;
             const y2 = tp.y;
             const glow = edgeGlow(from, to);
             return (
@@ -373,6 +399,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
               node={node}
               level={level}
               colors={colors}
+              nw={nw}
               style={{ left: pos.x, top: pos.y }}
               onClick={() => {
                 const next = cycleLevel(level);
