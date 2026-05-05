@@ -4,12 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BookOpen, FolderKanban, BarChart2, Sparkles, Zap,
-  Scale, Flame, CalendarDays, TrendingUp, AlertCircle,
+  BookOpen, BarChart2, Flame, CalendarDays, TrendingUp, AlertCircle,
   Eye, Swords, MessageSquareMore,
   Dumbbell, BookMarked, FlaskConical, FileText, Map, Mic,
-  Star, GitBranch, Activity, Moon, ShieldCheck, Sigma,
-  Briefcase, Dices, Users, Compass, Bug, Network,
+  Star, GitBranch, Activity, Sparkles, Sigma,
+  Dices, Network,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
@@ -20,28 +19,14 @@ import { getActiveVerb } from "./top-nav";
 type Item = { href: string; label: string; icon: typeof BookOpen; hot?: boolean };
 
 const VERB_ITEMS: Record<Verb, Item[]> = {
-  trabalhar: [
-    { href: "/quando-usar", label: "O que usar quando?", icon: Compass, hot: true },
-    { href: "/debug",       label: "Debug Assistido",    icon: Bug, hot: true },
-    { href: "/squad",       label: "Squad",              icon: Users, hot: true },
-    { href: "/sentinela",   label: "Sentinela",         icon: ShieldCheck, hot: true },
-    { href: "/sessao",      label: "Sessão IA",        icon: Zap, hot: true },
-    { href: "/decisoes",    label: "Decision Journal",  icon: Scale },
-    { href: "/comparar",    label: "Comparar",          icon: Scale, hot: true },
-    { href: "/fim-do-dia",  label: "Fim do Dia",        icon: Moon },
-    { href: "/gerar-card",  label: "Gerar Card c/ IA",  icon: Sparkles, hot: true },
-    { href: "/projetos",    label: "Projetos",           icon: FolderKanban },
-    { href: "/claude-code", label: "Claude Code",       icon: Activity, hot: true },
-  ],
   estudar: [
-    { href: "/skills",         label: "Skill Tracker",    icon: Network, hot: true },
-    { href: "/skills/matematica", label: "Matemática",    icon: Sigma },
-    { href: "/jobs",           label: "Carreira",         icon: Briefcase },
-    { href: "/biblioteca",     label: "Biblioteca",       icon: BookOpen },
-    { href: "/trilha",         label: "Trilha Sênior",    icon: TrendingUp },
-    { href: "/card-do-dia",    label: "Card do Dia",      icon: CalendarDays, hot: true },
-    { href: "/mapa-dominio",   label: "Mapa de Domínio",  icon: Map },
-    { href: "/retrospectiva",  label: "Retrospectiva",    icon: BookMarked },
+    { href: "/trilha",            label: "Trilha Sênior",    icon: TrendingUp, hot: true },
+    { href: "/skills",            label: "Skill Tracker",    icon: Network, hot: true },
+    { href: "/skills/matematica", label: "Matemática",       icon: Sigma },
+    { href: "/biblioteca",        label: "Biblioteca",       icon: BookOpen },
+    { href: "/card-do-dia",       label: "Card do Dia",      icon: CalendarDays, hot: true },
+    { href: "/mapa-dominio",      label: "Mapa de Domínio",  icon: Map },
+    { href: "/retrospectiva",     label: "Retrospectiva",    icon: BookMarked },
   ],
   treinar: [
     { href: "/math-quest",        label: "Treinar Mat",         icon: Dices, hot: true },

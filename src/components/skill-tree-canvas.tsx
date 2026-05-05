@@ -1,24 +1,23 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { SkillArea, SkillNode, SkillLevel, SkillAreaProgress } from "@/lib/skill-tree-types";
 
 // ─── Layout constants ────────────────────────────────────────────────────────
 
-const NW = 176; // node width
-const NH = 72;  // node height
-const GAP_X = 52; // horizontal gap between tiers
-const GAP_Y = 14; // vertical gap within tier
-const PAD_X = 20;
+const NW = 176;          // node width
+const NH = 72;           // node height
+const GAP_X = 20;        // horizontal gap between nodes in same tier
+const GAP_Y = 56;        // vertical gap between tier rows
+const PAD_X = 24;
 const PAD_Y = 24;
-const TIER_LABEL_H = 34;
+const TIER_LABEL_H = 32; // height of tier label row
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
 function computeLevel(
   node: SkillNode,
   progress: SkillAreaProgress,
-  allNodes: SkillNode[],
 ): SkillLevel {
   const saved = progress[node.id];
   if (saved === "mastered" || saved === "learning") return saved;
@@ -33,40 +32,42 @@ function computeLayout(
   nodes: SkillNode[],
 ): { positions: Map<string, NodePos>; canvasW: number; canvasH: number } {
   const tiers = [...new Set(nodes.map((n) => n.tier))].sort((a, b) => a - b);
-  const maxTier = tiers[tiers.length - 1];
+  const numTiers = tiers.length;
 
   const tierNodeMap = new Map<number, SkillNode[]>();
   for (const t of tiers) tierNodeMap.set(t, nodes.filter((n) => n.tier === t));
 
   const maxCount = Math.max(...[...tierNodeMap.values()].map((ns) => ns.length));
-  const totalContentH = maxCount * NH + (maxCount - 1) * GAP_Y;
+  const totalContentW = maxCount * NW + Math.max(0, maxCount - 1) * GAP_X;
 
   const positions = new Map<string, NodePos>();
   for (const [tier, tierNodes] of tierNodeMap) {
-    const tierH = tierNodes.length * NH + (tierNodes.length - 1) * GAP_Y;
-    const startY = PAD_Y + TIER_LABEL_H + (totalContentH - tierH) / 2;
-    const x = PAD_X + tier * (NW + GAP_X);
+    const tierIndex = tiers.indexOf(tier);
+    const tierW = tierNodes.length * NW + Math.max(0, tierNodes.length - 1) * GAP_X;
+    const startX = PAD_X + (totalContentW - tierW) / 2;
+    const y = PAD_Y + tierIndex * (TIER_LABEL_H + NH + GAP_Y) + TIER_LABEL_H;
     tierNodes.forEach((node, i) => {
-      positions.set(node.id, { x, y: startY + i * (NH + GAP_Y) });
+      positions.set(node.id, { x: startX + i * (NW + GAP_X), y });
     });
   }
 
   return {
     positions,
-    canvasW: PAD_X * 2 + (maxTier + 1) * NW + maxTier * GAP_X,
-    canvasH: PAD_Y * 2 + TIER_LABEL_H + totalContentH,
+    canvasW: PAD_X * 2 + totalContentW,
+    canvasH: PAD_Y * 2 + numTiers * (TIER_LABEL_H + NH) + Math.max(0, numTiers - 1) * GAP_Y,
   };
 }
 
+// Vertical bezier: bottom-center of source → top-center of target
 function bezierPath(x1: number, y1: number, x2: number, y2: number): string {
-  const cx = (x1 + x2) / 2;
-  return `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+  const cy = (y1 + y2) / 2;
+  return `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
 }
 
 function cycleLevel(current: SkillLevel): "learning" | "mastered" | null {
   if (current === "available") return "learning";
   if (current === "learning") return "mastered";
-  if (current === "mastered") return null; // reset
+  if (current === "mastered") return null;
   return null;
 }
 
@@ -86,14 +87,11 @@ function SkillNodeCard({ node, level, colors, onClick, style }: NodeProps) {
   const isLocked = level === "locked";
   const isMastered = level === "mastered";
   const isLearning = level === "learning";
-  const isAvailable = level === "available";
 
   const borderColor = isLocked
     ? "rgba(63,63,70,0.6)"
     : isMastered
     ? colors.borderMastered
-    : isLearning
-    ? colors.border
     : colors.border;
 
   const bgColor = isLocked
@@ -145,7 +143,7 @@ function SkillNodeCard({ node, level, colors, onClick, style }: NodeProps) {
     >
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 13, lineHeight: 1 }}>
+        <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>
           {isLocked ? "🔒" : isMastered ? "✦" : isLearning ? "⚡" : "▷"}
         </span>
         <span
@@ -162,11 +160,26 @@ function SkillNodeCard({ node, level, colors, onClick, style }: NodeProps) {
         >
           {node.name}
         </span>
+        {node.cardSlug && !isLocked && (
+          <a
+            href={`/biblioteca/${node.cardSlug}`}
+            onClick={(e) => e.stopPropagation()}
+            title="Ver card na biblioteca"
+            style={{
+              fontSize: 11,
+              color: colors.textMuted,
+              opacity: 0.75,
+              flexShrink: 0,
+              lineHeight: 1,
+            }}
+          >
+            ↗
+          </a>
+        )}
       </div>
 
       {/* Footer row */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-        {/* Level dots */}
         {(isMastered || isLearning) && (
           <div style={{ display: "flex", gap: 3 }}>
             {Array.from({ length: 5 }).map((_, i) => (
@@ -229,11 +242,10 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
 
   const levels = useMemo(() => {
     const m = new Map<string, SkillLevel>();
-    for (const n of nodes) m.set(n.id, computeLevel(n, progress, nodes));
+    for (const n of nodes) m.set(n.id, computeLevel(n, progress));
     return m;
   }, [nodes, progress]);
 
-  // Compute connection edges
   const edges = useMemo(() => {
     const result: { from: string; to: string }[] = [];
     for (const node of nodes) {
@@ -257,13 +269,14 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
   function edgeWidth(fromId: string, toId: string): number {
     const fromLevel = levels.get(fromId) ?? "locked";
     const toLevel = levels.get(toId) ?? "locked";
-    if (fromLevel === "mastered" && toLevel === "mastered") return 1.5;
-    return 1;
+    return fromLevel === "mastered" && toLevel === "mastered" ? 1.5 : 1;
   }
 
   function edgeGlow(fromId: string, toId: string): boolean {
-    return (levels.get(fromId) === "mastered") && (levels.get(toId) === "mastered");
+    return levels.get(fromId) === "mastered" && levels.get(toId) === "mastered";
   }
+
+  const totalW = canvasW - 2 * PAD_X;
 
   return (
     <div
@@ -272,25 +285,23 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
         background: "rgba(9,9,11,0.85)",
         border: `1px solid ${colors.border}`,
         minHeight: 240,
-        backgroundImage: `
-          radial-gradient(circle, ${colors.bgLight} 1px, transparent 1px)
-        `,
+        backgroundImage: `radial-gradient(circle, ${colors.bgLight} 1px, transparent 1px)`,
         backgroundSize: "28px 28px",
       }}
     >
       <div style={{ width: canvasW, height: canvasH, position: "relative", minWidth: canvasW }}>
-        {/* Tier labels */}
-        {tiers.map((tier) => {
-          const firstNodePos = positions.get(nodes.find((n) => n.tier === tier)!.id);
+        {/* Tier labels — horizontal strip above each row */}
+        {tiers.map((tier, tierIndex) => {
+          const labelY = PAD_Y + tierIndex * (TIER_LABEL_H + NH + GAP_Y);
           return (
             <div
               key={tier}
               style={{
                 position: "absolute",
-                left: PAD_X + tier * (NW + GAP_X),
-                top: PAD_Y,
-                width: NW,
-                height: TIER_LABEL_H - 6,
+                left: PAD_X,
+                top: labelY,
+                width: totalW,
+                height: TIER_LABEL_H,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -315,7 +326,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
           );
         })}
 
-        {/* SVG connections */}
+        {/* SVG connections — vertical beziers (bottom-center → top-center) */}
         <svg
           style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }}
           width={canvasW}
@@ -333,10 +344,10 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
           {edges.map(({ from, to }) => {
             const fp = positions.get(from)!;
             const tp = positions.get(to)!;
-            const x1 = fp.x + NW;
-            const y1 = fp.y + NH / 2;
-            const x2 = tp.x;
-            const y2 = tp.y + NH / 2;
+            const x1 = fp.x + NW / 2;
+            const y1 = fp.y + NH;
+            const x2 = tp.x + NW / 2;
+            const y2 = tp.y;
             const glow = edgeGlow(from, to);
             return (
               <path
@@ -375,7 +386,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
   );
 }
 
-// ─── Mini preview (for master dashboard) ─────────────────────────────────────
+// ─── Mini preview (vertical: rows = tiers, dots spread horizontally) ─────────
 
 interface MiniPreviewProps {
   area: SkillArea;
@@ -383,7 +394,7 @@ interface MiniPreviewProps {
   size?: number;
 }
 
-export function SkillTreeMiniPreview({ area, progress, size = 120 }: MiniPreviewProps) {
+export function SkillTreeMiniPreview({ area, progress }: MiniPreviewProps) {
   const { nodes, colors } = area;
 
   const tiers = useMemo(() => {
@@ -391,32 +402,22 @@ export function SkillTreeMiniPreview({ area, progress, size = 120 }: MiniPreview
     return [...s].sort((a, b) => a - b);
   }, [nodes]);
 
-  const totalNodes = nodes.length;
-  const masteredCount = nodes.filter((n) => progress[n.id] === "mastered").length;
-  const learningCount = nodes.filter((n) => progress[n.id] === "learning").length;
-  const pct = totalNodes > 0 ? (masteredCount / totalNodes) * 100 : 0;
-
-  // Mini dot grid visualization
-  const dotsPerRow = Math.max(...tiers.map((t) => nodes.filter((n) => n.tier === t).length));
-  const tierCount = tiers.length;
-
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${tierCount}, 1fr)`,
-        gap: 4,
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
         padding: 8,
         background: "rgba(9,9,11,0.6)",
         borderRadius: 8,
         border: `1px solid ${colors.border}`,
-        minHeight: size * 0.6,
       }}
     >
       {tiers.map((tier) => {
         const tierNodes = nodes.filter((n) => n.tier === tier);
         return (
-          <div key={tier} style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+          <div key={tier} style={{ display: "flex", gap: 3, alignItems: "center" }}>
             {tierNodes.map((node) => {
               const lvl = progress[node.id];
               const isMastered = lvl === "mastered";
@@ -426,12 +427,12 @@ export function SkillTreeMiniPreview({ area, progress, size = 120 }: MiniPreview
                   key={node.id}
                   title={node.name}
                   style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 3,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
                     background: isMastered ? colors.primary : isLearning ? colors.bgMedium : "rgba(39,39,42,0.8)",
                     border: `1px solid ${isMastered ? colors.borderMastered : isLearning ? colors.border : "rgba(63,63,70,0.4)"}`,
-                    boxShadow: isMastered ? `0 0 5px ${colors.glow}` : "none",
+                    boxShadow: isMastered ? `0 0 4px ${colors.glow}` : "none",
                     transition: "background 0.3s",
                   }}
                 />

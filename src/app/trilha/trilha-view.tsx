@@ -1,414 +1,305 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { clsx } from "clsx";
-import { GraduationCap, ChevronRight, ExternalLink } from "lucide-react";
-import { Card, Tag } from "@/components/ui";
 import Link from "next/link";
-import { type Card as CardType, type NivelTrilha, type TrilhaProgresso } from "@/lib/types";
-import { listTrilhaProgresso } from "@/lib/db";
+import { ChevronRight } from "lucide-react";
+import { getAllProgress } from "@/lib/skill-tree-db";
+import { SKILL_AREAS } from "@/lib/skill-trees";
+import type { SkillAreaProgress } from "@/lib/skill-tree-types";
 
-// ─── Seniority track mapping ──────────────────────────────────────────────────
-const NIVEL_CARDS: Record<NivelTrilha, string[]> = {
-  junior: [
-    "dto-validation",
-    "repository-pattern",
-    "session-cookie-vs-jwt",
-    "rbac-vs-abac",
-    "n-plus-1",
-    "decimal-money",
-    "soft-delete-audit",
-    "migrations-zero-downtime",
-    "docker-compose-dev",
-    "server-components",
-    "server-actions",
-    "app-router",
-    "account-creation-flow",
-    "llm-fundamentos",
-    "prompt-engineering-avancado",
-    "tool-use-function-calling",
-    // Data Science
-    "eda-workflow",
-    "pandas-patterns",
-    "data-cleaning",
-    "statistical-thinking",
-    // Matemática
-    "logica-matematica",
-    "probabilidade",
-    // GovTech
-    "lgpd-compliance",
-    "wcag-govtech",
-  ],
-  pleno: [
-    "modular-monolith",
-    "clean-architecture",
-    "hexagonal",
-    "ddd-light-erp",
-    "auth-architecture",
-    "session-strategy",
-    "token-encryption-at-rest",
-    "nest-module-organization",
-    "use-cases",
-    "drizzle-vs-prisma-2026",
-    "firestore-cost-optimization",
-    "docker-multistage",
-    "monorepo-turborepo",
-    "background-jobs",
-    "caching-layers",
-    "rate-limit-distribuido",
-    "streaming-suspense",
-    "observability",
-    "langchain-fundamentos",
-    "langchain-agents",
-    "rag-fundamentos",
-    "vector-databases",
-    "anthropic-sdk-patterns",
-    "claude-tool-use",
-    "langsmith-observabilidade",
-    // Data Science
-    "feature-engineering",
-    "model-selection",
-    "ml-evaluation",
-    "sklearn-patterns",
-    "data-leakage",
-    "overfitting-strategies",
-    // Matemática
-    "algebra-linear",
-    "calculo-1-variavel",
-    "estatistica-inferencia",
-    "teoria-grafos-mat",
-    // GovTech
-    "keycloak-sso",
-    "govbr-sso",
-    "nfse-padrao-nacional",
-    "single-tenant-govtech",
-    // Infra/Segurança
-    "container-security",
-    "github-actions-cicd",
-  ],
-  senior: [
-    "cqrs-lite",
-    "event-driven",
-    "outbox-pattern",
-    "saga-pattern",
-    "gateway-compliance",
-    "multi-tenant-strategies",
-    "firestore-multi-tenant",
-    "microservices-quando-usar",
-    "golang-microservices",
-    "golang-grpc",
-    "go-vs-nest-microservices",
-    "audit-api-endpoint",
-    "audit-auth",
-    "audit-migration",
-    "certificado-digital-a1",
-    "sefaz-integration-br",
-    "langgraph-fundamentos",
-    "langgraph-patterns",
-    "rag-avancado",
-    "graph-rag",
-    "mcp-protocol",
-    "agent-memory-patterns",
-    "multi-agent-orchestration",
-    "human-in-the-loop",
-    // Data Science
-    "ml-pipeline-production",
-    "mlops-basics",
-    // Matemática
-    "calculo-multivariavel",
-    "otimizacao-pesquisa-op",
-    "processos-estocasticos",
-    "analise-numerica",
-    "teoria-da-informacao",
-    "teoria-dos-jogos",
-    // GovTech
-    "event-sourcing-govtech",
-    "kafka-govtech",
-    "tce-audit-compliance",
-    "xml-json-digital-signature",
-    "postgis-spatial",
-    "nestjs-audit-interceptor",
-    // Infra/Segurança
-    "kubernetes-workloads",
-    "sre-reliability",
-    "terraform-iac",
-  ],
-  staff: [
-    "multi-filial",
-    "omnichannel-conversations",
-    "golang-chi-gin-fiber",
-    "monorepo-turborepo",
-    "postgres-erp-checklist",
-    "prompt-modulo-crud-nest",
-    "prompt-modulo-financeiro",
-    "como-auditar-codigo-ia",
-    "quando-nao-usar-ia",
-    "agent-evaluation",
-    "agent-security",
-    "agent-observabilidade-producao",
-    "agent-deployment",
-    "claude-code-sdk",
-    "agente-financeiro-erp",
-    "ai-agent-architecture",
-    // Matemática
-    "computabilidade-complexidade",
-    "modelagem-matematica",
-    "grupos-de-lie",
-    "calculo-das-variacoes",
-    "algebra-comutativa",
-    // GovTech
-    "dispensa-licitacao-govtech",
-    "reforma-tributaria-2026",
-    "portal-transparencia",
-    "nfse-contingencia",
-    // Infra
-    "argocd-gitops",
-    "helm-charts",
-  ],
-};
+// ─── Path definitions ─────────────────────────────────────────────────────────
 
-const NIVEL_META: Record<NivelTrilha, { label: string; color: string; textColor: string; description: string }> = {
-  junior: {
-    label: "Júnior",
-    color: "bg-sky-500",
-    textColor: "text-sky-600 dark:text-sky-400",
-    description: "Fundamentos sólidos: validação, repositórios, auth básica, banco, containers, LLMs e prompt engineering + lógica matemática, probabilidade, LGPD e WCAG",
+const PATHS = [
+  {
+    id: "engenharia",
+    emoji: "⚙",
+    title: "Engenharia de Software",
+    description:
+      "Arquitetura, sistemas distribuídos, DevOps e GovTech. O caminho do engenheiro sênior.",
+    areaIds: ["software", "devops", "govtech"] as const,
+    primary: "#06b6d4",
+    glow: "rgba(6,182,212,0.30)",
+    bgLight: "rgba(6,182,212,0.07)",
+    bgMedium: "rgba(6,182,212,0.18)",
+    text: "#a5f3fc",
+    textMuted: "#67e8f9",
+    border: "rgba(6,182,212,0.45)",
+    borderMastered: "rgba(6,182,212,0.90)",
   },
-  pleno: {
-    label: "Pleno",
-    color: "bg-emerald-500",
-    textColor: "text-emerald-600 dark:text-emerald-400",
-    description: "Arquitetura aplicada: monólito modular, DDD leve, clean arch, infra avançada, LangChain, RAG + álgebra linear, cálculo, Keycloak, NFS-e e segurança de containers",
+  {
+    id: "data-ia",
+    emoji: "◈",
+    title: "Data Science & IA",
+    description:
+      "LangGraph, LangSmith, Graph RAG, MLOps. Do dado ao sistema de IA em produção.",
+    areaIds: ["data-science", "ia-llm"] as const,
+    primary: "#10b981",
+    glow: "rgba(16,185,129,0.30)",
+    bgLight: "rgba(16,185,129,0.07)",
+    bgMedium: "rgba(16,185,129,0.18)",
+    text: "#6ee7b7",
+    textMuted: "#34d399",
+    border: "rgba(16,185,129,0.45)",
+    borderMastered: "rgba(16,185,129,0.90)",
   },
-  senior: {
-    label: "Sênior",
-    color: "bg-amber-500",
-    textColor: "text-amber-600 dark:text-amber-400",
-    description: "Sistemas distribuídos: CQRS, Event-Driven, microsserviços, multi-tenant, LangGraph, MCP + otimização matemática, GovTech avançado (auditoria TCE, event sourcing) e Kubernetes/SRE",
+  {
+    id: "security",
+    emoji: "⛨",
+    title: "Segurança",
+    description:
+      "Fundamentos de redes e criptografia até red team, incident response e arquitetura zero-trust.",
+    areaIds: ["security"] as const,
+    primary: "#f43f5e",
+    glow: "rgba(244,63,94,0.30)",
+    bgLight: "rgba(244,63,94,0.07)",
+    bgMedium: "rgba(244,63,94,0.18)",
+    text: "#fda4af",
+    textMuted: "#fb7185",
+    border: "rgba(244,63,94,0.45)",
+    borderMastered: "rgba(244,63,94,0.90)",
   },
-  staff: {
-    label: "Staff",
-    color: "bg-violet-500",
-    textColor: "text-violet-600 dark:text-violet-400",
-    description: "Liderança técnica: multi-filial, IA com auditoria, design de plataformas complexas, agentes em produção + computabilidade, GovTech estratégico (dispensa, reforma tributária) e GitOps",
-  },
-};
+];
 
-const NIVEL_ORDER: NivelTrilha[] = ["junior", "pleno", "senior", "staff"];
+type PathConfig = (typeof PATHS)[number];
 
-export function TrilhaView({ allCards }: { allCards: CardType[] }) {
-  const [progresso, setProgresso] = useState<TrilhaProgresso[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+// ─── Path Card ────────────────────────────────────────────────────────────────
 
-  const cardBySlug = new Map(allCards.map((c) => [c.slug, c]));
+function PathCard({
+  path,
+  allProgress,
+}: {
+  path: PathConfig;
+  allProgress: Record<string, SkillAreaProgress>;
+}) {
+  const areas = path.areaIds
+    .map((id) => SKILL_AREAS.find((a) => a.id === id))
+    .filter(Boolean) as (typeof SKILL_AREAS)[number][];
 
-  useEffect(() => {
-    listTrilhaProgresso()
-      .then(setProgresso)
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false));
-  }, []);
+  const totalNodes = areas.reduce((sum, a) => sum + a.nodes.length, 0);
+  const masteredNodes = areas.reduce((sum, a) => {
+    const prog = allProgress[a.id] ?? {};
+    return sum + a.nodes.filter((n) => prog[n.id] === "mastered").length;
+  }, 0);
+  const learningNodes = areas.reduce((sum, a) => {
+    const prog = allProgress[a.id] ?? {};
+    return sum + a.nodes.filter((n) => prog[n.id] === "learning").length;
+  }, 0);
 
-  const progressBySlug = new Map(progresso.map((p) => [p.cardSlug, p]));
-
-  // Aggregate totals
-  const allSlugs = NIVEL_ORDER.flatMap((n) => NIVEL_CARDS[n]);
-  const uniqueSlugs = [...new Set(allSlugs)];
-  const totalDominados = uniqueSlugs.filter((s) => progressBySlug.get(s)?.dominado).length;
-  const totalEmProgresso = uniqueSlugs.filter(
-    (s) => !progressBySlug.get(s)?.dominado && (progressBySlug.get(s)?.tentativas ?? 0) > 0,
-  ).length;
-  const totalNaoIniciados = uniqueSlugs.length - totalDominados - totalEmProgresso;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-64">
-        <span className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const pct = totalNodes > 0 ? Math.round((masteredNodes / totalNodes) * 100) : 0;
 
   return (
-    <div className="space-y-8 max-w-5xl">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold flex items-center gap-3">
-          <GraduationCap className="w-8 h-8 text-amber-500" />
-          Trilha de Senioridade
-        </h1>
-        <p className="text-muted max-w-2xl">
-          Mapa de conhecimentos organizados por nível. Pratique os cards e marque como dominados
-          para acompanhar sua evolução.
-        </p>
-      </header>
-
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      {/* Overall stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Total de conceitos" value={String(uniqueSlugs.length)} color="text-fg" />
-        <StatCard label="Dominados" value={String(totalDominados)} color="text-emerald-500" />
-        <StatCard label="Em progresso" value={String(totalEmProgresso)} color="text-amber-500" />
-        <StatCard label="Não iniciados" value={String(totalNaoIniciados)} color="text-muted" />
+    <div
+      className="rounded-2xl flex flex-col overflow-hidden"
+      style={{
+        background: "rgba(9,9,11,0.85)",
+        border: `1px solid ${path.border}`,
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      {/* Header */}
+      <div
+        className="px-6 py-5 flex items-center gap-4"
+        style={{ borderBottom: `1px solid ${path.border}` }}
+      >
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-mono flex-shrink-0"
+          style={{
+            background: path.bgMedium,
+            border: `1px solid ${path.border}`,
+            color: path.primary,
+            boxShadow: `0 0 16px ${path.glow}`,
+          }}
+        >
+          {path.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-bold" style={{ color: path.text }}>
+            {path.title}
+          </h2>
+          <p className="text-sm mt-0.5" style={{ color: "#71717a" }}>
+            {path.description}
+          </p>
+        </div>
+        <div className="flex-shrink-0 text-right">
+          <div className="text-2xl font-bold tabular-nums" style={{ color: path.primary }}>
+            {pct}%
+          </div>
+          <div className="text-xs" style={{ color: "#52525b" }}>
+            {masteredNodes}/{totalNodes}
+          </div>
+        </div>
       </div>
 
-      {/* Global progress bar */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs text-muted">
-          <span>Progresso geral</span>
-          <span>{totalDominados}/{uniqueSlugs.length} dominados</span>
-        </div>
-        <div className="h-2.5 rounded-full bg-card border border-line overflow-hidden">
-          <div
-            className="h-full bg-amber-500 rounded-full transition-all duration-700"
-            style={{ width: `${Math.round((totalDominados / uniqueSlugs.length) * 100)}%` }}
-          />
-        </div>
+      {/* Progress bar */}
+      <div style={{ height: 3, background: "rgba(39,39,42,0.6)" }}>
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            background: path.primary,
+            boxShadow: `0 0 8px ${path.glow}`,
+            transition: "width 0.5s ease",
+          }}
+        />
       </div>
 
-      {/* Levels */}
-      {NIVEL_ORDER.map((nivel) => {
-        const slugs = NIVEL_CARDS[nivel];
-        const meta = NIVEL_META[nivel];
-        const dominados = slugs.filter((s) => progressBySlug.get(s)?.dominado).length;
-        const emProgresso = slugs.filter(
-          (s) => !progressBySlug.get(s)?.dominado && (progressBySlug.get(s)?.tentativas ?? 0) > 0,
-        ).length;
-        const pct = Math.round((dominados / slugs.length) * 100);
+      {/* Area sub-links */}
+      <div className="px-6 py-4 flex flex-col gap-2">
+        {areas.map((area) => {
+          const prog = allProgress[area.id] ?? {};
+          const total = area.nodes.length;
+          const mastered = area.nodes.filter((n) => prog[n.id] === "mastered").length;
+          const areaPct = total > 0 ? Math.round((mastered / total) * 100) : 0;
 
-        return (
-          <Card key={nivel} className="space-y-5">
-            {/* Level header */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className={clsx("text-lg font-semibold", meta.textColor)}>{meta.label}</span>
-                  <Tag color={nivel === "junior" ? "sky" : nivel === "pleno" ? "emerald" : nivel === "senior" ? "amber" : "violet"}>
-                    {dominados}/{slugs.length} dominados
-                  </Tag>
-                  {emProgresso > 0 && (
-                    <Tag color="zinc">{emProgresso} em progresso</Tag>
-                  )}
+          return (
+            <Link
+              key={area.id}
+              href={`/skills/${area.id}`}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
+              style={{ background: path.bgLight, border: `1px solid ${path.border}` }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = path.bgMedium;
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 10px ${path.glow}`;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = path.bgLight;
+                (e.currentTarget as HTMLElement).style.boxShadow = "none";
+              }}
+            >
+              <span className="text-base flex-shrink-0" style={{ color: path.primary }}>
+                {area.emoji}
+              </span>
+              <span className="flex-1 text-sm font-medium" style={{ color: path.text }}>
+                {area.name}
+              </span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div
+                  className="rounded-full overflow-hidden"
+                  style={{ width: 60, height: 4, background: "rgba(39,39,42,0.6)" }}
+                >
+                  <div
+                    style={{
+                      width: `${areaPct}%`,
+                      height: "100%",
+                      background: path.primary,
+                      borderRadius: 9999,
+                      transition: "width 0.4s ease",
+                    }}
+                  />
                 </div>
-                <p className="text-xs text-muted">{meta.description}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-2xl font-semibold">{pct}%</span>
-              </div>
-            </div>
-
-            {/* Level progress bar */}
-            <div className="h-1.5 rounded-full bg-card border border-line overflow-hidden">
-              <div
-                className={clsx("h-full rounded-full transition-all duration-700", meta.color)}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-
-            {/* Cards chips */}
-            <div className="flex flex-wrap gap-2">
-              {slugs.map((slug) => {
-                const p = progressBySlug.get(slug);
-                const card = cardBySlug.get(slug);
-                const isDominado = p?.dominado ?? false;
-                const isEmProgresso = !isDominado && (p?.tentativas ?? 0) > 0;
-
-                return (
-                  <div key={slug} className="flex items-center gap-1">
-                    <Link
-                      href={`/biblioteca/${slug}`}
-                      className={clsx(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition group",
-                        isDominado
-                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:border-emerald-500"
-                          : isEmProgresso
-                          ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:border-amber-500"
-                          : "border-line bg-card text-muted hover:border-line-strong hover:text-fg",
-                      )}
-                      title={card?.title ?? slug}
-                    >
-                      {isDominado ? (
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      ) : isEmProgresso ? (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                      ) : (
-                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
-                      )}
-                      {card?.title ?? slug}
-                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-60 transition" />
-                    </Link>
-                    <Link
-                      href={`/card-do-dia?card=${slug}`}
-                      title="Praticar este card"
-                      className="inline-flex items-center px-1.5 py-1.5 rounded-full border border-line text-muted hover:border-amber-500/60 hover:text-amber-500 transition text-[10px]"
-                    >
-                      <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Per-level score distribution if any progress */}
-            {(dominados > 0 || emProgresso > 0) && (
-              <div className="pt-2 border-t border-line flex items-center gap-4 text-xs text-muted">
-                {dominados > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    {dominados} dominados
-                  </span>
-                )}
-                {emProgresso > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    {emProgresso} em progresso
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-zinc-400" />
-                  {slugs.length - dominados - emProgresso} não iniciados
+                <span
+                  className="text-xs tabular-nums"
+                  style={{ color: path.textMuted, minWidth: 36, textAlign: "right" }}
+                >
+                  {mastered}/{total}
                 </span>
               </div>
-            )}
-          </Card>
-        );
-      })}
-
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-muted pt-2">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          Dominado
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-          Em progresso
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-zinc-400" />
-          Não iniciado
-        </span>
-        <span className="ml-auto flex items-center gap-1.5">
-          <ChevronRight className="w-3 h-3" /> Praticar via Card do Dia
-        </span>
+              <ChevronRight size={14} style={{ color: path.textMuted }} />
+            </Link>
+          );
+        })}
       </div>
+
+      {/* In-progress indicator */}
+      {learningNodes > 0 && (
+        <div className="px-6 pb-4 text-xs" style={{ color: "#52525b" }}>
+          <span style={{ color: path.textMuted }}>{learningNodes}</span> em estudo agora
+        </div>
+      )}
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) {
+// ─── Main View ────────────────────────────────────────────────────────────────
+
+export function TrilhaView() {
+  const [allProgress, setAllProgress] = useState<Record<string, SkillAreaProgress>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getAllProgress()
+      .then(setAllProgress)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const seniorAreas = SKILL_AREAS.filter((a) => a.id !== "matematica");
+  const totalNodes = seniorAreas.reduce((sum, a) => sum + a.nodes.length, 0);
+  const masteredTotal = seniorAreas.reduce((sum, a) => {
+    const prog = allProgress[a.id] ?? {};
+    return sum + a.nodes.filter((n) => prog[n.id] === "mastered").length;
+  }, 0);
+  const pctTotal = totalNodes > 0 ? Math.round((masteredTotal / totalNodes) * 100) : 0;
+
   return (
-    <Card className="text-center py-4 space-y-1">
-      <div className={clsx("text-3xl font-semibold", color)}>{value}</div>
-      <div className="text-xs text-muted">{label}</div>
-    </Card>
+    <div className="min-h-screen" style={{ background: "#09090b" }}>
+      {/* Header */}
+      <div className="px-6 pt-10 pb-6 max-w-3xl mx-auto">
+        <div
+          className="mb-2 text-xs font-mono tracking-widest uppercase"
+          style={{ color: "#52525b" }}
+        >
+          Trilha Sênior
+        </div>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: "#fafafa" }}>
+          Escolha seu caminho
+        </h1>
+        <p className="text-sm mb-6" style={{ color: "#71717a" }}>
+          Três trilhas de progressão vertical. Cada nó aponta para um card na biblioteca.
+        </p>
+
+        {/* Global progress */}
+        <div className="flex items-center gap-3 mb-2">
+          <div
+            className="flex-1 rounded-full overflow-hidden"
+            style={{ height: 6, background: "rgba(39,39,42,0.8)" }}
+          >
+            <div
+              style={{
+                width: `${pctTotal}%`,
+                height: "100%",
+                background: "linear-gradient(90deg, #06b6d4, #10b981, #f43f5e)",
+                boxShadow: "0 0 10px rgba(6,182,212,0.4)",
+                transition: "width 0.6s ease",
+                borderRadius: 9999,
+              }}
+            />
+          </div>
+          <span
+            className="text-sm font-bold tabular-nums flex-shrink-0"
+            style={{ color: "#a1a1aa" }}
+          >
+            {masteredTotal}/{totalNodes}
+          </span>
+        </div>
+        <p className="text-xs" style={{ color: "#52525b" }}>
+          Matemática tem trilha separada em{" "}
+          <Link href="/skills/matematica" className="underline" style={{ color: "#71717a" }}>
+            /skills/matematica
+          </Link>
+        </p>
+      </div>
+
+      {/* Paths */}
+      <div className="px-6 pb-16 max-w-3xl mx-auto flex flex-col gap-6">
+        {loading ? (
+          <div
+            className="flex items-center justify-center rounded-xl"
+            style={{
+              height: 200,
+              background: "rgba(9,9,11,0.85)",
+              border: "1px solid rgba(63,63,70,0.4)",
+              color: "#52525b",
+            }}
+          >
+            Carregando progresso...
+          </div>
+        ) : (
+          PATHS.map((path) => (
+            <PathCard key={path.id} path={path} allProgress={allProgress} />
+          ))
+        )}
+      </div>
+    </div>
   );
 }

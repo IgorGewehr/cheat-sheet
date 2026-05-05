@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, Search } from "lucide-react";
+import { Brain, Search, Settings2 } from "lucide-react";
 import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthWidget } from "./auth-widget";
@@ -10,11 +10,10 @@ import { ProjectPill } from "./project-pill";
 import { TaskPill } from "./task-pill";
 import { DamageMeter } from "./damage-meter";
 
-export type Verb = "trabalhar" | "estudar" | "treinar" | "refletir";
+export type Verb = "estudar" | "treinar" | "refletir";
 
 const VERB_ROUTES: Record<Verb, string[]> = {
-  trabalhar: ["/sessao", "/decisoes", "/comparar", "/fim-do-dia", "/gerar-card", "/projetos", "/sentinela", "/idle", "/claude-code"],
-  estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva", "/skills", "/jobs"],
+  estudar: ["/biblioteca", "/trilha", "/card-do-dia", "/mapa-dominio", "/retrospectiva", "/skills"],
   treinar: [
     "/debate", "/math-quest", "/anti-pattern", "/war-game",
     "/system-design", "/mock-interview", "/refatoracao", "/architecture-audit",
@@ -24,7 +23,6 @@ const VERB_ROUTES: Record<Verb, string[]> = {
 };
 
 const VERB_LABELS: Record<Verb, string> = {
-  trabalhar: "Trabalhar",
   estudar: "Estudar",
   treinar: "Treinar",
   refletir: "Refletir",
@@ -32,8 +30,7 @@ const VERB_LABELS: Record<Verb, string> = {
 
 // Primary route for each verb (used by verb-switch in Cmd+K)
 export const VERB_PRIMARY: Record<Verb, string> = {
-  trabalhar: "/sessao",
-  estudar: "/biblioteca",
+  estudar: "/trilha",
   treinar: "/debate",
   refletir: "/health-score",
 };
@@ -44,7 +41,7 @@ export function getActiveVerb(pathname: string): Verb {
       return verb;
     }
   }
-  return "trabalhar";
+  return "estudar";
 }
 
 interface TopNavProps {
@@ -107,6 +104,19 @@ export function TopNav({ onCmdK, cmdKTrigger }: TopNavProps) {
               <kbd className="hidden sm:inline px-1 py-0.5 rounded bg-card-hover text-[10px] font-mono text-subtle">⌘K</kbd>
             </button>
           )}
+
+          <Link
+            href="/workspace"
+            className={clsx(
+              "flex items-center justify-center w-8 h-8 rounded-lg border border-line transition",
+              pathname === "/workspace"
+                ? "border-violet-500/60 text-violet-400 bg-violet-500/10"
+                : "text-muted hover:text-fg hover:border-violet-500/40 hover:bg-card-hover",
+            )}
+            title="Workspace / Integrações"
+          >
+            <Settings2 className="w-4 h-4" />
+          </Link>
 
           <AuthWidget />
           <ThemeToggle />
