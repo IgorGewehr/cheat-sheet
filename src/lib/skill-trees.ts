@@ -144,15 +144,15 @@ const SOFTWARE: SkillArea = {
     { id: "se-poo", name: "OOP & Paradigmas", description: "Classes, herança, polimorfismo, OOP vs funcional vs procedural.", tier: 0, prerequisites: [] },
     { id: "se-git", name: "Git & Versionamento", description: "Branches, merge, rebase, pull requests, conventional commits.", tier: 0, prerequisites: [] },
     { id: "se-linux", name: "Linux & Shell", description: "Filesystem, processos, scripting bash, pipes, cron.", tier: 0, prerequisites: [] },
-    { id: "se-sql", name: "SQL & Bancos Relacionais", description: "DDL/DML, JOINs, índices, transações ACID, normalização.", tier: 0, prerequisites: [], cardSlugs: ["n-plus-1", "migrations-zero-downtime", "postgres-erp-checklist", "soft-delete-audit", "decimal-money", "drizzle-vs-prisma-2026", "audit-migration"] },
+    { id: "se-sql", name: "SQL & Bancos Relacionais", description: "DDL/DML, JOINs, índices, transações ACID, Drizzle ORM, PostgreSQL.", tier: 0, prerequisites: [], cardSlugs: ["n-plus-1", "drizzle-schema-queries", "migrations-zero-downtime", "postgres-erp-checklist", "postgres-indexes-explain", "soft-delete-audit", "decimal-money", "drizzle-vs-prisma-2026", "audit-migration"] },
     { id: "se-http", name: "HTTP & Redes", description: "TCP/IP, HTTP/1.1, HTTP/2, TLS, DNS, REST semântica.", tier: 0, prerequisites: [] },
 
     // ── Tier 1 ──
-    { id: "se-patterns", name: "Design Patterns", description: "GoF: factory, strategy, observer, decorator, adapter, CQRS.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["repository-pattern", "cqrs-lite", "saga-pattern", "nest-module-organization"] },
+    { id: "se-patterns", name: "Design Patterns & NestJS DI", description: "GoF: factory, strategy, observer. NestJS: DI container, providers, escopos, tokens, forRoot.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["repository-pattern", "cqrs-lite", "saga-pattern", "nest-module-organization", "nestjs-guards-interceptors", "nestjs-di-providers"] },
     { id: "se-clean-code", name: "Clean Code & SOLID", description: "Naming, SRP, OCP, LSP, ISP, DIP — código como documentação.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["clean-architecture", "use-cases", "como-auditar-codigo-ia", "ai-monolito-arquivo-unico", "ai-sem-tratamento-erro"] },
-    { id: "se-testing", name: "Testing (Unit/Integration)", description: "TDD, unit tests, integration tests, test doubles, coverage.", tier: 1, prerequisites: ["se-clean-code"] },
-    { id: "se-api", name: "REST API Design", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI.", tier: 1, prerequisites: ["se-http", "se-sql"], cardSlugs: ["dto-validation", "gateway-compliance", "audit-api-endpoint", "golang-chi-gin-fiber", "ai-sem-paginacao", "ai-sem-validacao"] },
-    { id: "se-ci-cd", name: "CI/CD Fundamentos", description: "Pipelines, Github Actions, build, lint, test, deploy automatizado.", tier: 1, prerequisites: ["se-git", "se-testing"], cardSlugs: ["github-actions-cicd", "monorepo-turborepo", "ai-config-hardcoded"] },
+    { id: "se-testing", name: "TDD & Testing", description: "TDD Red/Green/Refactor, unit tests com Jest, integration tests, pirâmide de testes, E2E Playwright.", tier: 1, prerequisites: ["se-clean-code"], cardSlugs: ["tdd-red-green-refactor", "jest-unit-nestjs", "nestjs-integration-testing", "testing-pyramid-nestjs", "playwright-nextjs"] },
+    { id: "se-api", name: "REST API Design & SDD", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI spec-first.", tier: 1, prerequisites: ["se-http", "se-sql"], cardSlugs: ["dto-validation", "sdd-openapi-nestjs", "gateway-compliance", "audit-api-endpoint", "golang-chi-gin-fiber", "ai-sem-paginacao", "ai-sem-validacao"] },
+    { id: "se-ci-cd", name: "CI/CD & Config", description: "Pipelines, Github Actions, build, lint, test, deploy, variáveis de ambiente com validação.", tier: 1, prerequisites: ["se-git", "se-testing"], cardSlugs: ["github-actions-cicd", "monorepo-turborepo", "nestjs-config-env", "ai-config-hardcoded"] },
 
     // ── Tier 2 ──
     { id: "se-ddd", name: "Domain-Driven Design", description: "Bounded contexts, aggregates, events, ubiquitous language.", tier: 2, prerequisites: ["se-patterns", "se-clean-code"], cardSlugs: ["ddd-light-erp", "hexagonal"] },
@@ -163,7 +163,7 @@ const SOFTWARE: SkillArea = {
 
     // ── Tier 3 ──
     { id: "se-arq-dist", name: "Arquitetura Distribuída", description: "CAP, consensus, particionamento, replicação, SLA/SLO.", tier: 3, prerequisites: ["se-microsserv", "se-event-driven"], cardSlugs: ["multi-filial", "multi-tenant-strategies"] },
-    { id: "se-performance", name: "Performance & Escalabilidade", description: "Caching, sharding, load balancing, profiling, N+1.", tier: 3, prerequisites: ["se-observ", "se-arq-dist"], cardSlugs: ["caching-layers", "rate-limit-distribuido", "n-plus-1", "ai-n-plus-1", "firestore-cost-optimization"] },
+    { id: "se-performance", name: "Performance & Escalabilidade", description: "Caching, sharding, load balancing, profiling, N+1, PostgreSQL query tuning.", tier: 3, prerequisites: ["se-observ", "se-arq-dist"], cardSlugs: ["caching-layers", "rate-limit-distribuido", "n-plus-1", "postgres-indexes-explain", "nextjs-caching-model", "ai-n-plus-1", "firestore-cost-optimization"] },
     { id: "se-security", name: "AppSec & OWASP", description: "SAST/DAST, threat modeling, OWASP Top 10 avançado, WAF.", tier: 3, prerequisites: ["se-auth", "se-api"], cardSlugs: ["owasp-top10", "sast-dast-scanning", "ai-prompt-injection"] },
     { id: "se-system-design", name: "System Design", description: "URL shortener, Twitter, WhatsApp — prática completa.", tier: 3, prerequisites: ["se-arq-dist", "se-performance"] },
     { id: "se-iac", name: "Infraestrutura como Código", description: "Terraform, Pulumi, Helm, GitOps, ambientes efêmeros.", tier: 3, prerequisites: ["se-ci-cd", "se-observ"], cardSlugs: ["terraform-iac", "argocd-gitops"] },
