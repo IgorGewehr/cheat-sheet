@@ -6,7 +6,8 @@ export interface SkillNode {
   description: string;
   tier: number; // 0 = foundation, higher = more advanced
   prerequisites: string[]; // node ids
-  cardSlug?: string; // link to /biblioteca/{slug}
+  cardSlug?: string; // link to /biblioteca/{slug} — legado, prefer cardSlugs
+  cardSlugs?: string[]; // múltiplos cards na biblioteca para este node
   routeHref?: string; // link to internal tool
   tags?: string[];
 }

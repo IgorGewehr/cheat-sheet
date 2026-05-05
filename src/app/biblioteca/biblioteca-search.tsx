@@ -22,9 +22,11 @@ type CardLite = {
 export function BibliotecaSearch({
   cards,
   groups,
+  pinnedSlugs,
 }: {
   cards: CardLite[];
   groups: { category: CardCategory; cards: CardLite[] }[];
+  pinnedSlugs?: string[];
 }) {
   const [q, setQ] = useState("");
 
@@ -43,6 +45,46 @@ export function BibliotecaSearch({
       }),
     [cards],
   );
+
+  // Modo filtrado pela trilha: mostra só os cards pinados
+  if (pinnedSlugs) {
+    const slugSet = new Set(pinnedSlugs);
+    const pinned = pinnedSlugs
+      .map((slug) => cards.find((c) => c.slug === slug))
+      .filter((c): c is CardLite => Boolean(c));
+
+    const results = q.trim().length > 1
+      ? fuse.search(q).map((r) => r.item).filter((c) => slugSet.has(c.slug))
+      : pinned;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar neste tópico…"
+              className="w-full rounded-xl border border-line bg-card pl-9 pr-4 py-2.5 text-sm text-fg outline-none focus:border-amber-500 transition"
+            />
+          </div>
+          <Link
+            href="/biblioteca"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-line bg-card text-sm text-muted hover:text-fg hover:border-amber-500 transition"
+          >
+            Ver tudo
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {results.map((c) => (
+            <CardLink key={c.slug} card={c} showDominarBadge />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const results = q.trim().length > 1 ? fuse.search(q).map((r) => r.item) : null;
 
@@ -96,7 +138,7 @@ export function BibliotecaSearch({
   );
 }
 
-function CardLink({ card }: { card: CardLite }) {
+function CardLink({ card, showDominarBadge }: { card: CardLite; showDominarBadge?: boolean }) {
   const href = card.isCustom ? `/cards/${card.slug}` : `/biblioteca/${card.slug}`;
   return (
     <Link href={href}>
@@ -115,6 +157,9 @@ function CardLink({ card }: { card: CardLite }) {
           {card.tags?.slice(0, 3).map((t) => (
             <Tag key={t}>{t}</Tag>
           ))}
+          {showDominarBadge && (
+            <Tag color="amber">marcar dominado →</Tag>
+          )}
         </div>
       </Card>
     </Link>

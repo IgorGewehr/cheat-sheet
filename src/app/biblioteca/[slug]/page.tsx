@@ -4,6 +4,7 @@ import { getAllCards, getCard } from "@/lib/content";
 import { CATEGORY_LABEL } from "@/lib/types";
 import { LinkButton, Tag } from "@/components/ui";
 import { AdotarButton } from "./adotar-button";
+import { DominarButton } from "./dominar-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ChecklistView } from "./checklist-view";
 import { AIReviewButton } from "./ai-review-button";
@@ -77,6 +78,7 @@ export default async function CardPage({ params }: { params: Promise<{ slug: str
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 items-center">
+        <DominarButton slug={card.slug} />
         <AdotarButton slug={card.slug} title={card.title} />
         {!isChecklist && !isArmadilha && (
           <div title="Cole código gerado pela IA e receba uma revisão técnica baseada neste padrão">

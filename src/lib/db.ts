@@ -545,6 +545,12 @@ export async function listTrilhaProgresso(): Promise<TrilhaProgresso[]> {
   return snap.docs.map((d) => d.data() as TrilhaProgresso);
 }
 
+export async function getTrilhaProgresso(cardSlug: string): Promise<TrilhaProgresso | null> {
+  await ready();
+  const snap = await getDoc(docRef("trilhaProgresso", cardSlug));
+  return snap.exists() ? (snap.data() as TrilhaProgresso) : null;
+}
+
 export async function saveTrilhaProgresso(
   cardSlug: string,
   update: Partial<Omit<TrilhaProgresso, "cardSlug">>,

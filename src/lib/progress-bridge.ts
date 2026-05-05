@@ -22,29 +22,35 @@ type NodeRef = { areaId: string; nodeId: string };
 
 const CARD_TO_NODES: Map<string, NodeRef[]> = new Map();
 
-for (const area of SKILL_AREAS) {
-  for (const node of area.nodes) {
-    if (!node.cardSlug) continue;
-    const list = CARD_TO_NODES.get(node.cardSlug) ?? [];
-    list.push({ areaId: area.id, nodeId: node.id });
-    CARD_TO_NODES.set(node.cardSlug, list);
-  }
-}
+// ─── Lookup: (areaId, nodeId) → cardSlugs[] ──────────────────────────────────
 
-// ─── Lookup: (areaId, nodeId) → cardSlug ─────────────────────────────────────
-
-const NODE_TO_CARD: Map<string, string> = new Map(); // key = `${areaId}:${nodeId}`
+const NODE_TO_CARDS: Map<string, string[]> = new Map(); // key = `${areaId}:${nodeId}`
 
 for (const area of SKILL_AREAS) {
   for (const node of area.nodes) {
-    if (node.cardSlug) {
-      NODE_TO_CARD.set(`${area.id}:${node.id}`, node.cardSlug);
+    const slugs = [
+      ...(node.cardSlugs ?? []),
+      ...(node.cardSlug && !node.cardSlugs?.includes(node.cardSlug) ? [node.cardSlug] : []),
+    ];
+    if (slugs.length === 0) continue;
+    NODE_TO_CARDS.set(`${area.id}:${node.id}`, slugs);
+    for (const slug of slugs) {
+      const list = CARD_TO_NODES.get(slug) ?? [];
+      if (!list.some((r) => r.areaId === area.id && r.nodeId === node.id)) {
+        list.push({ areaId: area.id, nodeId: node.id });
+      }
+      CARD_TO_NODES.set(slug, list);
     }
   }
 }
 
+export function getCardSlugsForNode(areaId: string, nodeId: string): string[] {
+  return NODE_TO_CARDS.get(`${areaId}:${nodeId}`) ?? [];
+}
+
+/** @deprecated use getCardSlugsForNode */
 export function getCardSlugForNode(areaId: string, nodeId: string): string | undefined {
-  return NODE_TO_CARD.get(`${areaId}:${nodeId}`);
+  return getCardSlugsForNode(areaId, nodeId)[0];
 }
 
 export function getNodesForCard(cardSlug: string): NodeRef[] {
@@ -88,28 +94,27 @@ async function rawWriteTrilhaCard(
 
 /**
  * Chamado por setNodeLevel() após escrever no skillProgress.
- * Se o node tem cardSlug, sincroniza o estado dominado no trilhaProgresso.
+ * Sincroniza o estado dominado em TODOS os cards vinculados ao node.
  */
 export async function syncNodeToTrilha(
   areaId: string,
   nodeId: string,
   level: PersistedLevel | null,
 ): Promise<void> {
-  const cardSlug = getCardSlugForNode(areaId, nodeId);
-  if (!cardSlug) return;
+  const slugs = getCardSlugsForNode(areaId, nodeId);
+  if (slugs.length === 0) return;
   const dominado = level === "mastered";
-  try {
-    await rawWriteTrilhaCard(cardSlug, dominado);
-  } catch {
-    // Silencia erros de sync — não bloqueia a ação principal
-  }
+  await Promise.all(
+    slugs.map((slug) => rawWriteTrilhaCard(slug, dominado).catch(() => {})),
+  );
 }
 
 // ─── Sync: Trilha → Skill Tracker ────────────────────────────────────────────
 
 /**
  * Chamado por saveTrilhaProgresso() após escrever no trilhaProgresso.
- * Marca os skill nodes correspondentes como mastered (ou os remove).
+ * Para nodes com múltiplos cards: marca mastered só quando TODOS estão dominados.
+ * Para nodes com card único: comportamento anterior (1:1 sync).
  */
 export async function syncTrilhaToNodes(
   cardSlug: string,
@@ -118,13 +123,32 @@ export async function syncTrilhaToNodes(
   const nodes = getNodesForCard(cardSlug);
   if (nodes.length === 0) return;
 
-  const level: PersistedLevel | null = dominado ? "mastered" : null;
-
   await Promise.all(
-    nodes.map(({ areaId, nodeId }) =>
-      rawWriteSkillNode(areaId, nodeId, level).catch(() => {
-        // Silencia erros de sync por node individual
-      }),
-    ),
+    nodes.map(async ({ areaId, nodeId }) => {
+      const allSlugs = getCardSlugsForNode(areaId, nodeId);
+
+      if (allSlugs.length <= 1) {
+        // Comportamento anterior — sync direto 1:1
+        const level: PersistedLevel | null = dominado ? "mastered" : null;
+        return rawWriteSkillNode(areaId, nodeId, level).catch(() => {});
+      }
+
+      // Node com múltiplos cards — verifica se TODOS estão dominados
+      const { db } = getFirebase();
+      const wid = getWorkspaceId();
+      const checks = await Promise.all(
+        allSlugs.map(async (slug) => {
+          if (slug === cardSlug) return dominado;
+          const ref = doc(db, "workspaces", wid, "trilhaProgresso", slug);
+          const snap = await getDoc(ref);
+          return snap.exists() ? !!(snap.data() as TrilhaProgresso).dominado : false;
+        }),
+      );
+
+      const allDone = checks.every(Boolean);
+      const anyDone = checks.some(Boolean);
+      const level: PersistedLevel | null = allDone ? "mastered" : anyDone ? "learning" : null;
+      return rawWriteSkillNode(areaId, nodeId, level).catch(() => {});
+    }),
   );
 }

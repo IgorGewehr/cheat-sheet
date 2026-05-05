@@ -148,18 +148,18 @@ const SOFTWARE: SkillArea = {
     { id: "se-http", name: "HTTP & Redes", description: "TCP/IP, HTTP/1.1, HTTP/2, TLS, DNS, REST semântica.", tier: 0, prerequisites: [] },
 
     // ── Tier 1 ──
-    { id: "se-patterns", name: "Design Patterns", description: "GoF: factory, strategy, observer, decorator, adapter, CQRS.", tier: 1, prerequisites: ["se-poo"] },
-    { id: "se-clean-code", name: "Clean Code & SOLID", description: "Naming, SRP, OCP, LSP, ISP, DIP — código como documentação.", tier: 1, prerequisites: ["se-poo"] },
+    { id: "se-patterns", name: "Design Patterns", description: "GoF: factory, strategy, observer, decorator, adapter, CQRS.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["repository-pattern", "cqrs-lite", "saga-pattern"] },
+    { id: "se-clean-code", name: "Clean Code & SOLID", description: "Naming, SRP, OCP, LSP, ISP, DIP — código como documentação.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["clean-architecture", "use-cases"] },
     { id: "se-testing", name: "Testing (Unit/Integration)", description: "TDD, unit tests, integration tests, test doubles, coverage.", tier: 1, prerequisites: ["se-clean-code"] },
-    { id: "se-api", name: "REST API Design", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI.", tier: 1, prerequisites: ["se-http", "se-sql"] },
+    { id: "se-api", name: "REST API Design", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI.", tier: 1, prerequisites: ["se-http", "se-sql"], cardSlugs: ["dto-validation", "gateway-compliance"] },
     { id: "se-ci-cd", name: "CI/CD Fundamentos", description: "Pipelines, Github Actions, build, lint, test, deploy automatizado.", tier: 1, prerequisites: ["se-git", "se-testing"] },
 
     // ── Tier 2 ──
-    { id: "se-ddd", name: "Domain-Driven Design", description: "Bounded contexts, aggregates, events, ubiquitous language.", tier: 2, prerequisites: ["se-patterns", "se-clean-code"] },
-    { id: "se-auth", name: "Auth & Segurança Web", description: "JWT, OAuth2, OIDC, RBAC, OWASP Top 10 básico.", tier: 2, prerequisites: ["se-api", "se-sql"] },
+    { id: "se-ddd", name: "Domain-Driven Design", description: "Bounded contexts, aggregates, events, ubiquitous language.", tier: 2, prerequisites: ["se-patterns", "se-clean-code"], cardSlugs: ["ddd-light-erp", "hexagonal"] },
+    { id: "se-auth", name: "Auth & Segurança Web", description: "JWT, OAuth2, OIDC, RBAC, OWASP Top 10 básico.", tier: 2, prerequisites: ["se-api", "se-sql"], cardSlugs: ["session-cookie-vs-jwt", "rbac-vs-abac", "oauth-2-1"] },
     { id: "se-observ", name: "Observabilidade", description: "Logs estruturados, métricas, traces, OpenTelemetry, alertas.", tier: 2, prerequisites: ["se-ci-cd"] },
-    { id: "se-microsserv", name: "Microsserviços", description: "Decomposição, comunicação síncrona/assíncrona, service mesh.", tier: 2, prerequisites: ["se-api", "se-ddd"] },
-    { id: "se-event-driven", name: "Event-Driven & CQRS", description: "Event sourcing, Kafka, outbox pattern, eventual consistency.", tier: 2, prerequisites: ["se-ddd", "se-microsserv"] },
+    { id: "se-microsserv", name: "Microsserviços", description: "Decomposição, comunicação síncrona/assíncrona, service mesh.", tier: 2, prerequisites: ["se-api", "se-ddd"], cardSlugs: ["microservices-quando-usar", "modular-monolith"] },
+    { id: "se-event-driven", name: "Event-Driven & CQRS", description: "Event sourcing, Kafka, outbox pattern, eventual consistency.", tier: 2, prerequisites: ["se-ddd", "se-microsserv"], cardSlugs: ["outbox-pattern", "event-driven", "cqrs-lite"] },
 
     // ── Tier 3 ──
     { id: "se-arq-dist", name: "Arquitetura Distribuída", description: "CAP, consensus, particionamento, replicação, SLA/SLO.", tier: 3, prerequisites: ["se-microsserv", "se-event-driven"] },
@@ -186,27 +186,27 @@ const DATA_SCIENCE: SkillArea = {
   tierNames: ["Ferramentas", "ML Fundamentos", "ML Avançado", "Deep Learning", "Research"],
   nodes: [
     // ── Tier 0 ──
-    { id: "ds-python", name: "Python & Pandas", description: "NumPy, Pandas, Matplotlib, Jupyter — o ecossistema de dados.", tier: 0, prerequisites: [] },
+    { id: "ds-python", name: "Python & Pandas", description: "NumPy, Pandas, Matplotlib, Jupyter — o ecossistema de dados.", tier: 0, prerequisites: [], cardSlugs: ["pandas-patterns", "sklearn-patterns"] },
     { id: "ds-sql", name: "SQL & Data Warehousing", description: "Window functions, CTEs, BigQuery/Redshift, dbt, modelagem.", tier: 0, prerequisites: [] },
-    { id: "ds-estat", name: "Estatística Descritiva", description: "Média, variância, distribuições, correlação, visualização.", tier: 0, prerequisites: [] },
+    { id: "ds-estat", name: "Estatística Descritiva", description: "Média, variância, distribuições, correlação, visualização.", tier: 0, prerequisites: [], cardSlugs: ["statistical-thinking", "eda-workflow"] },
     { id: "ds-prob", name: "Probabilidade Aplicada", description: "Teorema de Bayes, distribuições, variáveis aleatórias, CLT.", tier: 0, prerequisites: [] },
 
     // ── Tier 1 ──
     { id: "ds-alg-lin", name: "Álgebra Linear para DS", description: "Matrizes, SVD, PCA, projeções — o fundamento do ML.", tier: 1, prerequisites: ["ds-estat"] },
-    { id: "ds-ml-basico", name: "ML Supervisionado Básico", description: "Regressão, classificação, kNN, SVM, decision trees.", tier: 1, prerequisites: ["ds-alg-lin", "ds-prob"] },
+    { id: "ds-ml-basico", name: "ML Supervisionado Básico", description: "Regressão, classificação, kNN, SVM, decision trees.", tier: 1, prerequisites: ["ds-alg-lin", "ds-prob"], cardSlugs: ["model-selection", "ml-evaluation"] },
     { id: "ds-viz", name: "Visualização de Dados", description: "Seaborn, Plotly, storytelling com dados, dashboards.", tier: 1, prerequisites: ["ds-python", "ds-estat"] },
-    { id: "ds-feature-eng", name: "Feature Engineering", description: "Encoding, scaling, imputação, criação de features, pipelines.", tier: 1, prerequisites: ["ds-python", "ds-sql"] },
+    { id: "ds-feature-eng", name: "Feature Engineering", description: "Encoding, scaling, imputação, criação de features, pipelines.", tier: 1, prerequisites: ["ds-python", "ds-sql"], cardSlugs: ["feature-engineering", "data-cleaning"] },
 
     // ── Tier 2 ──
-    { id: "ds-ml-adv", name: "ML Avançado", description: "Ensemble (XGBoost, LightGBM), stacking, hyperparameter tuning.", tier: 2, prerequisites: ["ds-ml-basico", "ds-feature-eng"] },
-    { id: "ds-validacao", name: "Validação & Experimentos", description: "Cross-validation, métricas, curvas ROC/PR, leakage.", tier: 2, prerequisites: ["ds-ml-basico"] },
+    { id: "ds-ml-adv", name: "ML Avançado", description: "Ensemble (XGBoost, LightGBM), stacking, hyperparameter tuning.", tier: 2, prerequisites: ["ds-ml-basico", "ds-feature-eng"], cardSlugs: ["overfitting-strategies"] },
+    { id: "ds-validacao", name: "Validação & Experimentos", description: "Cross-validation, métricas, curvas ROC/PR, leakage.", tier: 2, prerequisites: ["ds-ml-basico"], cardSlugs: ["data-leakage"] },
     { id: "ds-nlp", name: "NLP Fundamentos", description: "Tokenização, TF-IDF, word2vec, classificação de texto.", tier: 2, prerequisites: ["ds-ml-basico"] },
     { id: "ds-timeseries", name: "Séries Temporais", description: "ARIMA, decomposição, Prophet, forecasting, sazonalidade.", tier: 2, prerequisites: ["ds-estat", "ds-ml-basico"] },
 
     // ── Tier 3 ──
     { id: "ds-deep-learning", name: "Deep Learning", description: "Redes neurais, backprop, CNNs, RNNs, Transformers básico.", tier: 3, prerequisites: ["ds-ml-adv", "ds-alg-lin"] },
     { id: "ds-ab-testing", name: "Experimentos A/B", description: "Poder estatístico, significância, erros tipo I/II, CUPED.", tier: 3, prerequisites: ["ds-validacao", "ds-estat"] },
-    { id: "ds-mlops", name: "MLOps & Deployment", description: "Versionamento de modelos, feature store, drift, monitoring.", tier: 3, prerequisites: ["ds-deep-learning", "ds-validacao"] },
+    { id: "ds-mlops", name: "MLOps & Deployment", description: "Versionamento de modelos, feature store, drift, monitoring.", tier: 3, prerequisites: ["ds-deep-learning", "ds-validacao"], cardSlugs: ["ml-pipeline-production", "mlops-basics"] },
     { id: "ds-interpret", name: "Interpretabilidade", description: "SHAP, LIME, PDP, análise de erro, fairness, bias.", tier: 3, prerequisites: ["ds-ml-adv"] },
 
     // ── Tier 4 ──
@@ -267,21 +267,21 @@ const SECURITY: SkillArea = {
   tierNames: ["Fundamentos Sec", "Ofensiva Básica", "Defesa & Gov", "Red Team", "APT / Research"],
   nodes: [
     // ── Tier 0 ──
-    { id: "sec-net", name: "Redes (TCP/IP, DNS, TLS)", description: "OSI, TCP handshake, DNS lookup, TLS 1.3, HTTP/2.", tier: 0, prerequisites: [] },
+    { id: "sec-net", name: "Redes (TCP/IP, DNS, TLS)", description: "OSI, TCP handshake, DNS lookup, TLS 1.3, HTTP/2.", tier: 0, prerequisites: [], cardSlugs: ["network-security-basics"] },
     { id: "sec-linux", name: "Linux para Segurança", description: "Permissões, sudoers, auditd, cgroups, SELinux/AppArmor.", tier: 0, prerequisites: [] },
-    { id: "sec-cripto", name: "Criptografia Fundamentos", description: "Simétrica/assimétrica, hashing, PKI, certificados, TLS.", tier: 0, prerequisites: [] },
+    { id: "sec-cripto", name: "Criptografia Fundamentos", description: "Simétrica/assimétrica, hashing, PKI, certificados, TLS.", tier: 0, prerequisites: [], cardSlugs: ["cryptography-basics"] },
     { id: "sec-http", name: "HTTP & Web Security", description: "Cookies, CORS, SOP, headers de segurança, HTTPS, HTTP/2.", tier: 0, prerequisites: ["sec-net"] },
 
     // ── Tier 1 ──
-    { id: "sec-owasp", name: "OWASP Top 10", description: "Injection, XSS, IDOR, SSRF, deserialization, supply chain.", tier: 1, prerequisites: ["sec-http"] },
+    { id: "sec-owasp", name: "OWASP Top 10", description: "Injection, XSS, IDOR, SSRF, deserialization, supply chain.", tier: 1, prerequisites: ["sec-http"], cardSlugs: ["owasp-top10", "ai-prompt-injection"] },
     { id: "sec-pentest", name: "Pen Testing Básico", description: "Recon, scanning (nmap/masscan), exploitation básico, Metasploit.", tier: 1, prerequisites: ["sec-linux", "sec-net"] },
-    { id: "sec-auth-adv", name: "Auth Avançado", description: "JWT attacks, OAuth flows, MFA bypass, SAML, Kerberos basics.", tier: 1, prerequisites: ["sec-http", "sec-cripto"] },
+    { id: "sec-auth-adv", name: "Auth Avançado", description: "JWT attacks, OAuth flows, MFA bypass, SAML, Kerberos basics.", tier: 1, prerequisites: ["sec-http", "sec-cripto"], cardSlugs: ["session-cookie-vs-jwt", "oauth-2-1", "token-encryption-at-rest"] },
     { id: "sec-firewall", name: "Firewall & WAF", description: "iptables, nftables, WAF rules, IDS/IPS, network ACLs.", tier: 1, prerequisites: ["sec-net"] },
 
     // ── Tier 2 ──
     { id: "sec-threat-model", name: "Threat Modeling", description: "STRIDE, DREAD, attack trees, dataflow diagrams, PASTA.", tier: 2, prerequisites: ["sec-owasp", "sec-pentest"] },
-    { id: "sec-siem", name: "SIEM & SOC", description: "Log agregation, Splunk/ELK, alertas, playbooks, triage.", tier: 2, prerequisites: ["sec-firewall", "sec-net"] },
-    { id: "sec-devsecops", name: "DevSecOps", description: "SAST, DAST, SCA, secret scanning, policy-as-code, shift-left.", tier: 2, prerequisites: ["sec-owasp", "sec-auth-adv"] },
+    { id: "sec-siem", name: "SIEM & SOC", description: "Log agregation, Splunk/ELK, alertas, playbooks, triage.", tier: 2, prerequisites: ["sec-firewall", "sec-net"], cardSlugs: ["incident-response-playbook", "modern-monitoring-sec"] },
+    { id: "sec-devsecops", name: "DevSecOps", description: "SAST, DAST, SCA, secret scanning, policy-as-code, shift-left.", tier: 2, prerequisites: ["sec-owasp", "sec-auth-adv"], cardSlugs: ["sast-dast-scanning", "secrets-management"] },
     { id: "sec-vuln", name: "Vulnerability Assessment", description: "CVE/CVSS, scanner (Nessus/OpenVAS), patch management, VDP.", tier: 2, prerequisites: ["sec-pentest", "sec-owasp"] },
 
     // ── Tier 3 ──

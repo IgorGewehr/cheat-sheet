@@ -79,14 +79,19 @@ interface NodeProps {
   level: SkillLevel;
   colors: SkillArea["colors"];
   nw: number;
+  areaId: string;
   onClick: () => void;
   style: React.CSSProperties;
 }
 
-function SkillNodeCard({ node, level, colors, nw, onClick, style }: NodeProps) {
+function SkillNodeCard({ node, level, colors, nw, areaId, onClick, style }: NodeProps) {
   const [hovered, setHovered] = useState(false);
 
   const isLocked = level === "locked";
+  const effectiveCardSlugs = [
+    ...(node.cardSlugs ?? []),
+    ...(node.cardSlug && !node.cardSlugs?.includes(node.cardSlug) ? [node.cardSlug] : []),
+  ];
   const isMastered = level === "mastered";
   const isLearning = level === "learning";
 
@@ -162,20 +167,32 @@ function SkillNodeCard({ node, level, colors, nw, onClick, style }: NodeProps) {
         >
           {node.name}
         </span>
-        {node.cardSlug && !isLocked && (
+        {effectiveCardSlugs.length === 1 && !isLocked && (
           <a
-            href={`/biblioteca/${node.cardSlug}`}
+            href={`/biblioteca/${effectiveCardSlugs[0]}`}
             onClick={(e) => e.stopPropagation()}
             title="Ver card na biblioteca"
-            style={{
-              fontSize: 11,
-              color: colors.textMuted,
-              opacity: 0.75,
-              flexShrink: 0,
-              lineHeight: 1,
-            }}
+            style={{ fontSize: 11, color: colors.textMuted, opacity: 0.75, flexShrink: 0, lineHeight: 1 }}
           >
             ↗
+          </a>
+        )}
+        {effectiveCardSlugs.length > 1 && !isLocked && (
+          <a
+            href={`/biblioteca?node=${node.id}&area=${areaId}`}
+            onClick={(e) => e.stopPropagation()}
+            title={`${effectiveCardSlugs.length} cards na biblioteca`}
+            style={{
+              fontSize: 10,
+              color: colors.textMuted,
+              opacity: 0.8,
+              flexShrink: 0,
+              lineHeight: 1,
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+            }}
+          >
+            {effectiveCardSlugs.length} ↗
           </a>
         )}
       </div>
@@ -400,6 +417,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
               level={level}
               colors={colors}
               nw={nw}
+              areaId={area.id}
               style={{ left: pos.x, top: pos.y }}
               onClick={() => {
                 const next = cycleLevel(level);
