@@ -2,16 +2,310 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, ExternalLink, Flame, Lock, PlayCircle } from "lucide-react";
 import { SkillTreeCanvas } from "@/components/skill-tree-canvas";
 import { getAreaProgress, setNodeLevel } from "@/lib/skill-tree-db";
 import type { SkillArea, SkillAreaProgress, SkillLevel } from "@/lib/skill-tree-types";
+import type { CardCategory } from "@/lib/types";
+
+interface StudyCard {
+  slug: string;
+  title: string;
+  category: CardCategory;
+  excerpt: string;
+  tags: string[];
+  stack: string[];
+}
 
 interface Props {
   area: SkillArea;
+  cards: StudyCard[];
 }
 
-export function AreaClient({ area }: Props) {
+function getNodeCardSlugs(node: SkillArea["nodes"][number]): string[] {
+  return [
+    ...(node.cardSlugs ?? []),
+    ...(node.cardSlug && !node.cardSlugs?.includes(node.cardSlug) ? [node.cardSlug] : []),
+  ];
+}
+
+function getNodeLevel(
+  node: SkillArea["nodes"][number],
+  progress: SkillAreaProgress,
+): SkillLevel {
+  const saved = progress[node.id];
+  if (saved === "mastered" || saved === "learning") return saved;
+  if (node.prerequisites.length === 0) return "available";
+  return node.prerequisites.every((pid) => progress[pid] === "mastered")
+    ? "available"
+    : "locked";
+}
+
+function StudyStatus({
+  level,
+  colors,
+}: {
+  level: SkillLevel;
+  colors: SkillArea["colors"];
+}) {
+  if (level === "mastered") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: colors.text }}>
+        <CheckCircle2 size={14} />
+        Dominada
+      </span>
+    );
+  }
+  if (level === "learning") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: colors.textMuted }}>
+        <Flame size={14} />
+        Estudando
+      </span>
+    );
+  }
+  if (level === "available") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: colors.textMuted }}>
+        <PlayCircle size={14} />
+        Próxima
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: "#52525b" }}>
+      <Lock size={14} />
+      Bloqueada
+    </span>
+  );
+}
+
+function StudyPlanPanel({
+  area,
+  progress,
+  cards,
+  onStartNode,
+}: {
+  area: SkillArea;
+  progress: SkillAreaProgress;
+  cards: StudyCard[];
+  onStartNode: (nodeId: string) => void;
+}) {
+  const cardsBySlug = new Map(cards.map((card) => [card.slug, card]));
+  const orderedNodes = [...area.nodes].sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"));
+  const learningNode = orderedNodes.find((node) => getNodeLevel(node, progress) === "learning");
+  const availableNode = orderedNodes.find((node) => getNodeLevel(node, progress) === "available");
+  const focusNode = learningNode ?? availableNode;
+  const focusCards = focusNode ? getNodeCardSlugs(focusNode).map((slug) => cardsBySlug.get(slug)).filter(Boolean) as StudyCard[] : [];
+  const nodesWithCards = orderedNodes.filter((node) => getNodeCardSlugs(node).length > 0);
+
+  return (
+    <section className="space-y-4 mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-4">
+        <div
+          className="rounded-xl p-5"
+          style={{
+            background: "rgba(15,15,18,0.72)",
+            border: `1px solid ${area.colors.border}`,
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3" style={{ color: area.colors.text }}>
+            <BookOpen size={18} />
+            <h2 className="text-base font-semibold">Roteiro de estudo</h2>
+          </div>
+          <p className="text-sm leading-relaxed mb-5" style={{ color: "#a1a1aa" }}>
+            Use esta área como sequência de cards da biblioteca. Marque um node como estudando,
+            leia os cards associados e só domine quando conseguir explicar os conceitos sem consultar.
+          </p>
+
+          {focusNode ? (
+            <div
+              className="rounded-lg p-4"
+              style={{
+                background: area.colors.bgLight,
+                border: `1px solid ${area.colors.border}`,
+              }}
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wide mb-1" style={{ color: "#71717a" }}>
+                    Foco agora
+                  </p>
+                  <h3 className="font-semibold" style={{ color: area.colors.text }}>
+                    {focusNode.name}
+                  </h3>
+                </div>
+                <StudyStatus level={getNodeLevel(focusNode, progress)} colors={area.colors} />
+              </div>
+              <p className="text-sm mb-4" style={{ color: "#a1a1aa" }}>
+                {focusNode.description}
+              </p>
+              {getNodeLevel(focusNode, progress) === "available" && (
+                <button
+                  onClick={() => onStartNode(focusNode.id)}
+                  className="text-sm font-medium rounded-lg px-3 py-2 transition hover:opacity-85"
+                  style={{
+                    background: area.colors.bgMedium,
+                    border: `1px solid ${area.colors.border}`,
+                    color: area.colors.text,
+                  }}
+                >
+                  Começar este node
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-line p-4 text-sm" style={{ color: "#a1a1aa" }}>
+              Todos os nodes disponíveis já foram dominados.
+            </div>
+          )}
+        </div>
+
+        <div
+          className="rounded-xl p-5"
+          style={{
+            background: "rgba(15,15,18,0.72)",
+            border: `1px solid ${area.colors.border}`,
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-base font-semibold" style={{ color: area.colors.text }}>
+              Cards do foco
+            </h2>
+            {focusCards.length > 0 && (
+              <span className="text-xs" style={{ color: "#71717a" }}>
+                {focusCards.length} card{focusCards.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+
+          {focusCards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {focusCards.map((card) => (
+                <Link
+                  key={card.slug}
+                  href={`/biblioteca/${card.slug}`}
+                  className="group rounded-lg p-4 transition"
+                  style={{
+                    background: "rgba(9,9,11,0.64)",
+                    border: "1px solid rgba(63,63,70,0.72)",
+                  }}
+                >
+                  <div className="flex items-start gap-2">
+                    <h3 className="text-sm font-semibold flex-1 leading-snug" style={{ color: "#fafafa" }}>
+                      {card.title}
+                    </h3>
+                    <ExternalLink size={14} style={{ color: area.colors.textMuted }} />
+                  </div>
+                  {card.excerpt && (
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: "#a1a1aa" }}>
+                      {card.excerpt}
+                    </p>
+                  )}
+                  {(card.stack.length > 0 || card.tags.length > 0) && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {[...card.stack.slice(0, 2), ...card.tags.slice(0, 3)].map((label) => (
+                        <span
+                          key={label}
+                          className="text-[11px] rounded px-1.5 py-0.5"
+                          style={{
+                            background: area.colors.bgLight,
+                            color: area.colors.textMuted,
+                          }}
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-line p-4 text-sm" style={{ color: "#a1a1aa" }}>
+              Este node ainda não tem cards associados. Use a descrição como guia e adicione cards depois.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="rounded-xl p-5"
+        style={{
+          background: "rgba(15,15,18,0.72)",
+          border: `1px solid ${area.colors.border}`,
+        }}
+      >
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-base font-semibold" style={{ color: area.colors.text }}>
+            Sequência completa de cards
+          </h2>
+          <span className="text-xs" style={{ color: "#71717a" }}>
+            {nodesWithCards.length} nodes com cards
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {nodesWithCards.map((node) => {
+            const level = getNodeLevel(node, progress);
+            const nodeCards = getNodeCardSlugs(node)
+              .map((slug) => cardsBySlug.get(slug))
+              .filter(Boolean) as StudyCard[];
+
+            return (
+              <div
+                key={node.id}
+                className="rounded-lg p-4"
+                style={{
+                  background: level === "locked" ? "rgba(9,9,11,0.36)" : "rgba(9,9,11,0.64)",
+                  border: "1px solid rgba(63,63,70,0.72)",
+                  opacity: level === "locked" ? 0.58 : 1,
+                }}
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: "#71717a" }}>
+                      {area.tierNames[node.tier] ?? `Tier ${node.tier}`}
+                    </p>
+                    <h3 className="text-sm font-semibold leading-snug" style={{ color: "#fafafa" }}>
+                      {node.name}
+                    </h3>
+                  </div>
+                  <StudyStatus level={level} colors={area.colors} />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {nodeCards.map((card) => (
+                    <Link
+                      key={card.slug}
+                      href={`/biblioteca/${card.slug}`}
+                      className="inline-flex items-center gap-1.5 text-xs rounded-md px-2 py-1 transition hover:opacity-85"
+                      style={{
+                        background: area.colors.bgLight,
+                        color: area.colors.textMuted,
+                        border: `1px solid ${area.colors.border}`,
+                      }}
+                    >
+                      {card.title}
+                      <ExternalLink size={12} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {nodesWithCards.length === 0 && (
+            <div className="rounded-lg border border-line p-4 text-sm" style={{ color: "#a1a1aa" }}>
+              Esta área ainda não possui cards ligados aos nodes.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function AreaClient({ area, cards }: Props) {
   const [progress, setProgress] = useState<SkillAreaProgress>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -202,7 +496,15 @@ export function AreaClient({ area }: Props) {
             Carregando progresso...
           </div>
         ) : (
-          <SkillTreeCanvas area={area} progress={progress} onNodeClick={handleNodeClick} />
+          <>
+            <StudyPlanPanel
+              area={area}
+              progress={progress}
+              cards={cards}
+              onStartNode={(nodeId) => void handleNodeClick(nodeId, "learning")}
+            />
+            <SkillTreeCanvas area={area} progress={progress} onNodeClick={handleNodeClick} />
+          </>
         )}
       </div>
     </div>
