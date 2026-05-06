@@ -170,9 +170,9 @@ const SOFTWARE: SkillArea = {
     { id: "se-iac", name: "Infraestrutura como Código", description: "Terraform, Pulumi, Helm, GitOps, ambientes efêmeros.", tier: 3, prerequisites: ["se-ci-cd", "se-observ"], cardSlugs: ["terraform-iac", "argocd-gitops"] },
 
     // ── Tier 4 ──
-    { id: "se-staff-arch", name: "Arquitetura Staff-Level", description: "Cross-team design, plataformas internas, golden paths.", tier: 4, prerequisites: ["se-system-design", "se-security"], cardSlugs: ["quando-nao-usar-ia"], routeHref: "/war-game" },
-    { id: "se-rfc", name: "RFC & ADR Writing", description: "Escrita técnica persuasiva, trade-offs documentados, RFCs.", tier: 4, prerequisites: ["se-staff-arch"], routeHref: "/rfc-writing" },
-    { id: "se-tech-lead", name: "Tech Leadership", description: "Mock interviews, system design ao vivo, banco de histórias STAR.", tier: 4, prerequisites: ["se-staff-arch", "se-rfc"], routeHref: "/mock-interview" },
+    { id: "se-staff-arch", name: "Arquitetura Staff-Level", description: "ADRs, cross-team design, decisões defendíveis com trade-offs documentados.", tier: 4, prerequisites: ["se-system-design", "se-security"], cardSlugs: ["quando-nao-usar-ia", "adr-como-escrever"], routeHref: "/war-game" },
+    { id: "se-rfc", name: "RFC & ADR Writing", description: "Escrita técnica persuasiva, trade-offs documentados, RFCs.", tier: 4, prerequisites: ["se-staff-arch"], cardSlugs: ["adr-como-escrever"], routeHref: "/rfc-writing" },
+    { id: "se-tech-lead", name: "Entrevistas & Live Coding", description: "Algoritmos para entrevista, mock interviews, system design ao vivo, banco de histórias STAR.", tier: 4, prerequisites: ["se-staff-arch", "se-rfc"], cardSlugs: ["entrevista-algoritmos"], routeHref: "/coding-challenge" },
   ],
 };
 
