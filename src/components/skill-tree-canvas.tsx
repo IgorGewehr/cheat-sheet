@@ -32,7 +32,7 @@ type NodePos = { x: number; y: number };
 function computeLayout(
   nodes: SkillNode[],
   nw: number,
-): { positions: Map<string, NodePos>; canvasH: number } {
+): { positions: Map<string, NodePos>; canvasH: number; canvasW: number } {
   const tiers = [...new Set(nodes.map((n) => n.tier))].sort((a, b) => a - b);
   const numTiers = tiers.length;
 
@@ -56,6 +56,7 @@ function computeLayout(
   return {
     positions,
     canvasH: PAD_Y * 2 + numTiers * (TIER_LABEL_H + NH) + Math.max(0, numTiers - 1) * GAP_Y,
+    canvasW: PAD_X * 2 + totalContentW,
   };
 }
 
@@ -281,7 +282,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
     return Math.max(NW_MIN, Math.floor(available / maxTierCount));
   }, [containerWidth, maxTierCount]);
 
-  const { positions, canvasH } = useMemo(
+  const { positions, canvasH, canvasW } = useMemo(
     () => computeLayout(nodes, nw),
     [nodes, nw],
   );
@@ -323,7 +324,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
   return (
     <div
       ref={containerRef}
-      className="relative rounded-xl overflow-hidden"
+      className="relative rounded-xl overflow-x-auto"
       style={{
         background: "rgba(9,9,11,0.85)",
         border: `1px solid ${colors.border}`,
@@ -332,7 +333,7 @@ export function SkillTreeCanvas({ area, progress, onNodeClick }: Props) {
         backgroundSize: "28px 28px",
       }}
     >
-      <div style={{ width: "100%", height: canvasH, position: "relative" }}>
+      <div style={{ width: canvasW, minWidth: canvasW, height: canvasH, position: "relative" }}>
         {/* Tier labels — full-width strip above each row */}
         {tiers.map((tier, tierIndex) => {
           const labelY = PAD_Y + tierIndex * (TIER_LABEL_H + NH + GAP_Y);

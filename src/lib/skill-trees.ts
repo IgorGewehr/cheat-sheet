@@ -141,11 +141,11 @@ const SOFTWARE: SkillArea = {
   tierNames: ["Base", "Fundamentos", "Aplicado", "Arquitetura", "Staff"],
   nodes: [
     // ── Tier 0 ──
-    { id: "se-poo", name: "OOP & Paradigmas", description: "Classes, herança, polimorfismo, OOP vs funcional vs procedural.", tier: 0, prerequisites: [] },
-    { id: "se-git", name: "Git & Versionamento", description: "Branches, merge, rebase, pull requests, conventional commits.", tier: 0, prerequisites: [] },
-    { id: "se-linux", name: "Linux & Shell", description: "Filesystem, processos, scripting bash, pipes, cron.", tier: 0, prerequisites: [] },
+    { id: "se-poo", name: "OOP & Paradigmas", description: "Classes, herança, polimorfismo, OOP vs funcional vs procedural.", tier: 0, prerequisites: [], cardSlugs: ["nestjs-por-onde-comecar", "typescript-por-que-usar"] },
+    { id: "se-git", name: "Git & Versionamento", description: "Branches, merge, rebase, pull requests, conventional commits.", tier: 0, prerequisites: [], cardSlugs: ["git-workflow-equipes"] },
+    { id: "se-linux", name: "Linux & Shell", description: "Filesystem, processos, scripting bash, pipes, cron.", tier: 0, prerequisites: [], cardSlugs: ["linux-shell-dev"] },
     { id: "se-sql", name: "SQL & Bancos Relacionais", description: "DDL/DML, JOINs, índices, transações ACID, Drizzle ORM, PostgreSQL.", tier: 0, prerequisites: [], cardSlugs: ["n-plus-1", "drizzle-schema-queries", "migrations-zero-downtime", "postgres-erp-checklist", "postgres-indexes-explain", "soft-delete-audit", "decimal-money", "drizzle-vs-prisma-2026", "audit-migration"] },
-    { id: "se-http", name: "HTTP & Redes", description: "TCP/IP, HTTP/1.1, HTTP/2, TLS, DNS, REST semântica.", tier: 0, prerequisites: [] },
+    { id: "se-http", name: "HTTP & Redes", description: "TCP/IP, HTTP/1.1, HTTP/2, TLS, DNS, REST semântica.", tier: 0, prerequisites: [], cardSlugs: ["http-fundamentos-api"] },
 
     // ── Tier 1 ──
     { id: "se-patterns", name: "Design Patterns & NestJS DI", description: "GoF: factory, strategy, observer. NestJS: DI container, providers, escopos, tokens, forRoot.", tier: 1, prerequisites: ["se-poo"], cardSlugs: ["typescript-avancado", "repository-pattern", "cqrs-lite", "saga-pattern", "nest-module-organization", "nestjs-guards-interceptors", "nestjs-di-providers", "prompt-modulo-crud-nest", "prompt-modulo-financeiro"] },
@@ -153,7 +153,7 @@ const SOFTWARE: SkillArea = {
     { id: "se-frontend", name: "Next.js & RSC", description: "App Router, React Server Components, Server Actions, streaming com Suspense, os 4 caches do Next.js 15.", tier: 1, prerequisites: ["se-http"], cardSlugs: ["app-router", "server-components", "server-actions", "streaming-suspense", "nextjs-caching-model", "react-testing-library"] },
     { id: "se-testing", name: "TDD & Testing", description: "TDD Red/Green/Refactor, unit tests com Jest, integration tests, pirâmide de testes, E2E Playwright.", tier: 1, prerequisites: ["se-clean-code"], cardSlugs: ["tdd-red-green-refactor", "jest-unit-nestjs", "nestjs-integration-testing", "testing-pyramid-nestjs", "playwright-nextjs", "test-data-builders", "react-testing-library"] },
     { id: "se-api", name: "REST API Design & SDD", description: "Resources, HTTP verbs, status codes, versionamento, OpenAPI spec-first com NestJS.", tier: 1, prerequisites: ["se-http", "se-sql"], cardSlugs: ["dto-validation", "sdd-openapi-nestjs", "gateway-compliance", "audit-api-endpoint", "ai-sem-paginacao", "ai-sem-validacao"] },
-    { id: "se-ci-cd", name: "CI/CD & Config", description: "Pipelines, Github Actions, build, lint, test, deploy, variáveis de ambiente com validação.", tier: 1, prerequisites: ["se-git", "se-testing"], cardSlugs: ["github-actions-cicd", "monorepo-turborepo", "nestjs-config-env", "ai-config-hardcoded"] },
+    { id: "se-ci-cd", name: "CI/CD & Config", description: "Pipelines, Github Actions, build, lint, test, deploy, variáveis de ambiente com validação.", tier: 1, prerequisites: ["se-git", "se-testing"], cardSlugs: ["github-actions-cicd", "monorepo-turborepo", "nestjs-config-env", "docker-compose-dev", "ai-config-hardcoded"] },
 
     // ── Tier 2 ──
     { id: "se-ddd", name: "Domain-Driven Design", description: "Bounded contexts, aggregates, events, ubiquitous language.", tier: 2, prerequisites: ["se-patterns", "se-clean-code"], cardSlugs: ["ddd-light-erp", "hexagonal"] },
