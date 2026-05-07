@@ -15,6 +15,7 @@ export interface SkillNode {
 export type SkillAreaId =
   | "matematica"
   | "software"
+  | "go-enterprise"
   | "data-science"
   | "ia-llm"
   | "security"

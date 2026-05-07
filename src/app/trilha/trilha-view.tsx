@@ -11,6 +11,22 @@ import type { SkillAreaProgress } from "@/lib/skill-tree-types";
 
 const PATHS = [
   {
+    id: "go-enterprise",
+    emoji: "Go",
+    title: "Go Enterprise",
+    description:
+      "Go, Chi, PostgreSQL, sqlc, RabbitMQ, Redis, SDD, testes e arquitetura para microsserviços empresariais.",
+    areaIds: ["go-enterprise"] as const,
+    primary: "#38bdf8",
+    glow: "rgba(56,189,248,0.30)",
+    bgLight: "rgba(56,189,248,0.07)",
+    bgMedium: "rgba(56,189,248,0.18)",
+    text: "#bae6fd",
+    textMuted: "#7dd3fc",
+    border: "rgba(56,189,248,0.45)",
+    borderMastered: "rgba(56,189,248,0.90)",
+  },
+  {
     id: "engenharia",
     emoji: "⚙",
     title: "Engenharia de Software",
@@ -245,7 +261,7 @@ export function TrilhaView() {
           Escolha seu caminho
         </h1>
         <p className="text-sm mb-6" style={{ color: "#71717a" }}>
-          Três trilhas de progressão vertical. Cada nó aponta para um card na biblioteca.
+          Trilhas de progressão vertical. Cada nó aponta para cards na biblioteca.
         </p>
 
         {/* Global progress */}

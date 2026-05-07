@@ -176,6 +176,48 @@ const SOFTWARE: SkillArea = {
   ],
 };
 
+// ─── Go Enterprise ───────────────────────────────────────────────────────────
+
+const GO_ENTERPRISE: SkillArea = {
+  id: "go-enterprise",
+  name: "Go Enterprise",
+  emoji: "Go",
+  colors: P.cyan,
+  description:
+    "Da instalação e sintaxe de Go até microsserviços spec-driven com Chi, PostgreSQL, sqlc, pgx, RabbitMQ, Redis, OpenAPI, testes state of the art e operação em produção.",
+  tierNames: ["Base", "HTTP & Projeto", "Persistência", "Arquitetura", "Produção Sênior", "Projeto Capstone"],
+  nodes: [
+    { id: "go-start", name: "Primeiros Passos", description: "Instalação, toolchain, go.mod, comandos essenciais e primeiro serviço executável.", tier: 0, prerequisites: [], cardSlugs: ["go-primeiros-passos"] },
+    { id: "go-language", name: "Linguagem Go", description: "Tipos, structs, interfaces, ponteiros, slices, maps e composição idiomática.", tier: 0, prerequisites: ["go-start"], cardSlugs: ["go-sintaxe-tipos-controle"] },
+    { id: "go-project-layout", name: "Layout de Projeto", description: "cmd, internal, pkg, migrations, api, scripts e fronteiras de pacote sem overengineering.", tier: 0, prerequisites: ["go-language"], cardSlugs: ["go-modulos-layout-projetos"] },
+    { id: "go-errors-context", name: "Errors & Context", description: "Error wrapping, sentinels, cancellation, deadlines e propagação de request scope.", tier: 0, prerequisites: ["go-language"], cardSlugs: ["go-errors-context"] },
+
+    { id: "go-chi", name: "HTTP com Chi", description: "Router, middlewares, request parsing, response envelopes, validação e graceful shutdown.", tier: 1, prerequisites: ["go-project-layout", "go-errors-context"], cardSlugs: ["go-chi-http"] },
+    { id: "go-sdd", name: "SDD com OpenAPI", description: "Spec-driven development: contrato primeiro, geração, validação e testes de contrato.", tier: 1, prerequisites: ["go-chi"], cardSlugs: ["go-sdd-openapi", "go-contract-sdd-tests"] },
+    { id: "go-config-logs", name: "Config & Logs", description: "envconfig/Viper, Zap/Zerolog, correlation ids e configuração validada no boot.", tier: 1, prerequisites: ["go-chi"], cardSlugs: ["go-config-envconfig-viper", "go-observabilidade-zap-otel"] },
+    { id: "go-testing-core", name: "Testes Go Core", description: "testing, testify, table-driven tests, fakes, fixtures e cobertura útil.", tier: 1, prerequisites: ["go-language"], cardSlugs: ["go-testing-testify", "tdd-red-green-refactor"] },
+
+    { id: "go-postgres", name: "PostgreSQL com sqlc + pgx", description: "Queries tipadas, pgxpool, transações, nullable types e modelagem relacional.", tier: 2, prerequisites: ["go-sdd", "go-testing-core"], cardSlugs: ["go-postgres-pgx-sqlc", "postgres-indexes-explain", "n-plus-1"] },
+    { id: "go-migrations", name: "Migrations", description: "Goose ou Atlas, versionamento de schema, rollback honesto e zero downtime.", tier: 2, prerequisites: ["go-postgres"], cardSlugs: ["go-migrations-goose-atlas", "migrations-zero-downtime"] },
+    { id: "go-transactions", name: "Transações & Repositórios", description: "Unit of Work pragmático, isolation levels, locks, interfaces e boundary de use case.", tier: 2, prerequisites: ["go-postgres"], cardSlugs: ["go-transactions-repositories", "repository-pattern"] },
+    { id: "go-integration-tests", name: "Testcontainers", description: "Testes de integração reais com Postgres, RabbitMQ e Redis efêmeros.", tier: 2, prerequisites: ["go-postgres", "go-testing-core"], cardSlugs: ["go-integration-testcontainers"] },
+
+    { id: "go-hexagonal", name: "Arquitetura Hexagonal", description: "Domínio sem framework, ports/adapters, use cases e separação de infraestrutura.", tier: 3, prerequisites: ["go-transactions", "go-sdd"], cardSlugs: ["go-clean-hexagonal", "hexagonal", "clean-architecture"] },
+    { id: "go-ddd", name: "DDD Pragmático", description: "Aggregates, invariantes, domain services, application services e eventos de domínio.", tier: 3, prerequisites: ["go-hexagonal"], cardSlugs: ["go-ddd-aggregates", "ddd-light-erp"] },
+    { id: "go-rabbitmq", name: "RabbitMQ & Eventos", description: "Exchanges, queues, routing keys, retries, DLQ, consumers idempotentes e backpressure.", tier: 3, prerequisites: ["go-ddd", "go-integration-tests"], cardSlugs: ["go-rabbitmq-event-driven", "event-driven", "background-jobs"] },
+    { id: "go-redis", name: "Redis Cache & Idempotência", description: "Cache-aside, distributed locks com cautela, idempotency keys e rate limiting.", tier: 3, prerequisites: ["go-rabbitmq"], cardSlugs: ["go-redis-cache-idempotencia", "caching-layers", "rate-limit-distribuido"] },
+
+    { id: "go-microservices", name: "Microsserviços Empresariais", description: "Bounded contexts, APIs internas, contratos, deploy independente e dados por serviço.", tier: 4, prerequisites: ["go-ddd", "go-rabbitmq"], cardSlugs: ["go-microservices-enterprise", "microservices-quando-usar", "modular-monolith"] },
+    { id: "go-outbox", name: "Outbox & Consistência", description: "Outbox pattern, exactly-once como ilusão, deduplicação e consistência eventual.", tier: 4, prerequisites: ["go-rabbitmq", "go-transactions"], cardSlugs: ["go-outbox-idempotency", "outbox-pattern"] },
+    { id: "go-observability", name: "Observabilidade", description: "Logs estruturados, métricas, traces, RED/USE, SLOs e diagnóstico de incidentes.", tier: 4, prerequisites: ["go-config-logs", "go-microservices"], cardSlugs: ["go-observabilidade-zap-otel", "observability", "opentelemetry-observabilidade"] },
+    { id: "go-performance", name: "Performance Go", description: "Benchmarks, pprof, allocation profiling, race detector, pool com parcimônia e tuning.", tier: 4, prerequisites: ["go-observability", "go-redis"], cardSlugs: ["go-benchmarks-profiling"] },
+
+    { id: "go-docker", name: "Docker & Compose", description: "Multi-stage builds, imagens pequenas, healthchecks e ambiente local reproduzível.", tier: 5, prerequisites: ["go-microservices", "go-integration-tests"], cardSlugs: ["go-docker-compose-enterprise", "docker-compose-dev", "docker-multistage"] },
+    { id: "go-production-checklist", name: "Checklist de Produção", description: "Critérios de aceite para serviço Go de alto valor: segurança, dados, operação e rollback.", tier: 5, prerequisites: ["go-docker", "go-outbox", "go-performance"], cardSlugs: ["go-microservice-production-checklist", "container-security", "secrets-management"] },
+    { id: "go-capstone", name: "Capstone: 2 Microsserviços", description: "Construir dois serviços empresariais integrados por eventos, contrato OpenAPI, banco próprio e suíte completa de testes.", tier: 5, prerequisites: ["go-production-checklist"], cardSlugs: ["go-microservices-enterprise", "go-sdd-openapi", "go-outbox-idempotency", "go-microservice-production-checklist"] },
+  ],
+};
+
 // ─── Data Science ────────────────────────────────────────────────────────────
 
 const DATA_SCIENCE: SkillArea = {
@@ -383,6 +425,7 @@ const GOVTECH: SkillArea = {
 export const SKILL_AREAS: SkillArea[] = [
   MATEMATICA,
   SOFTWARE,
+  GO_ENTERPRISE,
   DATA_SCIENCE,
   IA_LLM,
   SECURITY,
