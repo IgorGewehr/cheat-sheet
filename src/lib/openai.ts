@@ -16,6 +16,7 @@ export const MODELS = {
   rfc: "gpt-5.5",
   refatoracao: "gpt-5.5",
   interrogatorio: "gpt-5.5",
+  goExam: "gpt-5.5",
   // gpt-5.4 — geração de conteúdo
   enhance: "gpt-5.4",
   explain: "gpt-5.4",

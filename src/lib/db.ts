@@ -56,7 +56,8 @@ type ColName =
   | "errosPersonais" | "experienciasSTAR" | "systemDesigns"
   | "mockInterviews" | "rfcSessions" | "warGames" | "revisoesCodigo"
   | "trilhaProgresso" | "idleSessions" | "questSessions"
-  | "integracoes";
+  | "integracoes"
+  | "goExamSessions";
 
 function col(name: ColName) {
   const { db } = getFirebase();
@@ -1230,4 +1231,60 @@ export async function getIntegracao<T = Record<string, unknown>>(id: IntegracaoI
 export async function deleteIntegracao(id: IntegracaoId): Promise<void> {
   await ready();
   await deleteDoc(docRef("integracoes", id));
+}
+
+// ───── Go Exam Sessions ─────────────────────────────────────
+
+export interface GoExamSession {
+  id: string;
+  tier: 1 | 3 | 5;
+  finalScore: number;
+  passed: boolean;
+  threshold: number;
+  recommendation: "aprovado" | "revisar-cards" | "refazer-tier";
+  feedbackGeral: string;
+  pontosFortes: string[];
+  areasDesenvolvimento: string[];
+  questoes: Array<{
+    questionId: string;
+    verdict: "PASS" | "REVIEW" | "FAIL";
+    score: number;
+    feedback: string;
+    expectedPoints: string[];
+  }>;
+  answers: Array<{ questionId: string; answer: string }>;
+  criadoEm: number;
+}
+
+export async function saveGoExamSession(s: GoExamSession): Promise<void> {
+  await ready();
+  await setDoc(docRef("goExamSessions", s.id), clean(s) as DocumentData);
+}
+
+export async function listGoExamSessions(): Promise<GoExamSession[]> {
+  await ready();
+  const snap = await getDocs(query(col("goExamSessions"), orderBy("criadoEm", "desc")));
+  return snap.docs.map((d) => d.data() as GoExamSession);
+}
+
+export async function getLatestGoExamSession(tier: 1 | 3 | 5): Promise<GoExamSession | null> {
+  await ready();
+  const snap = await getDocs(query(col("goExamSessions"), orderBy("criadoEm", "desc")));
+  for (const d of snap.docs) {
+    const s = d.data() as GoExamSession;
+    if (s.tier === tier) return s;
+  }
+  return null;
+}
+
+export async function getBestGoExamSessionsByTier(): Promise<Record<1 | 3 | 5, GoExamSession | null>> {
+  await ready();
+  const snap = await getDocs(query(col("goExamSessions"), orderBy("criadoEm", "desc")));
+  const best: Record<1 | 3 | 5, GoExamSession | null> = { 1: null, 3: null, 5: null };
+  snap.docs.forEach((d) => {
+    const s = d.data() as GoExamSession;
+    const current = best[s.tier];
+    if (!current || s.finalScore > current.finalScore) best[s.tier] = s;
+  });
+  return best;
 }

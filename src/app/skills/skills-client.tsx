@@ -385,9 +385,9 @@ export function SkillsClient() {
       : "Iniciante";
 
   return (
-    <div className="min-h-screen px-4 sm:px-8 lg:px-12 py-8 space-y-8">
+    <div className="min-h-screen px-3 sm:px-8 lg:px-12 py-5 sm:py-8 space-y-6 sm:space-y-8">
       {/* Hero */}
-      <div className="flex items-start gap-6 flex-wrap">
+      <div className="flex items-start gap-4 sm:gap-6 flex-wrap">
         <div className="relative flex-shrink-0">
           <ProgressRing pct={overallPct} color="#8b5cf6" size={100} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -440,11 +440,13 @@ export function SkillsClient() {
         </div>
       </div>
 
-      {/* Coverage panel — full width */}
-      <CoveragePanel allProgress={loading ? {} : allProgress} />
+      {/* Coverage panel — full width, hidden on small mobile (heavy SVG) */}
+      <div className="hidden sm:block">
+        <CoveragePanel allProgress={loading ? {} : allProgress} />
+      </div>
 
       {/* Area cards — 3 per row, no GovTech card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {SKILL_AREAS.filter((a) => a.id !== "govtech").map((area) => (
           <AreaCard
             key={area.id}

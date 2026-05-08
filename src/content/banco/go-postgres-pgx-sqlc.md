@@ -87,6 +87,95 @@ func (r Repository) FindByID(ctx context.Context, id string) (invoice.Invoice, e
 }
 ```
 
+## Pool tuning sênior
+
+Configurar pool sem entender Postgres é otimizar no escuro. Regra prática:
+
+```go
+cfg, _ := pgxpool.ParseConfig(databaseURL)
+cfg.MaxConns = 20
+cfg.MinConns = 5
+cfg.MaxConnLifetime = 30 * time.Minute
+cfg.MaxConnIdleTime = 5 * time.Minute
+cfg.HealthCheckPeriod = 1 * time.Minute
+```
+
+`MaxConns` por instância **× réplicas** ≤ `max_connections` do Postgres (menos margem para outros clients/admin). Postgres não escala bem além de algumas centenas de conexões — para isso existe **PgBouncer** em modo transaction.
+
+Em PgBouncer transaction mode você **perde** prepared statements server-side. Use `pgx` com `default_query_exec_mode=cache_describe` ou `simple_protocol`, e teste com `EXPLAIN`.
+
+## Prepared statements e batch
+
+Para queries chamadas em loop hot, prepare uma vez, execute várias:
+
+```go
+batch := &pgx.Batch{}
+for _, item := range items {
+    batch.Queue("INSERT INTO line_items(invoice_id, sku, qty) VALUES ($1,$2,$3)",
+        invoiceID, item.SKU, item.Qty)
+}
+br := pool.SendBatch(ctx, batch)
+defer br.Close()
+for range items {
+    if _, err := br.Exec(); err != nil { return err }
+}
+```
+
+`SendBatch` envia um único round-trip — diferença de 50ms × N para 50ms total quando N é grande.
+
+## COPY para ingestão massiva
+
+Para milhões de linhas, `INSERT` em loop perde feio para `COPY`:
+
+```go
+_, err := pool.CopyFrom(ctx,
+    pgx.Identifier{"events"},
+    []string{"id", "type", "payload", "created_at"},
+    pgx.CopyFromRows(rows),
+)
+```
+
+`COPY` chega em 10-100x mais rápido que `INSERT` individuais para bulk load (importação inicial, ETL, reprocessamento).
+
+## LISTEN/NOTIFY para baixa latência
+
+Para eventos intra-DB sem fila externa, `LISTEN/NOTIFY` é gratuito:
+
+```go
+conn, _ := pool.Acquire(ctx)
+defer conn.Release()
+_, _ = conn.Exec(ctx, "LISTEN invoices_paid")
+
+for {
+    notif, err := conn.Conn().WaitForNotification(ctx)
+    if err != nil { return err }
+    handlePaid(notif.Payload)
+}
+```
+
+Limites: payload máximo 8000 bytes, sem persistência (notificações enquanto offline são perdidas), uma conexão dedicada por listener. Para volume alto e durabilidade, use RabbitMQ/Kafka.
+
+## Pitfalls que aparecem em produção
+
+- **N+1 escondido por sqlc**: queries simples viram laços sem você notar. Resolva com `JOIN` ou `WHERE id = ANY($1)` recebendo array.
+- **Transação longa**: cada `BEGIN` segura uma conexão do pool. Operações HTTP/IO fora de transação. Em pool de 20, 20 transações longas = pool zerado.
+- **`SELECT FOR UPDATE` em ordem inconsistente** entre queries → deadlock. Sempre lock na mesma ordem (ex: `ORDER BY id`).
+- **Migrations e queries em deploy diferente**: rode migration **antes** do deploy do código que depende dela. Revisar plano expand/contract evita downtime.
+- **Pool exausto silencioso**: monitore `pgxpool.Stat()` — `AcquireDuration_p99` é sinal precoce.
+
+## Listas e arrays
+
+Postgres tem arrays nativos. Use quando representar "lista pequena de valores escalares" sem semântica relacional:
+
+```go
+var tags []string
+err := pool.QueryRow(ctx, "SELECT tags FROM articles WHERE id=$1", id).Scan(&tags)
+
+_, err = pool.Exec(ctx, "UPDATE articles SET tags=$1 WHERE id=$2", []string{"go","sre"}, id)
+```
+
+`pgx` mapeia `[]string`, `[]int64`, etc. nativamente. Para JSONB, `pgtype.JSONB` ou desserialize manual.
+
 ## Critério de domínio
 
-Você dominou este card quando consegue escrever queries SQL conscientemente, gerar tipos com sqlc e impedir que structs de banco virem seu modelo de domínio por acidente.
+Você dominou este card quando consegue olhar uma query lenta no Postgres, decidir entre criar índice, mudar a query, paginar, materializar view ou trocar `INSERT` por `COPY` — e justificar a escolha com `EXPLAIN ANALYZE`, não com sensação.

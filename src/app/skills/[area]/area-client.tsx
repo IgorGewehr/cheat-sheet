@@ -2,11 +2,33 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, ExternalLink, Flame, Lock, PlayCircle } from "lucide-react";
+import { Award, ArrowLeft, BookOpen, CheckCircle2, ChevronRight, ExternalLink, Flame, GraduationCap, Lock, PlayCircle, Sparkles, AlertCircle } from "lucide-react";
 import { SkillTreeCanvas } from "@/components/skill-tree-canvas";
 import { getAreaProgress, setNodeLevel } from "@/lib/skill-tree-db";
+import { getBestGoExamSessionsByTier, type GoExamSession } from "@/lib/db";
 import type { SkillArea, SkillAreaProgress, SkillLevel } from "@/lib/skill-tree-types";
 import type { CardCategory } from "@/lib/types";
+
+const GO_EXAM_TIERS: Array<{ tier: 1 | 3 | 5; title: string; checkpointSlug: string; description: string }> = [
+  {
+    tier: 1,
+    title: "Tier 1 — Base, Concorrência, Generics",
+    checkpointSlug: "go-checkpoint-tier-1",
+    description: "Fundamentos Go: layout, errors+context, channels, generics, HTTP. Aprovação ≥ 70.",
+  },
+  {
+    tier: 3,
+    title: "Tier 3 — Persistência, Arquitetura, gRPC",
+    checkpointSlug: "go-checkpoint-tier-3",
+    description: "Pleno: hexagonal, DDD, eventos, Redis, gRPC, resiliência. Aprovação ≥ 70.",
+  },
+  {
+    tier: 5,
+    title: "Tier 5 — Produção, Segurança, AI-Era",
+    checkpointSlug: "go-checkpoint-tier-5",
+    description: "Sênior: supply chain, JWT, observability, AI integration, system design. Aprovação ≥ 75.",
+  },
+];
 
 interface StudyCard {
   slug: string;
@@ -103,7 +125,7 @@ function StudyPlanPanel({
     <section className="space-y-4 mb-6">
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-4">
         <div
-          className="rounded-xl p-5"
+          className="rounded-xl p-4 sm:p-5"
           style={{
             background: "rgba(15,15,18,0.72)",
             border: `1px solid ${area.colors.border}`,
@@ -162,7 +184,7 @@ function StudyPlanPanel({
         </div>
 
         <div
-          className="rounded-xl p-5"
+          className="rounded-xl p-4 sm:p-5"
           style={{
             background: "rgba(15,15,18,0.72)",
             border: `1px solid ${area.colors.border}`,
@@ -230,7 +252,7 @@ function StudyPlanPanel({
       </div>
 
       <div
-        className="rounded-xl p-5"
+        className="rounded-xl p-4 sm:p-5"
         style={{
           background: "rgba(15,15,18,0.72)",
           border: `1px solid ${area.colors.border}`,
@@ -305,6 +327,140 @@ function StudyPlanPanel({
   );
 }
 
+function GoExamPanel({
+  area,
+  progress,
+}: {
+  area: SkillArea;
+  progress: SkillAreaProgress;
+}) {
+  const [bestExams, setBestExams] = useState<Record<1 | 3 | 5, GoExamSession | null>>({ 1: null, 3: null, 5: null });
+
+  useEffect(() => {
+    getBestGoExamSessionsByTier()
+      .then(setBestExams)
+      .catch(() => {});
+  }, []);
+
+  const tierReadiness: Record<number, { mastered: number; total: number; ready: boolean }> = {};
+  GO_EXAM_TIERS.forEach(({ tier }) => {
+    const ceiling = tier; // questões cobrem nodes até o tier
+    const tierNodes = area.nodes.filter((n) => n.tier <= ceiling);
+    const mastered = tierNodes.filter((n) => progress[n.id] === "mastered").length;
+    tierReadiness[tier] = {
+      mastered,
+      total: tierNodes.length,
+      ready: tierNodes.length > 0 && mastered / tierNodes.length >= 0.7,
+    };
+  });
+
+  return (
+    <section
+      className="rounded-xl p-4 sm:p-5 mb-6"
+      style={{
+        background: "rgba(15,15,18,0.78)",
+        border: `1px solid ${area.colors.border}`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3" style={{ color: area.colors.text }}>
+        <GraduationCap size={18} />
+        <h2 className="text-base font-semibold">Checkpoints & Exames</h2>
+      </div>
+      <p className="text-xs sm:text-sm leading-relaxed mb-4" style={{ color: "#a1a1aa" }}>
+        Antes de marcar tier como dominado, valide com IA: leia o checkpoint markdown e faça o exame.
+        Avaliação por GPT-5.5 com rubrica técnica, sem floreio.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {GO_EXAM_TIERS.map(({ tier, title, checkpointSlug, description }) => {
+          const best = bestExams[tier];
+          const ready = tierReadiness[tier]?.ready ?? false;
+
+          return (
+            <div
+              key={tier}
+              className="rounded-lg p-3 sm:p-4 flex flex-col gap-3"
+              style={{
+                background: best?.passed ? "rgba(16,185,129,0.06)" : "rgba(9,9,11,0.6)",
+                border: `1px solid ${best?.passed ? "rgba(16,185,129,0.4)" : "rgba(63,63,70,0.6)"}`,
+              }}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <span className="text-xs uppercase tracking-wide" style={{ color: area.colors.textMuted }}>
+                    Tier {tier}
+                  </span>
+                  {best?.passed ? (
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+                      style={{ background: "rgba(16,185,129,0.18)", color: "#6ee7b7" }}
+                    >
+                      <Award size={10} />
+                      {best.finalScore}
+                    </span>
+                  ) : best ? (
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+                      style={{ background: "rgba(245,158,11,0.18)", color: "#fde68a" }}
+                    >
+                      <AlertCircle size={10} />
+                      {best.finalScore}
+                    </span>
+                  ) : ready ? (
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+                      style={{ background: area.colors.bgMedium, color: area.colors.text }}
+                    >
+                      <Sparkles size={10} />
+                      Pronto
+                    </span>
+                  ) : null}
+                </div>
+                <h3 className="text-sm font-semibold leading-snug mb-1.5" style={{ color: "#fafafa" }}>
+                  {title.split(" — ")[1] ?? title}
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: "#a1a1aa" }}>
+                  {description}
+                </p>
+              </div>
+
+              <div className="text-[11px] tabular-nums" style={{ color: "#71717a" }}>
+                {tierReadiness[tier]?.mastered ?? 0}/{tierReadiness[tier]?.total ?? 0} nodes dominados
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                <Link
+                  href={`/biblioteca/${checkpointSlug}`}
+                  className="flex-1 text-xs font-medium rounded-md px-2.5 py-1.5 text-center transition hover:opacity-85"
+                  style={{
+                    background: area.colors.bgLight,
+                    border: `1px solid ${area.colors.border}`,
+                    color: area.colors.text,
+                  }}
+                >
+                  Checkpoint
+                </Link>
+                <Link
+                  href={`/skills/go-enterprise/exam/${tier}`}
+                  className="flex-1 text-xs font-semibold rounded-md px-2.5 py-1.5 text-center transition hover:opacity-85 inline-flex items-center justify-center gap-1"
+                  style={{
+                    background: area.colors.bgMedium,
+                    border: `1px solid ${area.colors.border}`,
+                    color: area.colors.text,
+                  }}
+                >
+                  <Sparkles size={11} />
+                  {best ? "Refazer" : "Fazer exame"}
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function AreaClient({ area, cards }: Props) {
   const [progress, setProgress] = useState<SkillAreaProgress>({});
   const [loading, setLoading] = useState(true);
@@ -350,7 +506,7 @@ export function AreaClient({ area, cards }: Props) {
     <div className="min-h-screen" style={{ background: "#09090b" }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-20 px-6 py-3 flex items-center gap-4"
+        className="sticky top-0 z-20 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4"
         style={{
           background: "rgba(9,9,11,0.92)",
           backdropFilter: "blur(12px)",
@@ -359,26 +515,27 @@ export function AreaClient({ area, cards }: Props) {
       >
         <Link
           href="/skills"
-          className="flex items-center gap-1.5 text-sm transition-colors"
+          className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm transition-colors shrink-0"
           style={{ color: colors.textMuted }}
         >
           <ArrowLeft size={14} />
-          Skills
+          <span className="hidden sm:inline">Skills</span>
         </Link>
-        <ChevronRight size={12} style={{ color: "#52525b" }} />
-        <span className="text-sm font-semibold" style={{ color: colors.text }}>
+        <ChevronRight size={12} style={{ color: "#52525b" }} className="hidden sm:inline shrink-0" />
+        <span className="text-xs sm:text-sm font-semibold truncate" style={{ color: colors.text }}>
           {area.emoji} {area.name}
         </span>
 
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-2 sm:gap-4 shrink-0">
           {/* Stats */}
-          <div className="flex items-center gap-3 text-xs" style={{ color: "#71717a" }}>
+          <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs" style={{ color: "#71717a" }}>
             <span>
               <span style={{ color: colors.text, fontWeight: 600 }}>{mastered}</span>
-              /{total} dominadas
+              /{total}
+              <span className="hidden sm:inline"> dominadas</span>
             </span>
             {learning > 0 && (
-              <span>
+              <span className="hidden sm:inline">
                 <span style={{ color: colors.textMuted, fontWeight: 600 }}>{learning}</span>{" "}
                 estudando
               </span>
@@ -387,7 +544,7 @@ export function AreaClient({ area, cards }: Props) {
 
           {/* Progress bar */}
           <div
-            className="hidden sm:flex items-center gap-2"
+            className="hidden md:flex items-center gap-2"
             style={{ minWidth: 140 }}
           >
             <div
@@ -412,11 +569,19 @@ export function AreaClient({ area, cards }: Props) {
               {pct}%
             </span>
           </div>
+
+          {/* Mobile-only inline percent */}
+          <span
+            className="md:hidden text-[11px] font-bold tabular-nums"
+            style={{ color: colors.text }}
+          >
+            {pct}%
+          </span>
         </div>
       </div>
 
       {/* Page title */}
-      <div className="px-6 pt-8 pb-4">
+      <div className="px-4 sm:px-6 pt-6 sm:pt-8 pb-4">
         <div className="flex items-start gap-4 mb-6">
           <div
             className="rounded-xl flex items-center justify-center text-2xl font-mono"
@@ -466,7 +631,7 @@ export function AreaClient({ area, cards }: Props) {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 mb-6 text-xs" style={{ color: "#52525b" }}>
+        <div className="flex items-center gap-x-4 gap-y-1 mb-6 text-xs flex-wrap" style={{ color: "#52525b" }}>
           {[
             { icon: "🔒", label: "Bloqueada" },
             { icon: "▷", label: "Disponível (clique para estudar)" },
@@ -482,7 +647,7 @@ export function AreaClient({ area, cards }: Props) {
       </div>
 
       {/* Canvas */}
-      <div className="px-6 pb-12">
+      <div className="px-4 sm:px-6 pb-12">
         {loading ? (
           <div
             className="flex items-center justify-center rounded-xl"
@@ -503,6 +668,7 @@ export function AreaClient({ area, cards }: Props) {
               cards={cards}
               onStartNode={(nodeId) => void handleNodeClick(nodeId, "learning")}
             />
+            {area.id === "go-enterprise" && <GoExamPanel area={area} progress={progress} />}
             <SkillTreeCanvas area={area} progress={progress} onNodeClick={handleNodeClick} />
           </>
         )}

@@ -73,13 +73,35 @@ updated: "2026-05-07"
 
 ## Segurança
 
-- Secrets não estão no repo.
+- Secrets não estão no repo, vêm de secret manager.
 - Config é validada no boot.
-- AuthN/AuthZ são testadas.
-- Inputs são validados.
-- Timeouts existem para dependências externas.
+- AuthN/AuthZ são testadas em handler e middleware.
+- Inputs são validados, body limitado por `MaxBytesReader`.
+- Timeouts existem em todo client externo.
 - Imagem final não carrega toolchain.
+- Headers de segurança presentes (HSTS, CSP, X-Content-Type-Options).
+- CORS com lista explícita, nunca `*` em endpoint autenticado.
+
+## Supply chain & static analysis
+
+- `golangci-lint run` (com gosec, staticcheck, errcheck, bodyclose, sqlclosecheck) passa em CI.
+- `govulncheck ./...` passa — falhar build em vulnerabilidade que toca caminho ativo.
+- `go mod verify` no pipeline.
+- `GOFLAGS=-mod=readonly` em CI — sem mudança implícita em `go.mod`.
+- SBOM gerado no build (syft, cyclonedx-gomod) e armazenado como artefato.
+- Imagem base (distroless/scratch) escaneada por trivy/grype.
+- Dependências revisadas — uso de `go list -m -u all` periódico ou Renovate/Dependabot.
+- Assinatura de imagem com cosign onde a política exige.
+
+## Resiliência
+
+- Timeout do handler ≤ timeout do load balancer.
+- Timeouts de client < timeout do handler caller.
+- Retries com backoff+jitter, só em operações idempotentes.
+- Circuit breaker em dependências externas críticas.
+- Bulkhead por dependência onde a saturação de uma não pode matar as outras.
+- Graceful shutdown drena requests in-flight antes de fechar.
 
 ## Critério de aceite
 
-Um serviço só está pronto quando alguém consegue: rodar local, entender contrato, executar testes, diagnosticar falha e fazer rollback sem depender da memória de quem escreveu.
+Um serviço só está pronto quando alguém consegue: rodar local, entender contrato, executar testes, diagnosticar falha por trace, fazer rollback e provar que nenhuma vulnerabilidade conhecida atinge o caminho ativo — sem depender da memória de quem escreveu.
