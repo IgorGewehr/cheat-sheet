@@ -1,0 +1,634 @@
+---
+title: AI Engineering Team Process — Eval-Driven, Prompt Versioning, CI/CD
+category: agentes-ia
+stack: [team process, eval-driven, prompt versioning, CI/CD, A/B test]
+tags: [team-process, eval-driven, prompt-versioning, ci-cd, a-b-testing]
+excerpt: "Como times de AI Engineering trabalham em 2026 — eval-driven dev, prompt versioning (git-like), CI/CD para AI apps, prompt review como code review, A/B testing em prod."
+related: [ai-eval-driven-dev, ai-deployment-2026, ai-product-ux]
+updated: "2026-05-10"
+---
+
+## AI Engineering vs Software Engineering
+
+Software engineering matured over 50 years. AI Engineering is 2-3 years old. Times estão learning how to work bem em AI apps.
+
+Diferenças key:
+
+| Aspect | Software | AI |
+|--------|----------|------|
+| Source of behavior | Code | Code + prompts + data + model |
+| Testing | Unit tests (binary) | Evals (continuous score) |
+| Reproducibility | Deterministic | Stochastic (varies per run) |
+| Versioning | Code in git | Prompts, models, datasets, weights |
+| Quality control | Pre-merge tests | Pre-merge evals + post-deploy monitoring |
+| Performance | CPU/memory | Tokens/cost/latency |
+| Failures | Crashes | Hallucinations, refusals, drift |
+| Debugging | Stack traces | Traces of LLM calls + reasoning |
+
+Esse card cobre process práticas que functions em AI teams 2026.
+
+## Roles em AI team
+
+Typical AI team:
+
+- **AI Engineer** — build apps with LLMs, prompts, evals, deployment.
+- **ML Engineer** — fine-tune, infrastructure, optimization.
+- **AI Researcher** — papers, novel techniques (frequentemente in lab).
+- **AI Product Manager** — define use cases, prioritize, measure success.
+- **AI Safety / Trust** — red team, compliance, content moderation.
+- **AI Operations** — monitoring, incident response, cost management.
+
+Solo founders: do all. Small startups: 1-2 people do all. Scale: dedicated each.
+
+## Eval-driven development
+
+(Resumo de `ai-eval-driven-dev` card, com process lens.)
+
+### Flow
+
+```
+1. Goal defined
+   ↓
+2. Golden dataset created (100+ examples)
+   ↓
+3. Baseline measured
+   ↓
+4. Hypothesis: "Change X will improve metric Y"
+   ↓
+5. Implement change
+   ↓
+6. Re-run evals
+   ↓
+7. Compare baseline vs current
+   ↓
+8a. Improved → merge
+8b. Same/worse → discard or iterate
+```
+
+### Sem evals
+
+```
+Dev says: "I tried this prompt and it works!"
+Reality: works on 1 example, fails on 10 others.
+Reviewer: ¯\_(ツ)_/¯
+Production: regression invisible until users complain.
+```
+
+Em equipes maduras, **evals são tabela mínima**. PRs without eval evidence not merged.
+
+## Prompt versioning
+
+Prompts são código. Treat eles assim.
+
+### Bad: hardcoded strings
+
+```python
+# main.py
+async def chat(msg):
+    return await client.messages.create(
+        system="You are a helpful assistant. ...",  # ❌ inline
+        messages=[{"role": "user", "content": msg}],
+    )
+```
+
+Problemas:
+- Não versioned.
+- Diff de prompt hard to see.
+- Multiple prompts scattered.
+- No way to A/B test versions.
+
+### Better: separate files
+
+```
+prompts/
+├── system_chat.md
+├── system_summarize.md
+├── classify_intent.md
+└── extract_invoice.md
+```
+
+```python
+def load_prompt(name: str) -> str:
+    return open(f"prompts/{name}.md").read()
+
+system = load_prompt("system_chat")
+```
+
+Diff visible em git. Versioned com code.
+
+### Better: prompt SDK / registry
+
+Tools like **LangSmith Hub**, **Langfuse**, **Mirascope**, **Promptotype**:
+
+```python
+from langsmith import Client
+ls = Client()
+
+# Pull versioned prompt
+prompt = ls.pull_prompt("acme/customer-support-system:v2.1")
+
+response = await client.messages.create(
+    system=prompt.format(...),
+    messages=[...],
+)
+```
+
+Pros:
+- Pin specific version per environment.
+- Non-engineers (PM, content) can update prompts via UI.
+- Audit trail of prompt changes.
+- Built-in A/B testing.
+
+Cons:
+- Vendor dependency.
+- Latency (network call).
+
+### Recommended: hybrid
+
+- Prompts em git (markdown files).
+- Loaded at deploy time (no runtime call).
+- Versioned com semver.
+- Tracked in prompts registry for non-engineer collaboration.
+
+```yaml
+# prompts.yaml — prompt registry
+prompts:
+  system_chat:
+    version: "2.1.0"
+    file: ./prompts/system_chat.md
+    last_updated: "2026-05-01"
+    last_updated_by: "alice@acme.com"
+    eval_score: 0.92
+  
+  classify_intent:
+    version: "1.3.0"
+    file: ./prompts/classify_intent.md
+    eval_score: 0.88
+```
+
+CI checks: prompt eval scores meet threshold.
+
+## Pull Request workflow
+
+### Anatomy of PR with prompt change
+
+```
+PR: "Improve refund query handling"
+
+Description:
+- Customers complained about generic refund answers.
+- Updated system prompt to include refund-specific section.
+- Added 5 new golden eval examples for refund queries.
+
+Diff:
+- prompts/system_chat.md  (+15 lines)
+- prompts/refund_examples.json  (NEW file, 5 examples)
+- tests/evals/refund.py  (NEW, eval pipeline)
+
+Eval results (auto-generated by CI):
+- Before: 78% accuracy on refund golden set.
+- After: 91% accuracy.
+- Other queries unchanged (within noise threshold).
+- Cost: +5% per query (acceptable).
+
+Reviewer checks:
+- [ ] Eval score improved on target metric?
+- [ ] No regression em other categories?
+- [ ] Prompt change diff reviewed?
+- [ ] Golden examples are realistic?
+- [ ] Cost impact acceptable?
+```
+
+### Review patterns
+
+**Prompt diffs** are different than code diffs:
+
+- Don't just rubber-stamp. Read the prompt carefully.
+- Think: "what edge case breaks this?"
+- Check: are there tests/evals for the new behavior?
+- Run the prompt locally if possible.
+- Check tone consistency.
+
+### CODEOWNERS para prompts
+
+```
+# .github/CODEOWNERS
+/prompts/system_chat.md @product-manager @ai-team
+/prompts/safety_*.md @ai-safety-team
+/prompts/billing/*.md @billing-team
+```
+
+Right people review right prompts.
+
+## CI/CD para AI apps
+
+### Standard CI pipeline
+
+```yaml
+# .github/workflows/ci.yml
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Unit tests (deterministic code)
+      - run: pytest tests/unit
+      
+      # 2. Integration tests (with mocked LLM)
+      - run: pytest tests/integration
+      
+      # 3. Evals (real LLM, smaller subset)
+      - run: pytest tests/evals/quick
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      
+      # 4. Prompt linting
+      - run: python scripts/lint_prompts.py
+      
+      # 5. Cost estimation
+      - run: python scripts/estimate_cost.py
+  
+  eval-full:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.labels.*.name contains 'full-eval'
+    steps:
+      - run: pytest tests/evals/full --eval-baseline=main
+      - run: python scripts/compare_evals.py baseline.json current.json
+      - run: python scripts/comment_pr.py
+```
+
+### Deploy pipeline
+
+```yaml
+# .github/workflows/deploy.yml
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # 1. Required: full eval passing
+      - run: pytest tests/evals/full
+      
+      # 2. Build & push container
+      - run: docker build && docker push
+      
+      # 3. Deploy to canary (10% traffic)
+      - run: fly deploy --strategy canary --canary-pct 10
+      
+      # 4. Monitor canary
+      - run: python scripts/monitor_canary.py --duration=30m
+      
+      # 5. Promote if healthy
+      - run: fly deploy --strategy promote
+      
+      # Or rollback
+      - run: fly deploy --strategy rollback
+        if: failure()
+```
+
+### Canary deployments
+
+Especially valuable em AI apps where prompt change may cause unexpected behavior:
+
+```python
+# Routing 10% of traffic to new version
+import random
+
+def route(user_id: str) -> str:
+    if get_user_in_canary_cohort(user_id):
+        return "v2.1.0"  # new prompt
+    return "v2.0.0"  # current
+
+prompt = load_prompt(route(user_id))
+```
+
+Monitor: error rate, user feedback, eval scores em canary cohort. Promote if good, rollback if not.
+
+## A/B testing em produção
+
+Critical para prompt optimization:
+
+```python
+# A/B test framework
+class PromptABTest:
+    def __init__(self, variants: list):
+        self.variants = variants  # ["v1", "v2"]
+    
+    def assign(self, user_id: str) -> str:
+        # Consistent assignment per user
+        hash_val = hashlib.md5(user_id.encode()).hexdigest()
+        idx = int(hash_val[:8], 16) % len(self.variants)
+        return self.variants[idx]
+    
+    def track(self, user_id: str, variant: str, outcome: dict):
+        # Log to analytics for later analysis
+        analytics.track({
+            "test": "system_prompt_v2",
+            "user_id": user_id,
+            "variant": variant,
+            "outcome": outcome,
+        })
+
+# Use
+ab = PromptABTest(["v1", "v2"])
+variant = ab.assign(user.id)
+prompt = load_prompt(f"system_chat_{variant}")
+response = await call_llm(prompt, user_message)
+
+ab.track(user.id, variant, {
+    "thumbs_up": user_feedback == "up",
+    "tokens_used": response.usage.total_tokens,
+    "follow_up_needed": user_sent_another_message_in_5min,
+})
+```
+
+Stat sig analysis after enough data:
+- Need: ~1000 samples per variant minimum.
+- Metrics: satisfaction (thumbs), task completion, cost, latency.
+- Tools: built-in analytics, Mixpanel, Amplitude, Statsig, GrowthBook.
+
+## Monitoring + dashboards
+
+Post-deploy, monitor:
+
+```
+Real-time:
+- Request rate (RPS)
+- Error rate
+- p50/p99 latency
+- Cost per request
+
+Daily:
+- Total cost
+- Top expensive queries
+- Cache hit rate
+- Eval scores (nightly run)
+
+Weekly:
+- User retention (re-engagement)
+- Feature usage breakdown
+- Cost projection trend
+
+Monthly:
+- Quality trend (eval scores over time)
+- Cost per user trend
+- Incident review
+```
+
+Tools: Datadog, Grafana, Langfuse, Helicone.
+
+## Incident response
+
+```markdown
+# Incident: AI app responding inappropriately
+
+## Detection
+- 2026-05-10 14:32 UTC: First user report via support.
+- 2026-05-10 14:45 UTC: 3 more reports. Pager triggered.
+
+## Initial assessment
+- Behavior: AI responding with profanity in certain contexts.
+- Affected users: ~15 estimated based on reports.
+- Severity: P1 (brand damage risk).
+
+## Containment
+- 2026-05-10 14:55 UTC: Reverted to previous prompt version.
+- 2026-05-10 15:00 UTC: Verified rollback effective in canary.
+- 2026-05-10 15:05 UTC: Fully rolled back.
+
+## Root cause
+- Recent prompt change introduced "be casual" instruction.
+- Combined with certain user query patterns, model interpreted casual = profanity.
+- Eval set didn't have casual-tone tests.
+
+## Resolution
+- Reverted.
+- Added 10 eval scenarios for tone testing.
+- Re-deployed with adjusted prompt + new evals.
+
+## Post-mortem
+- Date: 2026-05-12.
+- Attendees: AI team + PM + safety.
+- Outcomes:
+  - Add tone-check eval pre-merge mandatorily.
+  - Canary period for prompt changes: minimum 1 hour.
+  - Add safety classifier in output filter.
+
+## Affected users
+- Notified 15 users (best estimate from logs).
+- Apology + 1-month free tier.
+
+## Timeline
+- Detection to fix: 33 minutes.
+- Detection to user notification: 4 hours.
+```
+
+Post-mortem culture: blameless, focused on systems, leading to improvements.
+
+## Prompt registry / pattern library
+
+For larger teams, build internal pattern library:
+
+```yaml
+patterns:
+  json_extraction:
+    template: |
+      Extract the following information from the text below:
+      {fields_list}
+      
+      Return as JSON.
+      
+      Text:
+      {input_text}
+    used_in: [invoice_extract, contact_extract, ...]
+    eval_score: 0.94
+  
+  refusal_specialized_advice:
+    template: |
+      The user is asking for {advice_type} advice. Politely decline and suggest 
+      consulting a {profession}.
+    used_in: [chat, support, ...]
+```
+
+Reuse > reinvent.
+
+## Documentation
+
+AI apps need extra docs:
+
+### User docs
+- What AI can/can't do.
+- Examples.
+- Limitations.
+- Troubleshooting.
+
+### Engineer docs
+- Architecture diagram.
+- Prompt registry.
+- Eval methodology.
+- Cost model.
+- Incident runbook.
+
+### Compliance docs
+- Model cards (`ai-compliance-2026`).
+- Privacy policy AI-specific.
+- DPA with subprocessors.
+
+### Audit trail
+- All AI decisions with significant impact (logs).
+- Prompt change history.
+- Model version history.
+
+## Stakeholder communication
+
+PM, design, legal, sales all interact with AI:
+
+- **PM**: prioritize features, define metrics. Educate on AI capabilities/limitations.
+- **Design**: UX patterns (ai-product-ux). Streaming, citations, retry.
+- **Legal**: compliance review. DPAs. Privacy policy.
+- **Sales**: realistic claims. Customer demo expectations.
+
+Weekly AI sync: shared dashboard, recent changes, incidents, roadmap.
+
+## Talent + hiring
+
+For AI Engineer hire:
+- LLM SDK experience (Anthropic, OpenAI).
+- Prompt engineering (real, not hype).
+- RAG implementation experience.
+- Eval-driven mindset.
+- Python or TypeScript proficiency.
+- Curiosity to keep up with rapid changes.
+
+Avoid:
+- Only ML research background without app experience.
+- "AI" but only Hugging Face hobby.
+- Resistant to evals or production thinking.
+
+## Skill development
+
+For team:
+- Weekly paper club (read 1 paper, discuss).
+- Monthly internal demo day.
+- Conference attendance (NeurIPS, ICLR for research; KubeCon, AI Engineer Summit for practitioner).
+- Sandbox environment for experimentation (cost-controlled).
+- Reading list (this brain + others).
+
+## Cost discipline
+
+AI bills get large. Team practices:
+- Monthly cost review.
+- Budget allocations per feature/team.
+- Cost-conscious code review ("is this LLM call necessary?").
+- Caching opportunities flagged.
+- Annual contract negotiation com providers (volume discounts).
+
+## OKRs typical para AI team
+
+```
+Q1 OKR examples:
+
+Objective 1: Ship AI-powered customer support
+- KR1: 80% deflection of Tier 1 tickets by Q1 end
+- KR2: <5% wrong-answer rate (eval)
+- KR3: <$0.05 cost per conversation
+
+Objective 2: Improve AI app reliability
+- KR1: 99.5% uptime
+- KR2: Multi-provider fallback deployed (Tier 4 checkpoint)
+- KR3: Adversarial eval pass rate >95%
+
+Objective 3: Compliance readiness
+- KR1: EU AI Act risk assessment complete
+- KR2: Model cards for all production AI features
+- KR3: Right to deletion implemented
+```
+
+## Common team dysfunctions
+
+### 1. Prompt cowboy
+One person changes prompts without review. Regressions invisible. Solution: PR required + evals.
+
+### 2. Eval avoidance
+"Tests slow us down." → quality drops. Solution: evals are non-negotiable.
+
+### 3. Demo-driven dev
+Builds for demos, fails em prod. Solution: production-mindset from start.
+
+### 4. Model hopping
+Switch base model weekly chasing benchmarks. Solution: stable baseline, evaluate carefully.
+
+### 5. No PM involvement
+Engineers decide features. Solution: PM owns roadmap, engineer owns implementation.
+
+### 6. No safety team
+Safety as afterthought. Issues emerge late. Solution: safety review from start.
+
+### 7. Cost surprises
+No monitoring → end-of-month shock. Solution: real-time cost dashboard.
+
+## Roadmap planning
+
+AI features hard to estimate (uncertainty about feasibility):
+- **Spike** first (1-week timebox): proof of concept.
+- **Eval before commit**: can we hit quality bar?
+- **Scope down**: simplest version first.
+- **Iterate**: ship MVP, learn, iterate.
+
+## Career growth
+
+For AI Engineers careering:
+
+- **Junior**: implement specs, debug prompts, write evals.
+- **Mid**: design features, optimize, mentor juniors.
+- **Senior**: architecture decisions, cross-team work, mentor mids.
+- **Staff**: cross-org impact, set technical direction.
+- **Principal**: industry-level influence (talks, papers).
+
+Path to senior: own a feature end-to-end (eval → prompt → deploy → monitor).
+Path to staff: lead initiative spanning multiple AI features.
+
+## Continuous learning
+
+Pace de mudança em AI = need to learn ongoing:
+
+- Twitter/Mastodon AI researchers.
+- Anthropic, OpenAI, Google AI blogs.
+- arXiv papers (read abstracts of relevant).
+- Practitioner blogs (Eugene Yan, Hamel Husain, Simon Willison, Chip Huyen).
+- AI Engineer Summit talks (YouTube).
+- Hugging Face daily papers.
+
+Block 4-8 hours/week for learning. Compound returns.
+
+## Checklist — AI team process maturity
+
+- [ ] Eval-driven dev (não optional)?
+- [ ] Prompts versioned in git?
+- [ ] PR template with eval evidence?
+- [ ] CODEOWNERS for prompts?
+- [ ] Canary deployments standard?
+- [ ] A/B testing framework?
+- [ ] Real-time cost monitoring?
+- [ ] Incident response runbook?
+- [ ] Post-mortem culture?
+- [ ] Weekly AI sync com stakeholders?
+- [ ] Compliance docs maintained?
+- [ ] Career ladder defined?
+- [ ] Continuous learning culture?
+
+## Leituras
+
+- "AI Engineering" — Chip Huyen (2024)
+- "Building LLM Applications" — Eugene Yan blog series
+- "Patterns for Building LLM-Based Systems" — Eugene Yan
+- Hamel Husain talks (hamel.dev)
+- "12-Factor Agents" — humanloop
+- "MLOps Maturity Model" — Google
+- "Continuous Delivery" — Jez Humble (still applies)
+- AI Engineer Summit talks
