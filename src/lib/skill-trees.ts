@@ -280,36 +280,65 @@ const IA_LLM: SkillArea = {
   name: "IA & LLM Engineering",
   emoji: "⬡",
   colors: P.amber,
-  description: "Da engenharia de prompt a sistemas multi-agentes e LLMs em produção — o stack do AI Engineer.",
-  tierNames: ["Bases IA", "LLMs Core", "Agentes", "Sistemas Prod.", "Research"],
+  description:
+    "Trilha 0 → sênior pra AI Engineer empresarial 2026+. Cobre LLM internals modernos, prompt engineering avançado, RAG production-grade, agents com MCP, observability e cost optimization, deploy production-ready, AI safety/compliance (EU AI Act, NIST AI RMF) e capstone end-to-end. Foco em construir AI products que funcionam em produção, não demos.",
+  tierNames: [
+    "Base AI Engineer",
+    "LLM Prático Moderno",
+    "RAG & Embeddings Produção",
+    "Agents & MCP",
+    "LLM em Produção",
+    "Sênior 2026+ & Capstone",
+  ],
   nodes: [
-    // ── Tier 0 ──
-    { id: "ai-python", name: "Python para IA", description: "async, type hints, Pydantic, APIs, gerenciamento de dependências.", tier: 0, prerequisites: [] },
-    { id: "ai-transformers", name: "Arquitetura Transformer", description: "Attention, encoder/decoder, positional encoding, tokenização.", tier: 0, prerequisites: [], cardSlugs: ["llm-fundamentos"] },
-    { id: "ai-alg-lin", name: "Álgebra Linear para IA", description: "Embeddings como vetores, similaridade coseno, matrizes de atenção.", tier: 0, prerequisites: [] },
-    { id: "ai-prompt", name: "Prompt Engineering", description: "Zero/few-shot, CoT, sistema vs usuário, jailbreak awareness.", tier: 0, prerequisites: ["ai-transformers"], cardSlugs: ["prompt-engineering-avancado"] },
+    // ── Tier 0: Base AI Engineer ──
+    { id: "ai-py-async", name: "Python para AI", description: "asyncio, type hints, Pydantic v2, FastAPI básico, gerenciamento de deps com uv — o stack que apps AI rodam em 2026.", tier: 0, prerequisites: [], cardSlugs: ["ai-py-async"] },
+    { id: "ai-llm-internals", name: "LLM Internals", description: "Tokens, context window, sampling (temperature, top_p, min_p, repetition penalty), latência por token, custos por token de input vs output cacheado.", tier: 0, prerequisites: [], cardSlugs: ["ai-llm-internals-2026", "llm-fundamentos"] },
+    { id: "ai-prompt-eng", name: "Prompt Engineering 2026", description: "System vs user prompts, few-shot, chain-of-thought, structured output, XML tags (Claude), prompt templates, A/B testing de prompts.", tier: 0, prerequisites: ["ai-llm-internals"], cardSlugs: ["prompt-engineering-avancado"] },
+    { id: "ai-provider-apis", name: "Anthropic & OpenAI SDK", description: "Messages API, completions, streaming, tool use básico — comparison entre providers e quando preferir cada um.", tier: 0, prerequisites: ["ai-py-async", "ai-prompt-eng"], cardSlugs: ["ai-openai-vs-anthropic", "anthropic-sdk-patterns"] },
+    { id: "ai-structured-out", name: "Structured Output", description: "JSON mode, function calling como validador, Pydantic + Instructor, Outlines — garantia de schema sem retries.", tier: 0, prerequisites: ["ai-provider-apis"], cardSlugs: ["ai-structured-output"] },
 
-    // ── Tier 1 ──
-    { id: "ai-rag", name: "RAG", description: "Retrieval Augmented Generation, chunking, reranking, HyDE.", tier: 1, prerequisites: ["ai-prompt", "ai-alg-lin"], cardSlugs: ["rag-fundamentos", "rag-avancado"] },
-    { id: "ai-embeddings", name: "Embeddings & Semântica", description: "Modelos de embedding, índices vetoriais, FAISS, distâncias.", tier: 1, prerequisites: ["ai-transformers", "ai-alg-lin"], cardSlugs: ["vector-databases"] },
-    { id: "ai-fine-tuning", name: "Fine-tuning de LLMs", description: "SFT, LoRA, QLoRA, instruction tuning, DPO, RLHF.", tier: 1, prerequisites: ["ai-transformers", "ai-python"] },
-    { id: "ai-eval", name: "Avaliação de LLMs", description: "Benchmarks, evals automatizadas, LLM-as-judge, hallucination.", tier: 1, prerequisites: ["ai-prompt", "ai-rag"], cardSlugs: ["agent-evaluation"] },
+    // ── Tier 1: LLM Prático Moderno ──
+    { id: "ai-prompt-caching", name: "Prompt Caching", description: "Anthropic + OpenAI prompt caching — economia 5-10x em workloads com contexto grande. Cache breakpoints, TTL, hit rate.", tier: 1, prerequisites: ["ai-provider-apis"], cardSlugs: ["ai-prompt-caching"] },
+    { id: "ai-extended-think", name: "Extended Thinking & Reasoning", description: "Claude extended thinking, OpenAI reasoning models (o1/o3), quando vale o custo, controle de budget de raciocínio.", tier: 1, prerequisites: ["ai-prompt-caching"], cardSlugs: ["ai-extended-thinking"] },
+    { id: "ai-tool-use-deep", name: "Tool Use Avançado", description: "Tool calling paralelo, error handling, retry sem loop infinito, tool description engineering, parallel vs sequential.", tier: 1, prerequisites: ["ai-structured-out"], cardSlugs: ["tool-use-function-calling", "claude-tool-use"] },
+    { id: "ai-streaming-sse", name: "Streaming & SSE", description: "Server-Sent Events, async iteration, partial JSON, cancelamento, parsing incremental de tool calls.", tier: 1, prerequisites: ["ai-provider-apis"], cardSlugs: ["ai-streaming-sse"] },
+    { id: "ai-multimodal", name: "Vision & Audio", description: "Vision LLMs (Claude, GPT-4V), OCR vs vision (quando preferir cada), audio (Whisper, Sonnet 4.5 audio), interleaved multimodal.", tier: 1, prerequisites: ["ai-tool-use-deep"], cardSlugs: ["ai-multimodal-2026"] },
+    { id: "ai-cp-claude-app", name: "Checkpoint: Claude App from Scratch", description: "Build app Claude-powered sem framework (sem LangChain) com prompt caching, tool use, streaming, structured output, multimodal. Submeter via /sentinela.", tier: 1, prerequisites: ["ai-prompt-caching", "ai-extended-think", "ai-tool-use-deep", "ai-streaming-sse", "ai-multimodal"], cardSlugs: ["ai-checkpoint-claude-app"], routeHref: "/sentinela" },
 
-    // ── Tier 2 ──
-    { id: "ai-agents", name: "AI Agents", description: "ReAct, tooling, planning, memória, ciclos de raciocínio.", tier: 2, prerequisites: ["ai-rag", "ai-eval"], cardSlugs: ["ai-agent-architecture", "langchain-agents", "langgraph-fundamentos", "langchain-fundamentos", "agent-memory-patterns", "agente-financeiro-erp"] },
-    { id: "ai-tool-use", name: "Tool Use & Function Calling", description: "Definição de tools, orquestração, streaming, erros.", tier: 2, prerequisites: ["ai-agents"], cardSlugs: ["tool-use-function-calling", "claude-tool-use", "anthropic-sdk-patterns", "mcp-protocol"] },
-    { id: "ai-vector-db", name: "Vector Databases", description: "Pinecone, Weaviate, pgvector, Qdrant, índices e filtragem.", tier: 2, prerequisites: ["ai-embeddings", "ai-rag"], cardSlugs: ["vector-databases"] },
-    { id: "ai-multimodal", name: "Modelos Multimodais", description: "Vision LLMs, geração de imagem, audio, interleaving.", tier: 2, prerequisites: ["ai-fine-tuning", "ai-embeddings"] },
+    // ── Tier 2: RAG & Embeddings Produção ──
+    { id: "ai-embeddings", name: "Embeddings Modernos", description: "Voyage vs OpenAI vs Cohere vs BGE — MTEB benchmark, dimensão, Matryoshka embeddings, multilingual, cost per 1M tokens.", tier: 2, prerequisites: ["ai-cp-claude-app"], cardSlugs: ["ai-embeddings-2026"] },
+    { id: "ai-vector-db", name: "Vector Databases", description: "pgvector vs Pinecone vs Qdrant vs Weaviate vs Chroma — hybrid search (BM25 + dense), filtering performante, custo em escala.", tier: 2, prerequisites: ["ai-embeddings"], cardSlugs: ["vector-databases"] },
+    { id: "ai-rag-prod", name: "RAG Production-Grade", description: "Chunking strategies (parent-child, late-chunking), retrieval, reranking (Cohere Rerank, BGE), citation tracking, freshness.", tier: 2, prerequisites: ["ai-vector-db"], cardSlugs: ["rag-fundamentos", "rag-avancado"] },
+    { id: "ai-rag-contextual", name: "Contextual Retrieval & GraphRAG", description: "Anthropic contextual retrieval (49% melhora), HyDE, multi-query, GraphRAG, query decomposition, hybrid search avançado.", tier: 2, prerequisites: ["ai-rag-prod"], cardSlugs: ["ai-rag-contextual", "graph-rag"] },
+    { id: "ai-eval-driven", name: "Eval-Driven Development", description: "Ragas (RAG-específico), DeepEval, PromptFoo, Inspect (UK AISI), golden datasets, LLM-as-judge, regression tests em CI.", tier: 2, prerequisites: ["ai-rag-contextual"], cardSlugs: ["ai-eval-driven-dev", "agent-evaluation"] },
+    { id: "ai-cp-rag-prod", name: "Checkpoint: Production RAG", description: "Build RAG sobre corpus técnico complexo (legal, scientific, médico) + eval suite com Ragas + monitoring. Submeter via /sentinela.", tier: 2, prerequisites: ["ai-rag-contextual", "ai-eval-driven"], cardSlugs: ["ai-checkpoint-rag-prod"], routeHref: "/sentinela" },
 
-    // ── Tier 3 ──
-    { id: "ai-multi-agent", name: "Sistemas Multi-agente", description: "Orquestração, handoffs, supervisores, crew AI, A2A.", tier: 3, prerequisites: ["ai-agents", "ai-tool-use"], cardSlugs: ["multi-agent-orchestration", "langgraph-patterns", "human-in-the-loop"] },
-    { id: "ai-safety", name: "AI Safety & Alignment", description: "Jailbreaks, red teaming, guardrails, Constitutional AI.", tier: 3, prerequisites: ["ai-eval", "ai-multi-agent"], cardSlugs: ["agent-security"] },
-    { id: "ai-prod", name: "LLMs em Produção", description: "Latência, custo, caching, fallbacks, observabilidade, SLOs.", tier: 3, prerequisites: ["ai-multi-agent", "ai-vector-db"], cardSlugs: ["agent-observabilidade-producao", "agent-deployment", "langsmith-observabilidade"] },
-    { id: "ai-graph-rag", name: "Graph RAG & Retrieval Avançado", description: "Knowledge graphs, GraphRAG, hybrid search, query decomp.", tier: 3, prerequisites: ["ai-vector-db", "ai-multi-agent"], cardSlugs: ["graph-rag", "rag-avancado"] },
+    // ── Tier 3: Agents & MCP ──
+    { id: "ai-agent-patterns", name: "Agent Patterns 2026", description: "ReAct, Plan-and-Execute, Reflexion, agentic loop com state machines, recovery, thin agent + thick tools.", tier: 3, prerequisites: ["ai-cp-rag-prod"], cardSlugs: ["ai-agent-patterns-2026", "ai-agent-architecture", "agent-memory-patterns"] },
+    { id: "ai-mcp-deep", name: "MCP — Building & Securing", description: "Model Context Protocol profundo: building MCP servers, transports (stdio, SSE, HTTP), security (allowlists, sandbox), Claude Desktop + Code integration.", tier: 3, prerequisites: ["ai-agent-patterns"], cardSlugs: ["ai-mcp-building", "mcp-protocol"] },
+    { id: "ai-claude-sdk-pro", name: "Anthropic Agent SDK", description: "Claude Agent SDK profundo: subagents, hooks, slash commands, file ops, permissions, deployment patterns.", tier: 3, prerequisites: ["ai-mcp-deep"], cardSlugs: ["claude-code-sdk"] },
+    { id: "ai-langgraph-prod", name: "LangGraph em Produção", description: "Stateful graphs, conditional edges, human-in-the-loop, persistence, time travel, debug com LangGraph Studio.", tier: 3, prerequisites: ["ai-agent-patterns"], cardSlugs: ["langgraph-fundamentos", "langgraph-patterns", "langchain-fundamentos"] },
+    { id: "ai-multi-agent", name: "Multi-Agent Orchestration", description: "Quando usar multi-agent vs single, supervisor/worker, CrewAI vs LangGraph vs AutoGen, handoffs, falhas em cascata.", tier: 3, prerequisites: ["ai-langgraph-prod"], cardSlugs: ["multi-agent-orchestration", "human-in-the-loop"] },
+    { id: "ai-agent-eval", name: "Agent Evals", description: "Avaliação de agentes — task completion, tool use accuracy, trajectory eval, eval de multi-turn, custo por task.", tier: 3, prerequisites: ["ai-multi-agent", "ai-eval-driven"], cardSlugs: ["agent-evaluation"] },
+    { id: "ai-cp-agent-mcp", name: "Checkpoint: Agentic + MCP", description: "Build workflow agentic com MCP server customizado (real use case) + suite de evals + traces. Submeter via /sentinela.", tier: 3, prerequisites: ["ai-claude-sdk-pro", "ai-multi-agent", "ai-agent-eval"], cardSlugs: ["ai-checkpoint-agent-mcp"], routeHref: "/sentinela" },
 
-    // ── Tier 4 ──
-    { id: "ai-optimization", name: "Otimização de LLMs", description: "Quantização, distilação, vLLM, speculative decoding, batching.", tier: 4, prerequisites: ["ai-prod", "ai-fine-tuning"], cardSlugs: ["claude-code-sdk"] },
-    { id: "ai-research", name: "AI Research", description: "Arquiteturas novas, Mixture of Experts, SSMs, leitura de papers.", tier: 4, prerequisites: ["ai-safety", "ai-optimization"] },
+    // ── Tier 4: LLM em Produção ──
+    { id: "ai-cost-opt", name: "Cost Optimization", description: "Prompt caching agressivo + batching API (50% discount) + model routing (Haiku/Sonnet/Opus) + context compression + token budgets.", tier: 4, prerequisites: ["ai-cp-agent-mcp"], cardSlugs: ["ai-cost-optimization"] },
+    { id: "ai-latency", name: "Latency & Streaming UX", description: "Latency budgets (p50, p99), TTFT (Time To First Token), streaming UX, parallel calls, speculative decoding, predicted outputs.", tier: 4, prerequisites: ["ai-cost-opt"], cardSlugs: ["ai-latency-budgets"] },
+    { id: "ai-resilience", name: "Fallback & Resilience", description: "Circuit breakers, multi-provider fallback (Anthropic → OpenAI → local), retry com backoff exponential, async queue para retry.", tier: 4, prerequisites: ["ai-latency"], cardSlugs: ["ai-fallback-resilience"] },
+    { id: "ai-observability", name: "Observability LLM", description: "LangSmith, Langfuse, Helicone, OpenLLMetry — tracing, debugging, cost tracking, drift detection.", tier: 4, prerequisites: ["ai-resilience"], cardSlugs: ["langsmith-observabilidade", "agent-observabilidade-producao"] },
+    { id: "ai-fine-tuning", name: "Fine-Tuning 2026", description: "Quando fine-tune vs prompt vs RAG, LoRA/QLoRA, dataset curation, DPO/ORPO, eval de modelo fine-tuned.", tier: 4, prerequisites: ["ai-observability"], cardSlugs: ["ai-fine-tuning-2026"] },
+    { id: "ai-deployment", name: "Deployment Patterns", description: "Modal, Replicate, AWS Bedrock, Azure OpenAI, GCP Vertex, self-hosted (vLLM, llama.cpp, Ollama), quantization para edge.", tier: 4, prerequisites: ["ai-fine-tuning"], cardSlugs: ["ai-deployment-2026", "agent-deployment"] },
+    { id: "ai-cp-deploy", name: "Checkpoint: Production Deploy", description: "Deploy production LLM app: monitoring + fallback multi-provider + cost dashboard + eval-driven CI. Submeter via /sentinela.", tier: 4, prerequisites: ["ai-cost-opt", "ai-resilience", "ai-observability", "ai-deployment"], cardSlugs: ["ai-checkpoint-deploy"], routeHref: "/sentinela" },
+
+    // ── Tier 5: Sênior 2026+ & Capstone ──
+    { id: "ai-product-ux", name: "AI Product UX", description: "UX patterns para LLM: streaming, citations clicáveis, retry/escape hatches, partial states, undo, source attribution, expectation setting.", tier: 5, prerequisites: ["ai-cp-deploy"], cardSlugs: ["ai-product-ux"] },
+    { id: "ai-safety", name: "Safety & Guardrails", description: "Llama Guard 3, NeMo Guardrails, Anthropic prompt shields, Constitutional AI, content moderation, blocklist + allowlist tools.", tier: 5, prerequisites: ["ai-product-ux"], cardSlugs: ["ai-safety-guardrails", "agent-security", "ai-prompt-injection"] },
+    { id: "ai-compliance", name: "Compliance & Governance", description: "EU AI Act (entra em vigor 2026), NIST AI RMF, ISO 42001:2023, data residency, GDPR/LGPD em AI, model cards, AI impact assessment.", tier: 5, prerequisites: ["ai-safety"], cardSlugs: ["ai-compliance-2026"] },
+    { id: "ai-team-process", name: "AI Engineering Team Process", description: "Eval-driven dev, prompt versioning (git-like), CI/CD para AI apps, prompt review como code review, A/B testing em prod.", tier: 5, prerequisites: ["ai-compliance"], cardSlugs: ["ai-team-process"] },
+    { id: "ai-emerging", name: "AI Research Tracking", description: "Reasoning models (chain-of-thought scaling), Mixture of Experts, State Space Models (Mamba), agent benchmarks, paper tracking pragmático.", tier: 5, prerequisites: ["ai-team-process"], cardSlugs: ["ai-emerging-2026"] },
+    { id: "ai-capstone", name: "Capstone: AI Product End-to-End", description: "Build, deploy e monitor AI product completo: agentic + RAG + evals + multi-provider fallback + cost dashboard + post-mortem. Submeter via /sentinela.", tier: 5, prerequisites: ["ai-safety", "ai-compliance", "ai-emerging"], cardSlugs: ["ai-capstone"], routeHref: "/sentinela" },
   ],
 };
 
@@ -320,37 +349,64 @@ const SECURITY: SkillArea = {
   name: "Cybersecurity",
   emoji: "⛨",
   colors: P.rose,
-  description: "Fundamentos de redes e criptografia até red team, incident response e arquitetura zero-trust.",
-  tierNames: ["Fundamentos Sec", "Ofensiva Básica", "Defesa & Gov", "Red Team", "APT / Research"],
+  description:
+    "Trilha 0 → sênior em segurança ofensiva para consultoria e pentest empresarial real. Cobre Web AppSec, Cloud/Container, Red Team adversary simulation, secure code review, AI security 2026+ (LLM red team, MCP exploitation, agent security) e fechamento com engagement completo (scope → recon → exploit → relatório executivo + técnico).",
+  tierNames: [
+    "Base Júnior Sec",
+    "Web AppSec & Pentest",
+    "Cloud, Container & Network",
+    "Red Team & Adversary Simulation",
+    "AppSec & Secure Code Review",
+    "AI Security 2026+, Consultoria & Capstone",
+  ],
   nodes: [
-    // ── Tier 0 ──
-    { id: "sec-net", name: "Redes (TCP/IP, DNS, TLS)", description: "OSI, TCP handshake, DNS lookup, TLS 1.3, HTTP/2.", tier: 0, prerequisites: [], cardSlugs: ["network-security-basics"] },
-    { id: "sec-linux", name: "Linux para Segurança", description: "Permissões, sudoers, auditd, cgroups, SELinux/AppArmor.", tier: 0, prerequisites: [] },
-    { id: "sec-cripto", name: "Criptografia Fundamentos", description: "Simétrica/assimétrica, hashing, PKI, certificados, TLS.", tier: 0, prerequisites: [], cardSlugs: ["cryptography-basics", "certificado-digital-a1"] },
-    { id: "sec-http", name: "HTTP & Web Security", description: "Cookies, CORS, SOP, headers de segurança, HTTPS, HTTP/2.", tier: 0, prerequisites: ["sec-net"], cardSlugs: ["session-strategy", "auth-architecture"] },
+    // ── Tier 0: Base Júnior Sec ──
+    { id: "sec-redes", name: "Redes & Protocolos", description: "TCP/IP, DNS, TLS 1.3 handshake, HTTP/2 e /3, BGP basics — o que um pentester precisa saber sobre a stack que vai atacar.", tier: 0, prerequisites: [], cardSlugs: ["sec-redes-protocolos-2026", "network-security-basics"] },
+    { id: "sec-linux", name: "Linux Hardening & Forense Básica", description: "Permissões, SELinux/AppArmor, namespaces, capabilities, auditd, syslog — base pra entender escape e priv-esc.", tier: 0, prerequisites: [], cardSlugs: ["sec-linux-hardening"] },
+    { id: "sec-cripto", name: "Criptografia Aplicada", description: "Argon2, AES-GCM, ECDSA, PKI, TLS handshake interno — onde a cripto quebra na prática.", tier: 0, prerequisites: [], cardSlugs: ["cryptography-basics", "certificado-digital-a1"] },
+    { id: "sec-web-funda", name: "Web Fundamentos de Segurança", description: "Same-origin, CORS, CSP, cookies (SameSite, __Host-), headers (HSTS, COOP/COEP), HTTPS — o terreno que XSS/SSRF/CSRF exploram.", tier: 0, prerequisites: ["sec-redes"], cardSlugs: ["sec-web-fundamentos-headers", "session-strategy", "auth-architecture"] },
+    { id: "sec-toolkit", name: "Toolkit Pentest 2026", description: "Caido (Burp moderno), nuclei templates, ffuf, Wireshark, Kali/Parrot setup, OPSEC básica — ferramentas que você vai usar todo dia.", tier: 0, prerequisites: ["sec-redes", "sec-linux"], cardSlugs: ["sec-toolkit-pentest-2026"] },
 
-    // ── Tier 1 ──
-    { id: "sec-owasp", name: "OWASP Top 10", description: "Injection, XSS, IDOR, SSRF, deserialization, supply chain.", tier: 1, prerequisites: ["sec-http"], cardSlugs: ["owasp-top10", "ai-prompt-injection"] },
-    { id: "sec-pentest", name: "Pen Testing Básico", description: "Recon, scanning (nmap/masscan), exploitation básico, Metasploit.", tier: 1, prerequisites: ["sec-linux", "sec-net"] },
-    { id: "sec-auth-adv", name: "Auth Avançado", description: "JWT attacks, OAuth flows, MFA bypass, SAML, Kerberos basics.", tier: 1, prerequisites: ["sec-http", "sec-cripto"], cardSlugs: ["session-cookie-vs-jwt", "oauth-2-1", "token-encryption-at-rest", "account-creation-flow", "rbac-vs-abac"] },
-    { id: "sec-firewall", name: "Firewall & WAF", description: "iptables, nftables, WAF rules, IDS/IPS, network ACLs.", tier: 1, prerequisites: ["sec-net"] },
+    // ── Tier 1: Web AppSec & Pentest ──
+    { id: "sec-owasp-2025", name: "OWASP Top 10 (2025)", description: "Versão atualizada pós-LLM com LLM01 (prompt injection) no top — não a Top 10 de 2021 que todo curso ensina.", tier: 1, prerequisites: ["sec-web-funda"], cardSlugs: ["sec-owasp-top10-2025", "owasp-top10", "ai-prompt-injection"] },
+    { id: "sec-auth-attacks", name: "Ataques de Auth Modernos", description: "JWT alg confusion, OAuth misconfig (state, PKCE), SAML signature wrapping, MFA bypass, session fixation, account takeover.", tier: 1, prerequisites: ["sec-web-funda", "sec-cripto"], cardSlugs: ["sec-auth-attacks-modern", "session-cookie-vs-jwt", "oauth-2-1", "rbac-vs-abac"] },
+    { id: "sec-injection", name: "Injection Profundo", description: "SQLi blind/time-based, NoSQLi (Mongo, Elastic), GraphQL introspection abuse, XSS + CSP bypass, DOM clobbering, prototype pollution.", tier: 1, prerequisites: ["sec-web-funda", "sec-toolkit"], cardSlugs: ["sec-injection-attacks-deep"] },
+    { id: "sec-server-side", name: "Server-Side Attacks", description: "SSRF (incluindo cloud metadata IMDSv1/v2), SSTI (Jinja/Twig/Handlebars), XXE, deserialization, request smuggling.", tier: 1, prerequisites: ["sec-injection"], cardSlugs: ["sec-server-side-attacks"] },
+    { id: "sec-access", name: "Broken Access Control", description: "IDOR, BOLA (OWASP API#1), mass assignment, privilege escalation web, business logic flaws — onde 90% dos bugs reais estão.", tier: 1, prerequisites: ["sec-owasp-2025"], cardSlugs: ["sec-broken-access-control"] },
+    { id: "sec-cp-portswigger", name: "Checkpoint: PortSwigger Labs", description: "30+ labs do PortSwigger Web Security Academy (SQLi, XSS, SSRF, Access Control, JWT) + writeup técnico salvo no brain. Validar veredito com /sentinela.", tier: 1, prerequisites: ["sec-auth-attacks", "sec-injection", "sec-server-side", "sec-access"], cardSlugs: ["sec-checkpoint-portswigger"], routeHref: "/sentinela" },
 
-    // ── Tier 2 ──
-    { id: "sec-threat-model", name: "Threat Modeling", description: "STRIDE, DREAD, attack trees, dataflow diagrams, PASTA.", tier: 2, prerequisites: ["sec-owasp", "sec-pentest"] },
-    { id: "sec-siem", name: "SIEM & SOC", description: "Log agregation, Splunk/ELK, alertas, playbooks, triage.", tier: 2, prerequisites: ["sec-firewall", "sec-net"], cardSlugs: ["incident-response-playbook", "modern-monitoring-sec"] },
-    { id: "sec-devsecops", name: "DevSecOps", description: "SAST, DAST, SCA, secret scanning, policy-as-code, shift-left.", tier: 2, prerequisites: ["sec-owasp", "sec-auth-adv"], cardSlugs: ["sast-dast-scanning", "secrets-management"] },
-    { id: "sec-vuln", name: "Vulnerability Assessment", description: "CVE/CVSS, scanner (Nessus/OpenVAS), patch management, VDP.", tier: 2, prerequisites: ["sec-pentest", "sec-owasp"] },
+    // ── Tier 2: Cloud, Container & Network ──
+    { id: "sec-aws", name: "AWS Pentest", description: "IAM enumeration (Pacu, enumerate-iam), escalation paths, S3 bucket misconfig, EC2 metadata SSRF (IMDSv1), Lambda execution escape, STS abuse.", tier: 2, prerequisites: ["sec-server-side", "sec-toolkit"], cardSlugs: ["sec-aws-pentest"] },
+    { id: "sec-azure-gcp", name: "Azure & GCP Pentest", description: "Entra ID (ex-Azure AD): device code phishing, refresh token abuse. GCP: service account impersonation, OAuth scopes, project lateral movement.", tier: 2, prerequisites: ["sec-aws"], cardSlugs: ["sec-azure-gcp-pentest"] },
+    { id: "sec-k8s", name: "Kubernetes & Container Pentest", description: "Container escapes (capabilities, hostPath, /proc), RBAC bypass, ServiceAccount token abuse, kube-hunter, peirates, pod security policy.", tier: 2, prerequisites: ["sec-linux", "sec-aws"], cardSlugs: ["sec-k8s-container-pentest", "container-security"] },
+    { id: "sec-supply", name: "Supply Chain Attacks", description: "Dependency confusion, typosquatting (npm, PyPI), malicious GitHub Actions, Terraform module abuse, Helm chart backdoors — o vetor que dominou 2024-2025.", tier: 2, prerequisites: ["sec-toolkit"], cardSlugs: ["sec-supply-chain-attacks"] },
+    { id: "sec-ad-net", name: "AD & Network Pentest", description: "BloodHound 6, kerberoasting, AS-REP roasting, NTLM relay (mitm6, ntlmrelayx), pivoting com Ligolo-ng, AD CS (ESC1-ESC15).", tier: 2, prerequisites: ["sec-redes", "sec-toolkit"], cardSlugs: ["sec-ad-network-pentest"] },
+    { id: "sec-cp-cloudgoat", name: "Checkpoint: CloudGoat + HTB AD", description: "Completar CloudGoat (AWS scenarios), HTB Active Directory Pro Lab e CICD-Goat (Cider Security). Writeup técnico + relatório de findings.", tier: 2, prerequisites: ["sec-aws", "sec-azure-gcp", "sec-k8s", "sec-supply", "sec-ad-net"], cardSlugs: ["sec-checkpoint-cloudgoat-htb"], routeHref: "/sentinela" },
 
-    // ── Tier 3 ──
-    { id: "sec-malware", name: "Malware Analysis", description: "Análise estática/dinâmica, sandbox, reversing básico (IDA/Ghidra).", tier: 3, prerequisites: ["sec-vuln", "sec-linux"] },
-    { id: "sec-red-team", name: "Red Team Ops", description: "Lateral movement, persistence, C2 frameworks, TTPs (MITRE ATT&CK).", tier: 3, prerequisites: ["sec-pentest", "sec-threat-model"] },
-    { id: "sec-incident", name: "Incident Response", description: "Playbooks, containment, forensics, memória, cadeia de custódia.", tier: 3, prerequisites: ["sec-siem", "sec-threat-model"], cardSlugs: ["incident-response-playbook"] },
-    { id: "sec-zero-trust", name: "Zero Trust Architecture", description: "BeyondCorp, ZTNA, micro-segmentação, identidade como perímetro.", tier: 3, prerequisites: ["sec-devsecops", "sec-auth-adv"], cardSlugs: ["zero-trust-architecture"] },
+    // ── Tier 3: Red Team & Adversary Simulation ──
+    { id: "sec-red-ops", name: "Red Team Operations", description: "Scoping de engagement, RoE (Rules of Engagement), MITRE ATT&CK mapping, threat-informed defense, OPSEC, Atomic Red Team.", tier: 3, prerequisites: ["sec-cp-cloudgoat"], cardSlugs: ["sec-red-team-ops-2026"] },
+    { id: "sec-c2", name: "C2 Frameworks Modernos", description: "Sliver (post-Cobalt-Strike default), Mythic, Havoc — multiplayer C2, malleable profiles, BOFs, .NET reflective loading. Cobalt Strike é caro e queimado.", tier: 3, prerequisites: ["sec-red-ops"], cardSlugs: ["sec-c2-frameworks-modern"] },
+    { id: "sec-initial", name: "Initial Access Moderno", description: "Evilginx3 (MFA-bypass phishing), browser-in-the-browser, OAuth consent phishing, LNK + ISO smuggling, container delivery, social engineering 2026.", tier: 3, prerequisites: ["sec-red-ops"], cardSlugs: ["sec-initial-access-modern"] },
+    { id: "sec-post-exploit", name: "Post-Exploitation", description: "Persistence (registry, scheduled tasks, COM hijacking, systemd, cron), lateral movement (PsExec → WMI → DCOM → WinRM), Linux/Windows priv-esc.", tier: 3, prerequisites: ["sec-initial"], cardSlugs: ["sec-post-exploitation"] },
+    { id: "sec-edr", name: "EDR/AMSI/AV — Entendimento Defensivo", description: "Como EDRs detectam (kernel callbacks, ETW, ELAM), AMSI bypass técnicas (academicamente), unhooking — base pra trabalhar EM equipes de defesa contra red team. Não pra atacar empresas sem autorização.", tier: 3, prerequisites: ["sec-c2", "sec-post-exploit"], cardSlugs: ["sec-edr-evasion-defensive"] },
+    { id: "sec-cp-prolab", name: "Checkpoint: HTB Pro Lab", description: "Completar Dante OU RastaLabs OU Offshore (HTB Pro Labs). Relatório de red team estilo cliente: executive summary + cadeia técnica + remediation.", tier: 3, prerequisites: ["sec-c2", "sec-initial", "sec-post-exploit", "sec-edr"], cardSlugs: ["sec-checkpoint-prolabs"], routeHref: "/sentinela" },
 
-    // ── Tier 4 ──
-    { id: "sec-apt", name: "APT Research", description: "Nation-state TTPs, threat intelligence, diamond model, hunting.", tier: 4, prerequisites: ["sec-red-team", "sec-malware"] },
-    { id: "sec-exploit", name: "Exploit Development", description: "Buffer overflow, ROP chains, heap spray, kernel exploits.", tier: 4, prerequisites: ["sec-red-team", "sec-linux"] },
-    { id: "sec-arq", name: "Security Architecture", description: "Framework NIST, ISO 27001, cloud security arch, review de design.", tier: 4, prerequisites: ["sec-zero-trust", "sec-incident"] },
+    // ── Tier 4: AppSec & Secure Code Review ──
+    { id: "sec-threat-model", name: "Threat Modeling 2026", description: "STRIDE com IA (LLM-assisted), attack trees, PASTA, dataflow modeling, abuser stories, MITRE ATT&CK Defender. Base do AppSec consultant.", tier: 4, prerequisites: ["sec-cp-portswigger"], cardSlugs: ["sec-threat-modeling-2026"] },
+    { id: "sec-code-review", name: "Secure Code Review Playbook", description: "Semgrep com custom rules, CodeQL queries, manual review checklist por linguagem (Go, TS/Node, Python, Java), SARIF triage, false-positive culling.", tier: 4, prerequisites: ["sec-threat-model"], cardSlugs: ["sec-secure-code-review-playbook", "sast-dast-scanning"] },
+    { id: "sec-fuzzing", name: "Fuzzing Moderno", description: "AFL++, LibFuzzer, structure-aware (protobuf), coverage-guided, OSS-Fuzz contribution, Go fuzz nativo (1.18+), Atheris para Python.", tier: 4, prerequisites: ["sec-code-review"], cardSlugs: ["sec-fuzzing-modern"] },
+    { id: "sec-supply-def", name: "Defesa de Supply Chain", description: "SLSA L3/L4, SBOM (CycloneDX, SPDX), Sigstore/cosign signing, in-toto attestations, dependency pinning, GitHub Actions hardening.", tier: 4, prerequisites: ["sec-code-review"], cardSlugs: ["secrets-management", "sec-supply-chain-attacks"] },
+    { id: "sec-zt-real", name: "Zero Trust Implementation Real", description: "BeyondCorp implementation, mTLS interno (SPIFFE/SPIRE), identity-aware proxy, microsegmentation, ZTNA vs VPN — não a buzzword vendor.", tier: 4, prerequisites: ["sec-supply-def"], cardSlugs: ["zero-trust-architecture"] },
+    { id: "sec-cp-codeql", name: "Checkpoint: Auditoria Real OSS", description: "Auditoria de codebase open-source escolhida (Node/Go/Python) com Semgrep + CodeQL + revisão manual. Entregar relatório executivo + técnico para validar com /sentinela.", tier: 4, prerequisites: ["sec-code-review", "sec-fuzzing", "sec-supply-def", "sec-zt-real"], cardSlugs: ["sec-checkpoint-codeql-engagement"], routeHref: "/sentinela" },
+
+    // ── Tier 5: AI Security 2026+, Consultoria & Capstone ──
+    { id: "sec-llm-red", name: "LLM Red Teaming", description: "Prompt injection direta, indirect injection (RAG, web, email), jailbreaks (DAN, persona, base64, ASCII art), refusal bypass, multi-turn jailbreak, context pollution.", tier: 5, prerequisites: ["sec-cp-prolab", "sec-cp-codeql"], cardSlugs: ["sec-llm-redteam-2026", "ai-prompt-injection"] },
+    { id: "sec-ai-supply", name: "AI Supply Chain Attacks", description: "Model backdooring (BadNets, weight poisoning), data poisoning, RAG vector store poisoning, pickle bombs, LoRA backdoors, HuggingFace risk surface.", tier: 5, prerequisites: ["sec-llm-red"], cardSlugs: ["sec-ai-supply-chain-attacks"] },
+    { id: "sec-agent-mcp", name: "Agent & MCP Security", description: "Tool abuse, MCP server exploitation, agentic recursive prompt injection, capability escape, indirect tool injection, lethal trifecta (privado + não-confiável + tool action).", tier: 5, prerequisites: ["sec-llm-red"], cardSlugs: ["sec-agent-mcp-security", "agent-security"] },
+    { id: "sec-ai-tools", name: "AI Pentest Tools 2026", description: "Garak (LLM red team scanner), Pyrit (Microsoft), PromptFoo, NVIDIA Aegis, agentes autônomos de pentest (PentestGPT, AutoGPT redteam), responsible disclosure de AI bugs.", tier: 5, prerequisites: ["sec-llm-red", "sec-agent-mcp"], cardSlugs: ["sec-ai-pentest-tools-2026"] },
+    { id: "sec-report", name: "Pentest Report Profissional", description: "Estrutura: executive summary, escopo, methodology, findings com CVSS 4.0, evidence + repro steps, remediation prioritizada, retest plan. Template + exemplos reais.", tier: 5, prerequisites: ["sec-cp-prolab", "sec-cp-codeql"], cardSlugs: ["sec-pentest-report-pro"] },
+    { id: "sec-consult", name: "Consultoria & Engagement Business", description: "Scoping call, SOW (Statement of Work), RoE, pricing (project vs retainer vs day-rate), proposal writing, kick-off, readout call, follow-up & retest economics.", tier: 5, prerequisites: ["sec-report"], cardSlugs: ["sec-consultoria-engagement"] },
+    { id: "sec-capstone", name: "Capstone: Engagement Completo", description: "Pentest end-to-end em escopo escolhido (web + cloud + AI). Pré-engagement → recon → scanning → exploitation → post-exploit → relatório executivo + técnico → readout simulado. Valida com /sentinela.", tier: 5, prerequisites: ["sec-ai-supply", "sec-ai-tools", "sec-consult"], cardSlugs: ["sec-capstone-pentest-engagement"], routeHref: "/sentinela" },
   ],
 };
 
