@@ -155,7 +155,7 @@ class PedidoController(val service: PedidoService) {
     @Transactional
     fun listar(): List<PedidoEntity> {
         val pedidos = service.findAll()
-        pedidos.forEach { println("pedido ${it.id} tem ${it.itens.size} itens") }
+        pedidos.forEach { println("pedido \${it.id} tem \${it.itens.size} itens") }
         return pedidos
     }
 }
