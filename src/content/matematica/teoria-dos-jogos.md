@@ -20,7 +20,7 @@ O **equilíbrio de Nash** é um perfil de estratégias (s₁*,…,sₙ*) tal que
 
 Para o matemático, teoria dos jogos combina otimização, análise convexa, topologia (ponto fixo de Brouwer na prova de Nash) e probabilidade (estratégias mistas). Os problemas mais profundos — computabilidade de equilíbrios, jogos de soma geral, design de mecanismos — levam a questões em CS teórica e economia matemática.
 
-Para CS/ML: multiagent reinforcement learning é teoria dos jogos aplicada. AlphaGo/AlphaStar são algoritmos de teoria dos jogos de informação perfeita. Algoritmos de leilão (Google Ads, AWS Spot) são mecanismos de teoria dos jogos. GAN (Generative Adversarial Networks) é um jogo de dois jogadores — gerador vs. discriminador. Sistemas de recomendação criam jogos entre plataforma, usuários e produtores de conteúdo.
+Para CS/ML: multiagent reinforcement learning é teoria dos jogos aplicada. AlphaGo/AlphaStar são algoritmos de teoria dos jogos de informação perfeita. Algoritmos de leilão (Google Ads, AWS Spot) são mecanismos de teoria dos jogos. GAN (Generative Adversarial Networks) é um jogo minimax assimétrico de dois jogadores — gerador vs. discriminador, com payoffs não-simétricos em formulações modernas. Sistemas de recomendação criam jogos entre plataforma, usuários e produtores de conteúdo.
 
 ## Conceitos-chave
 
@@ -47,7 +47,7 @@ Para CS/ML: multiagent reinforcement learning é teoria dos jogos aplicada. Alph
 
 ## Aplicação em CS/Dev/ML
 
-**GANs como jogo de dois jogadores**: gerador G maximiza a probabilidade de enganar o discriminador D; D maximiza a acurácia de classificar real vs. fake. O equilíbrio (Nash) do jogo tem o gerador produzindo amostras da distribuição real. Na prática, os problemas de treinar GANs (mode collapse, instabilidade) são instâncias de dificuldades em convergir para equilíbrio de Nash.
+**GANs como jogo de dois jogadores assimétrico**: o jogo é minimax — não simétrico. Discriminador D maximiza ℒ_D = E_x[log D(x)] + E_z[log(1 − D(G(z)))]; gerador G minimiza essa quantidade (ou variantes não-saturating). Em formulações modernas (Wasserstein GAN, hinge loss), os payoffs **não são exatamente opostos** (ℒ_G ≠ −ℒ_D), logo o jogo nem sempre é soma zero. O ponto de sela ideal tem G produzindo a distribuição real e D ficando indeciso (D ≡ ½). Mode collapse e instabilidade surgem porque o jogo é **não convexo-côncavo** (von Neumann minimax falha) e o gradiente conjunto pode divergir mesmo com pontos de sela existentes (Mescheder et al., ICML 2018).
 
 **Multiagent RL**: aprender políticas ótimas em ambientes com múltiplos agentes é teoria dos jogos. Algoritmos como MADDPG, MAPPO tratam o problema como jogo estocástico de n-jogadores. Convergência para equilíbrio de Nash é garantida apenas em casos especiais (jogos de soma zero com dois jogadores).
 

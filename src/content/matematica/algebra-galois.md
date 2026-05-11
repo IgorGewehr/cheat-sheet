@@ -24,7 +24,7 @@ Para dev, a teoria de Galois é menos diretamente aplicada, mas o pensamento gal
 
 ## Conceitos-chave
 
-- **Extensão de corpo**: K/F é extensão de corpos se F ⊆ K e K é corpo. Grau [K:F] = dim_F(K) como espaço vetorial sobre F. Ex: [ℂ:ℝ] = 2 (base {1, i}); [ℚ(√2):ℚ] = 2 (base {1, √2}).
+- **Extensão de corpo**: K/F é extensão de corpos se F ⊆ K e K é corpo. Grau [K:F] = dim_F(K) como espaço vetorial sobre F. **Algébrica vs transcendental**: α ∈ K é algébrico sobre F se existe polinômio não-nulo em F[x] anulando α; caso contrário é transcendental. Extensão é **algébrica** se todo elemento é algébrico; **transcendental** se contém elemento transcendental. e e π são transcendentais sobre ℚ (Hermite 1873; Lindemann 1882). [ℚ(π):ℚ] = ∞. **Grau de transcendência** tr.deg(K/F) generaliza dimensão a transcendentais (cardinalidade de base de transcendência); tr.deg(ℂ/ℚ) tem cardinalidade contínua. Teoria de Galois clássica aplica-se a extensões algébricas finitas; generalização para transcendentais (corpos de funções, Galois diferencial de Picard-Vessiot) é o ferramental moderno. Ex: [ℂ:ℝ] = 2 (algébrica); [ℚ(√2):ℚ] = 2 (algébrica); ℂ/ℚ é transcendental com tr.deg contínuo.
 - **Corpo de decomposição**: dado f(x) ∈ F[x], o corpo de decomposição E de f sobre F é a menor extensão de F onde f fatora completamente em lineares. É único a menos de isomorfismo.
 - **Extensão de Galois**: E/F é extensão de Galois se é separável e normal. Separável: raízes do polinômio minimal de qualquer elemento de E são distintas. Normal: se f irredutível em F[x] tem uma raiz em E, tem todas em E.
 - **Grupo de Galois**: Gal(E/F) = {φ: E→E | φ automorfismo, φ|_F = id_F}. Para extensão de Galois finita: |Gal(E/F)| = [E:F].
@@ -62,6 +62,7 @@ Para dev, a teoria de Galois é menos diretamente aplicada, mas o pensamento gal
 - **Calcular grupos de Galois pequenos**: encontre Gal(ℚ(√2, √3)/ℚ), Gal(ℚ(∜2)/ℚ), Gal(ℚ(ζ₅)/ℚ). Identifique os subgrupos e as correspondências via teorema de Galois.
 - **SageMath**: `R.<x> = QQ[]; f = x^4 - 2; f.splitting_field('a')`, depois calcule o grupo de Galois. Compare com o esperado pela teoria.
 - **Projeto histórico**: refaça o argumento de Abel-Ruffini: construa um polinômio de grau 5 cujo grupo de Galois é S₅ e argumente por que ele não é solúvel por radicais.
+- **Resolução explícita da cúbica (Cardano-Tartaglia)**: dada x³ + px + q = 0 (depressed cubic — toda cúbica reduz a esta por substituição x ↦ x − a/3), use a substituição x = u + v com restrição 3uv = −p. Substituindo: u³ + v³ = −q, u³v³ = −p³/27. Logo u³ e v³ são raízes de t² + qt − p³/27 = 0. Discriminante: Δ = q² + 4p³/27 = (q/2)² + (p/3)³. Solução: u³ = −q/2 + √Δ/2, v³ = −q/2 − √Δ/2 (escolha consistente com 3uv = −p). Daí **fórmula de Cardano**: x = ∛(−q/2 + √Δ) + ∛(−q/2 − √Δ). Caso casus irreducibilis: Δ < 0 (três raízes reais) força raízes cúbicas de números complexos — só expressíveis via trigonometria (Viète, 1591): x_k = 2√(−p/3) cos((1/3) arccos((3q)/(2p)·√(−3/p)) − 2πk/3), k=0,1,2.
 
 ## Exercícios práticos
 

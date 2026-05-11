@@ -82,51 +82,88 @@ const MATEMATICA: SkillArea = {
   name: "Matemática",
   emoji: "∑",
   colors: P.violet,
-  description: "Da trigonometria às estruturas algébricas mais abstratas — a progressão completa de um bacharelado internacional.",
-  tierNames: ["Fundamentos", "Núcleo", "Análise & Álgebra", "Avançado", "Expert", "Mestre"],
+  description:
+    "Da trigonometria à análise harmônica em grupos — currículo completo de bacharelado internacional + ponte para mestrado. 7 tiers, 50+ marcos, 5 checkpoints e capstone TCC.",
+  tierNames: [
+    "Fundamentos",
+    "Núcleo Cálculo & Álgebra",
+    "Análise & EDOs",
+    "Análise Avançada & Álgebra Abstrata",
+    "Análise Funcional & Geometria",
+    "Topologia, Lie & Estruturas Modernas",
+    "Pós-Graduação & Capstone",
+  ],
   nodes: [
     // ── Tier 0: Fundamentos ──
-    { id: "mat-trig", name: "Trigonometria", description: "Funções trig, identidades, círculo unitário, equações.", tier: 0, prerequisites: [], cardSlug: "trigonometria-essencial" },
+    { id: "mat-trig", name: "Trigonometria", description: "Funções trig, identidades, círculo unitário, fórmula de Euler.", tier: 0, prerequisites: [], cardSlug: "trigonometria-essencial" },
     { id: "mat-geo-plana", name: "Geometria Plana", description: "Teoremas euclidianos, congruência, semelhança, áreas.", tier: 0, prerequisites: [], cardSlug: "geometria-plana" },
+    { id: "mat-geo-espacial", name: "Geometria Espacial", description: "Sólidos, vetores no espaço, coordenadas, planos.", tier: 0, prerequisites: ["mat-geo-plana"], cardSlug: "geometria-espacial" },
+    { id: "mat-num-complex", name: "Números Complexos", description: "Forma polar, Euler, raízes da unidade, equações algébricas.", tier: 0, prerequisites: ["mat-trig"], cardSlug: "numeros-complexos" },
     { id: "mat-logica", name: "Lógica Matemática", description: "Proposições, quantificadores, dedução natural, conjuntos.", tier: 0, prerequisites: [], cardSlug: "logica-matematica" },
-    { id: "mat-tec-demo", name: "Técnicas de Demonstração", description: "Indução, contradição, contrapositiva, construção.", tier: 0, prerequisites: [], cardSlug: "tecnicas-demonstracao" },
+    { id: "mat-tec-demo", name: "Técnicas de Demonstração", description: "Indução, contradição, contrapositiva, construção.", tier: 0, prerequisites: ["mat-logica"], cardSlug: "tecnicas-demonstracao" },
 
-    // ── Tier 1: Núcleo ──
+    // ── Tier 1: Núcleo Cálculo & Álgebra ──
     { id: "mat-calculo1", name: "Cálculo I", description: "Limites, derivadas, integrais, TFC — fundação da análise.", tier: 1, prerequisites: ["mat-trig", "mat-logica"], cardSlug: "calculo-1-variavel" },
-    { id: "mat-alg-lin", name: "Álgebra Linear", description: "Espaços vetoriais, matrizes, autovalores, transformações lineares.", tier: 1, prerequisites: ["mat-geo-plana", "mat-logica"], cardSlug: "algebra-linear" },
-    { id: "mat-geo-espacial", name: "Geometria Espacial", description: "Sólidos, vetores no espaço, coordenadas, planos.", tier: 1, prerequisites: ["mat-geo-plana"], cardSlug: "geometria-espacial" },
+    { id: "mat-calculo-multi", name: "Cálculo Multivariável", description: "Derivadas parciais, gradiente, integrais múltiplas, Jacobiano, formas diferenciais.", tier: 1, prerequisites: ["mat-calculo1"], cardSlug: "calculo-multivariavel" },
+    { id: "mat-series", name: "Séries e Sequências", description: "Convergência, séries de potências, Taylor, Fourier introdutório.", tier: 1, prerequisites: ["mat-calculo1"], cardSlug: "series-e-sequencias" },
+    { id: "mat-alg-lin", name: "Álgebra Linear", description: "Espaços vetoriais, SVD, Jordan, tensores, formas bilineares.", tier: 1, prerequisites: ["mat-geo-plana", "mat-logica"], cardSlug: "algebra-linear" },
     { id: "mat-teoria-num", name: "Teoria dos Números", description: "Primos, divisibilidade, congruências, Fermat, Euler.", tier: 1, prerequisites: ["mat-logica", "mat-tec-demo"], cardSlug: "teoria-dos-numeros" },
+    { id: "mat-comb", name: "Análise Combinatória", description: "Contagem, inclusão-exclusão, geradores, pigeonhole.", tier: 1, prerequisites: ["mat-teoria-num"], cardSlug: "analise-combinatoria" },
+    { id: "mat-grafos", name: "Teoria dos Grafos", description: "Conexidade, árvores, Euler, Hamilton, espectral.", tier: 1, prerequisites: ["mat-comb"], cardSlug: "teoria-grafos-mat" },
+    { id: "mat-cp-tier1", name: "Checkpoint Tier 1", description: "Problemset cálculo + álgebra + séries + discreta. Validar antes de análise rigorosa.", tier: 1, prerequisites: ["mat-calculo-multi", "mat-series", "mat-alg-lin", "mat-grafos"], cardSlug: "checkpoint-tier-1-calculo-algebra" },
 
-    // ── Tier 2: Análise & Álgebra ──
-    { id: "mat-calculo-multi", name: "Cálculo Multivariável", description: "Derivadas parciais, gradiente, integrais múltiplas, Jacobiano.", tier: 2, prerequisites: ["mat-calculo1"], cardSlug: "calculo-multivariavel" },
-    { id: "mat-analise-real", name: "Análise Real I", description: "ε-δ, sequências, séries, completude de ℝ, TVM.", tier: 2, prerequisites: ["mat-calculo1", "mat-tec-demo"], cardSlug: "analise-real" },
+    // ── Tier 2: Análise & EDOs ──
+    { id: "mat-analise-real", name: "Análise Real", description: "ε-δ, sequências, séries, completude de ℝ, TVM, integração de Riemann.", tier: 2, prerequisites: ["mat-cp-tier1", "mat-tec-demo"], cardSlug: "analise-real" },
+    { id: "mat-calculo-vet", name: "Cálculo Vetorial & Geometria Analítica", description: "Divergência, rotacional, Stokes, Green, Gauss, Frenet-Serret.", tier: 2, prerequisites: ["mat-cp-tier1", "mat-geo-espacial"], cardSlug: "calculo-vetorial-geometria-analitica" },
     { id: "mat-estruturas", name: "Estruturas Algébricas", description: "Grupos, anéis, corpos, homomorfismos, teoremas de isomorfismo.", tier: 2, prerequisites: ["mat-alg-lin", "mat-teoria-num"], cardSlug: "estruturas-algebricas" },
-    { id: "mat-comb", name: "Análise Combinatória", description: "Contagem, inclusão-exclusão, geradores, pigeonhole.", tier: 2, prerequisites: ["mat-teoria-num"], cardSlug: "analise-combinatoria" },
+    { id: "mat-edo", name: "EDOs", description: "Equações diferenciais ordinárias, sistemas, Picard-Lindelöf, estabilidade.", tier: 2, prerequisites: ["mat-calculo-multi", "mat-alg-lin"], cardSlug: "equacoes-diferenciais-ordinarias" },
+    { id: "mat-prob", name: "Probabilidade", description: "Espaços de probabilidade, variáveis aleatórias, LGN, TCL.", tier: 2, prerequisites: ["mat-analise-real", "mat-comb"], cardSlug: "probabilidade" },
+    { id: "mat-num-analise", name: "Análise Numérica", description: "Métodos numéricos para EDOs, sistemas lineares, interpolação.", tier: 2, prerequisites: ["mat-calculo-multi", "mat-alg-lin"], cardSlug: "analise-numerica" },
+    { id: "mat-cp-tier2", name: "Checkpoint Tier 2", description: "Problemset análise rigorosa + EDOs + estruturas + probabilidade.", tier: 2, prerequisites: ["mat-analise-real", "mat-edo", "mat-estruturas", "mat-prob"], cardSlug: "checkpoint-tier-2-analise-edo" },
 
-    // ── Tier 3: Avançado ──
-    { id: "mat-calculo-vet", name: "Cálculo Vetorial", description: "Divergência, rotacional, Stokes, Green, Gauss.", tier: 3, prerequisites: ["mat-calculo-multi", "mat-geo-espacial"], cardSlug: "calculo-vetorial-geometria-analitica" },
-    { id: "mat-analise-complexa", name: "Análise Complexa", description: "Funções analíticas, Cauchy, resíduos, transformadas conformes.", tier: 3, prerequisites: ["mat-calculo-multi", "mat-analise-real"], cardSlug: "analise-complexa" },
+    // ── Tier 3: Análise Avançada & Álgebra Abstrata ──
+    { id: "mat-analise-complexa", name: "Análise Complexa", description: "Funções analíticas, Cauchy, resíduos, Riemann mapping.", tier: 3, prerequisites: ["mat-cp-tier2"], cardSlug: "analise-complexa" },
     { id: "mat-topologia", name: "Topologia Geral", description: "Espaços topológicos, continuidade, compacidade, conexidade.", tier: 3, prerequisites: ["mat-analise-real"], cardSlug: "topologia-geral" },
-    { id: "mat-edo", name: "EDOs", description: "Equações diferenciais ordinárias, sistemas, estabilidade.", tier: 3, prerequisites: ["mat-calculo-multi", "mat-alg-lin"], cardSlug: "equacoes-diferenciais-ordinarias" },
-    { id: "mat-prob", name: "Probabilidade", description: "Espaços de probabilidade, variáveis aleatórias, distribuições, LGN.", tier: 3, prerequisites: ["mat-analise-real", "mat-comb"], cardSlug: "probabilidade" },
-    { id: "mat-num-analise", name: "Análise Numérica", description: "Métodos numéricos para EDOs, sistemas lineares, interpolação.", tier: 3, prerequisites: ["mat-calculo-multi", "mat-alg-lin"], cardSlug: "analise-numerica" },
+    { id: "mat-edp", name: "EDPs", description: "Equação do calor, onda, Laplace; séries de Fourier; princípio do máximo.", tier: 3, prerequisites: ["mat-edo", "mat-calculo-vet"], cardSlug: "equacoes-diferenciais-parciais" },
+    { id: "mat-galois", name: "Teoria de Galois", description: "Extensões de corpos (algébricas/transcendentais), grupo de Galois, solubilidade.", tier: 3, prerequisites: ["mat-estruturas", "mat-analise-complexa"], cardSlug: "algebra-galois" },
+    { id: "mat-alg-comutativa", name: "Álgebra Comutativa", description: "Anéis Noetherianos, Nullstellensatz, Dedekind, Cohen-Macaulay, Groebner.", tier: 3, prerequisites: ["mat-estruturas", "mat-galois"], cardSlug: "algebra-comutativa" },
+    { id: "mat-estatistica", name: "Estatística & Inferência", description: "Estimação, ML, intervalos, testes de hipótese, Bayes.", tier: 3, prerequisites: ["mat-prob"], cardSlug: "estatistica-inferencia" },
+    { id: "mat-otimizacao", name: "Otimização & PO", description: "Convexidade, KKT, dualidade, programação linear.", tier: 3, prerequisites: ["mat-calculo-multi", "mat-alg-lin"], cardSlug: "otimizacao-pesquisa-op" },
+    { id: "mat-cp-tier3", name: "Checkpoint Tier 3", description: "Problemset análise complexa + topologia + Galois + EDPs.", tier: 3, prerequisites: ["mat-analise-complexa", "mat-topologia", "mat-galois", "mat-edp"], cardSlug: "checkpoint-tier-3-analise-avancada" },
 
-    // ── Tier 4: Expert ──
-    { id: "mat-medida", name: "Medida e Integração", description: "Lebesgue, espaços Lp, Banach, Hilbert, análise funcional.", tier: 4, prerequisites: ["mat-topologia", "mat-analise-complexa"], cardSlug: "medida-integracao" },
-    { id: "mat-galois", name: "Teoria de Galois", description: "Extensões de corpos, grupo de Galois, solubilidade por radicais.", tier: 4, prerequisites: ["mat-estruturas", "mat-analise-complexa"], cardSlug: "algebra-galois" },
-    { id: "mat-geo-dif", name: "Geometria Diferencial", description: "Curvas, superfícies, curvatura, variedades, formas diferenciais.", tier: 4, prerequisites: ["mat-calculo-vet", "mat-topologia"], cardSlug: "geometria-diferencial" },
-    { id: "mat-fourier", name: "Análise de Fourier", description: "Séries de Fourier, transformada, L², Parseval, PDEs.", tier: 4, prerequisites: ["mat-analise-real", "mat-medida"], cardSlug: "analise-fourier" },
+    // ── Tier 4: Análise Funcional & Geometria ──
+    { id: "mat-medida", name: "Medida e Integração", description: "Lebesgue, espaços Lᵖ, teoremas de convergência, Fubini.", tier: 4, prerequisites: ["mat-topologia", "mat-analise-complexa"], cardSlug: "medida-integracao" },
+    { id: "mat-analise-funcional", name: "Análise Funcional", description: "Banach, Hilbert, Hahn-Banach, espectral, Sobolev — álgebra linear em dim. infinita.", tier: 4, prerequisites: ["mat-medida", "mat-topologia"], cardSlug: "analise-funcional" },
+    { id: "mat-fourier", name: "Análise de Fourier", description: "Séries de Fourier, transformada, L², Parseval, EDPs.", tier: 4, prerequisites: ["mat-analise-real", "mat-medida"], cardSlug: "analise-fourier" },
+    { id: "mat-geo-dif", name: "Geometria Diferencial", description: "Curvas, superfícies, variedades, formas diferenciais, Stokes generalizado.", tier: 4, prerequisites: ["mat-calculo-vet", "mat-topologia"], cardSlug: "geometria-diferencial" },
     { id: "mat-proc-esto", name: "Processos Estocásticos", description: "Markov, Browniano, martingales, Itô, Fokker-Planck.", tier: 4, prerequisites: ["mat-prob", "mat-medida"], cardSlug: "processos-estocasticos" },
-    { id: "mat-mecanica-lag", name: "Mecânica Lagrangiana", description: "Lagrangiana, Hamiltoniana, espaço de fase, simetrias.", tier: 4, prerequisites: ["mat-calculo-vet", "mat-edo"], cardSlug: "mecanica-lagrangiana-hamiltoniana" },
+    { id: "mat-fisica-classica", name: "Física: Mecânica Clássica", description: "Newton, energia, simetrias, forças centrais, oscilador.", tier: 4, prerequisites: ["mat-calculo-vet", "mat-edo"], cardSlug: "fisica-mecanica-classica" },
+    { id: "mat-mecanica-lag", name: "Mecânica Lagrangiana & Hamiltoniana", description: "Lagrangiana, Hamiltoniana, espaço de fase, Noether, simplética.", tier: 4, prerequisites: ["mat-fisica-classica", "mat-geo-dif"], cardSlug: "mecanica-lagrangiana-hamiltoniana" },
+    { id: "mat-calc-variacoes", name: "Cálculo das Variações", description: "Euler-Lagrange, geodésicas, braquistócrona, transporte ótimo.", tier: 4, prerequisites: ["mat-edo", "mat-calculo-multi"], cardSlug: "calculo-das-variacoes" },
     { id: "mat-sistemas-din", name: "Sistemas Dinâmicos", description: "Fluxos, bifurcações, atratores, caos, expoentes de Lyapunov.", tier: 4, prerequisites: ["mat-edo", "mat-geo-dif"], cardSlug: "sistemas-dinamicos-caos" },
+    { id: "mat-cp-tier4", name: "Checkpoint Tier 4", description: "Problemset medida + funcional + Fourier + geometria + estocástico.", tier: 4, prerequisites: ["mat-analise-funcional", "mat-fourier", "mat-geo-dif", "mat-proc-esto", "mat-mecanica-lag"], cardSlug: "checkpoint-tier-4-analise-funcional-geometria" },
 
-    // ── Tier 5: Mestre ──
-    { id: "mat-top-alg", name: "Topologia Algébrica", description: "Grupo fundamental, recobrimentos, homologia, CW-complexos.", tier: 5, prerequisites: ["mat-topologia", "mat-estruturas"], cardSlug: "topologia-algebrica" },
-    { id: "mat-alg-hom", name: "Álgebra Homológica", description: "Complexos de cadeia, Tor, Ext, sequências exatas, derivados.", tier: 5, prerequisites: ["mat-galois", "mat-top-alg"], cardSlug: "algebra-homologica" },
-    { id: "mat-categorias", name: "Teoria das Categorias", description: "Categorias, functores, transformações naturais, adjunções.", tier: 5, prerequisites: ["mat-estruturas", "mat-top-alg"], cardSlug: "teoria-categorias" },
-    { id: "mat-geo-alg", name: "Geometria Algébrica", description: "Variedades afins, Nullstellensatz, esquemas de Grothendieck.", tier: 5, prerequisites: ["mat-galois", "mat-alg-hom"], cardSlug: "geometria-algebrica-intro" },
-    { id: "mat-repr", name: "Teoria de Representação", description: "Representações de grupos, caracteres, Schur, SU(2).", tier: 5, prerequisites: ["mat-galois", "mat-categorias"], cardSlug: "teoria-representacao" },
-    { id: "mat-fundamentos", name: "Fundamentos & Gödel", description: "ZFC, axioma da escolha, incompletude, computabilidade.", tier: 5, prerequisites: ["mat-logica", "mat-top-alg"], cardSlug: "fundamentos-godel-zfc" },
+    // ── Tier 5: Topologia, Lie & Estruturas Modernas ──
+    { id: "mat-top-alg", name: "Topologia Algébrica", description: "π₁, recobrimentos, homologia, cohomologia, sheaves, classes características.", tier: 5, prerequisites: ["mat-topologia", "mat-estruturas"], cardSlug: "topologia-algebrica" },
+    { id: "mat-var-riem", name: "Variedades Riemannianas", description: "Métrica, Levi-Civita, curvatura Ricci/seccional, Hodge, Bonnet-Myers.", tier: 5, prerequisites: ["mat-geo-dif", "mat-analise-funcional"], cardSlug: "variedades-riemannianas" },
+    { id: "mat-grupos-lie", name: "Grupos de Lie", description: "Álgebras de Lie, exponencial, Cartan-Iwasawa, raízes, Dynkin.", tier: 5, prerequisites: ["mat-geo-dif", "mat-estruturas"], cardSlug: "grupos-de-lie" },
+    { id: "mat-repr", name: "Teoria de Representação", description: "Representações de grupos, caracteres, Schur, Peter-Weyl, SU(2).", tier: 5, prerequisites: ["mat-grupos-lie", "mat-galois"], cardSlug: "teoria-representacao" },
+    { id: "mat-analise-harm", name: "Análise Harmônica", description: "Pontryagin, FT em LCA, harmonics em grupos, representações unitárias.", tier: 5, prerequisites: ["mat-fourier", "mat-repr"], cardSlug: "analise-harmonica" },
+    { id: "mat-alg-hom", name: "Álgebra Homológica", description: "Complexos de cadeia, Tor, Ext, sequências espectrais, derivados.", tier: 5, prerequisites: ["mat-galois", "mat-top-alg"], cardSlug: "algebra-homologica" },
+    { id: "mat-categorias", name: "Teoria das Categorias", description: "Categorias, functores, adjunções, limites, topos.", tier: 5, prerequisites: ["mat-estruturas", "mat-top-alg"], cardSlug: "teoria-categorias" },
+    { id: "mat-tan", name: "Teoria Algébrica dos Números", description: "Corpos de números, Dedekind, ramificação, p-ádicos, adèles, Langlands.", tier: 5, prerequisites: ["mat-galois", "mat-alg-comutativa"], cardSlug: "teoria-algebrica-numeros" },
+    { id: "mat-cp-tier5", name: "Checkpoint Tier 5", description: "Problemset π₁/homologia + Lie + representação + categorias + TAN.", tier: 5, prerequisites: ["mat-top-alg", "mat-grupos-lie", "mat-repr", "mat-alg-hom", "mat-tan"], cardSlug: "checkpoint-tier-5-estruturas-modernas" },
+
+    // ── Tier 6: Pós-Graduação & Capstone ──
+    { id: "mat-geo-alg", name: "Geometria Algébrica", description: "Variedades afins, Nullstellensatz, esquemas de Grothendieck.", tier: 6, prerequisites: ["mat-alg-comutativa", "mat-alg-hom"], cardSlug: "geometria-algebrica-intro" },
+    { id: "mat-fundamentos", name: "Fundamentos & Gödel", description: "ZFC, axioma da escolha, incompletude, intuicionismo.", tier: 6, prerequisites: ["mat-logica", "mat-categorias"], cardSlug: "fundamentos-godel-zfc" },
+    { id: "mat-comput", name: "Computabilidade & Complexidade", description: "Turing, halting, P vs NP, Cook-Levin, PCP.", tier: 6, prerequisites: ["mat-logica", "mat-grafos"], cardSlug: "computabilidade-complexidade" },
+    { id: "mat-teoria-info", name: "Teoria da Informação", description: "Entropia, Shannon, Kullback-Leibler, channel capacity.", tier: 6, prerequisites: ["mat-prob", "mat-estatistica"], cardSlug: "teoria-da-informacao" },
+    { id: "mat-teoria-jogos", name: "Teoria dos Jogos", description: "Nash, minimax, design de mecanismos, VCG, GANs.", tier: 6, prerequisites: ["mat-prob", "mat-otimizacao"], cardSlug: "teoria-dos-jogos" },
+    { id: "mat-modelagem", name: "Modelagem Matemática", description: "Ciclo de modelagem, EDOs/EDPs aplicadas, validação, SIR.", tier: 6, prerequisites: ["mat-edo", "mat-estatistica"], cardSlug: "modelagem-matematica" },
+    { id: "mat-metodologia", name: "Metodologia Científica", description: "Pesquisa em matemática, peer review, conjecturas, ética.", tier: 6, prerequisites: ["mat-tec-demo"], cardSlug: "metodologia-cientifica" },
+    { id: "mat-latex", name: "LaTeX & Papers Matemáticos", description: "AMS-LaTeX, BibTeX, estrutura de paper, ler arXiv.", tier: 6, prerequisites: ["mat-metodologia"], cardSlug: "latex-mat-papers" },
+    { id: "mat-capstone", name: "Capstone — TCC & Mestrado", description: "TCC formato paper em LaTeX, banca simulada, candidatura a mestrado.", tier: 6, prerequisites: ["mat-cp-tier5", "mat-latex", "mat-metodologia"], cardSlug: "capstone-tcc-mat" },
   ],
 };
 
