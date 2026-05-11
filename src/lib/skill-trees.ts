@@ -73,6 +73,16 @@ const P = {
     border: "rgba(20,184,166,0.45)",
     borderMastered: "rgba(20,184,166,0.90)",
   },
+  springGreen: {
+    primary: "#84cc16",
+    glow: "rgba(132,204,22,0.30)",
+    bgLight: "rgba(132,204,22,0.07)",
+    bgMedium: "rgba(132,204,22,0.18)",
+    text: "#bef264",
+    textMuted: "#a3e635",
+    border: "rgba(132,204,22,0.45)",
+    borderMastered: "rgba(132,204,22,0.90)",
+  },
 };
 
 // ─── Matemática ──────────────────────────────────────────────────────────────
@@ -267,6 +277,69 @@ const GO_ENTERPRISE: SkillArea = {
     { id: "go-ai-integration", name: "AI Integration em Go", description: "OpenAI/Anthropic SDK Go, streaming SSE, function calling, MCP server em Go, RAG com pgvector e controle de custo.", tier: 5, prerequisites: ["go-resilience", "go-postgres"], cardSlugs: ["go-ai-integration", "mcp-protocol", "tool-use-function-calling"] },
     { id: "go-interview-prep", name: "Entrevista Sênior", description: "GC, runtime, escape analysis, channels internals, system design com Go, banco de respostas STAR e perguntas pra fazer ao entrevistador.", tier: 5, prerequisites: ["go-performance", "go-microservices"], cardSlugs: ["go-entrevista-senior", "entrevista-algoritmos"] },
     { id: "go-capstone", name: "Capstone: 2 Microsserviços", description: "Construir dois serviços empresariais integrados por eventos+gRPC, OpenAPI, banco próprio, observabilidade completa, auth e suíte de testes.", tier: 5, prerequisites: ["go-production-checklist", "go-ai-integration", "go-interview-prep"], cardSlugs: ["go-microservices-enterprise", "go-sdd-openapi", "go-outbox-idempotency", "go-microservice-production-checklist"] },
+  ],
+};
+
+// ─── Spring Boot + Kotlin ────────────────────────────────────────────────────
+
+const SPRING_BOOT_KOTLIN: SkillArea = {
+  id: "spring-boot-kotlin",
+  name: "Spring Boot + Kotlin",
+  emoji: "🌱",
+  colors: P.springGreen,
+  description:
+    "Trilha júnior → pleno → sênior em Kotlin + Spring Boot 3.x: linguagem moderna, corrotinas, Spring Web/WebFlux, Spring Data JPA, Flyway, Testcontainers, arquitetura hexagonal/DDD, Kafka/RabbitMQ, Redis, gRPC, Resilience4j, Spring Security/OAuth2, Micrometer/Observabilidade, GraalVM Native, AI integration e capstone empresarial pronto para Big Tech e governo.",
+  tierNames: [
+    "Base Júnior (Kotlin)",
+    "Spring Boot Essentials",
+    "Persistência & Spec-Driven",
+    "Arquitetura Distribuída",
+    "Produção Sênior & Segurança",
+    "AI-Era, Carreira & Capstone",
+  ],
+  nodes: [
+    // ── Tier 0: Base Júnior (Kotlin) ──
+    { id: "sb-kotlin-start", name: "Primeiros Passos Kotlin", description: "JDK 21+, Gradle Kotlin DSL, IntelliJ, build/test/run e primeiro serviço executável.", tier: 0, prerequisites: [], cardSlugs: ["kotlin-primeiros-passos"] },
+    { id: "sb-kotlin-lang", name: "Linguagem Kotlin", description: "val/var, null-safety, data classes, sealed classes, when, scope functions, extension functions, type system.", tier: 0, prerequisites: ["sb-kotlin-start"], cardSlugs: ["kotlin-linguagem-essencial"] },
+    { id: "sb-kotlin-layout", name: "Layout & Gradle", description: "Multi-module Gradle, source sets, build.gradle.kts, dependency catalogs, version sets — sem cargo cult.", tier: 0, prerequisites: ["sb-kotlin-lang"], cardSlugs: ["kotlin-gradle-multi-module"] },
+    { id: "sb-kotlin-errors", name: "Errors & Result", description: "Exceptions vs Result<T>, Either (Arrow), runCatching, when patterns, encapsulamento de falhas no domínio.", tier: 0, prerequisites: ["sb-kotlin-lang"], cardSlugs: ["kotlin-errors-result-arrow"] },
+
+    // ── Tier 1: Spring Boot Essentials ──
+    { id: "sb-essentials", name: "Spring Boot Essentials", description: "Auto-configuration, starters, ApplicationContext, beans, profiles, actuator, livecycle, graceful shutdown.", tier: 1, prerequisites: ["sb-kotlin-layout", "sb-kotlin-errors"], cardSlugs: ["spring-boot-essentials"] },
+    { id: "sb-web", name: "Spring Web MVC", description: "Controllers, request mapping, ResponseEntity, ControllerAdvice, ProblemDetail (RFC 7807), interceptors, validation.", tier: 1, prerequisites: ["sb-essentials"], cardSlugs: ["spring-web-controllers", "spring-validation-bean"] },
+    { id: "sb-coroutines", name: "Corrotinas & WebFlux", description: "suspend functions, Flow, structured concurrency, integração Spring com kotlinx.coroutines, quando NÃO usar WebFlux.", tier: 1, prerequisites: ["sb-kotlin-lang", "sb-web"], cardSlugs: ["kotlin-coroutines", "spring-webflux-vs-mvc"] },
+    { id: "sb-config-logs", name: "Config & Logs", description: "application.yml por profile, @ConfigurationProperties type-safe, Logback structured logging, MDC e correlation ids.", tier: 1, prerequisites: ["sb-essentials"], cardSlugs: ["spring-config-properties", "spring-logging-mdc"] },
+    { id: "sb-testing-core", name: "Testes Kotlin Core", description: "JUnit 5, Kotest, MockK, AssertJ, @SpringBootTest slices (@WebMvcTest, @DataJpaTest), table-driven com Kotest.", tier: 1, prerequisites: ["sb-web"], cardSlugs: ["kotlin-testing-junit-kotest-mockk", "tdd-red-green-refactor"] },
+
+    // ── Tier 2: Persistência & Spec-Driven ──
+    { id: "sb-sdd", name: "SDD com OpenAPI (springdoc)", description: "Spec-driven com springdoc-openapi, código a partir do contrato OU contrato a partir do código (escolha consciente), validação e contract tests.", tier: 2, prerequisites: ["sb-web", "sb-testing-core"], cardSlugs: ["spring-openapi-springdoc", "go-contract-sdd-tests"] },
+    { id: "sb-jpa", name: "Spring Data JPA", description: "Repositories, derived queries, @Query JPQL, EntityGraph contra N+1, lazy/eager, projections DTO, JPA Buddy.", tier: 2, prerequisites: ["sb-sdd"], cardSlugs: ["spring-data-jpa", "n-plus-1", "postgres-indexes-explain"] },
+    { id: "sb-flyway", name: "Flyway & Migrations", description: "Versionamento de schema com Flyway, migrations zero downtime, baselining, repeatable migrations, rollback honesto.", tier: 2, prerequisites: ["sb-jpa"], cardSlugs: ["spring-flyway-migrations", "migrations-zero-downtime"] },
+    { id: "sb-transactions", name: "Transações & Repositórios", description: "@Transactional, isolation levels, propagation, locks pessimistas vs otimistas, boundary em use case, exception rules.", tier: 2, prerequisites: ["sb-jpa"], cardSlugs: ["spring-transactions-isolation", "repository-pattern"] },
+    { id: "sb-testcontainers", name: "Testcontainers", description: "Testes de integração reais com Postgres, Kafka, RabbitMQ, Redis efêmeros, @DynamicPropertySource e shared containers.", tier: 2, prerequisites: ["sb-jpa", "sb-testing-core"], cardSlugs: ["spring-testcontainers"] },
+
+    // ── Tier 3: Arquitetura Distribuída ──
+    { id: "sb-hexagonal", name: "Arquitetura Hexagonal", description: "Domínio sem Spring, ports/adapters, use cases puros em Kotlin, separação de infraestrutura, módulos Gradle por camada.", tier: 3, prerequisites: ["sb-transactions", "sb-sdd"], cardSlugs: ["spring-hexagonal-kotlin", "hexagonal", "clean-architecture"] },
+    { id: "sb-ddd", name: "DDD Pragmático", description: "Aggregates como sealed classes, invariantes em factory functions, domain events, application services e bounded contexts.", tier: 3, prerequisites: ["sb-hexagonal"], cardSlugs: ["spring-ddd-aggregates-kotlin", "ddd-light-erp"] },
+    { id: "sb-messaging", name: "Kafka & RabbitMQ", description: "Spring Kafka (consumers, producers, error handling, DLT), RabbitMQ (exchanges, DLQ), idempotência, schema registry, backpressure.", tier: 3, prerequisites: ["sb-ddd", "sb-testcontainers"], cardSlugs: ["spring-kafka-rabbitmq", "event-driven", "background-jobs"] },
+    { id: "sb-redis", name: "Redis Cache & Idempotência", description: "Spring Data Redis (Lettuce), cache-aside via @Cacheable cauteloso, distributed locks com Redisson, idempotency keys, rate limit.", tier: 3, prerequisites: ["sb-messaging"], cardSlugs: ["spring-redis-cache-idempotencia", "caching-layers", "rate-limit-distribuido"] },
+    { id: "sb-grpc", name: "gRPC com Kotlin", description: "grpc-kotlin, protobuf, streaming, interceptors, quando preferir HTTP/REST, contract evolution e backward compatibility.", tier: 3, prerequisites: ["sb-sdd", "sb-coroutines"], cardSlugs: ["spring-grpc-kotlin", "golang-grpc"] },
+    { id: "sb-resilience", name: "Resilience4j", description: "Timeouts em camadas, retry com backoff+jitter, circuit breaker, bulkhead, hedging — integração com WebClient/RestClient sem cargo cult.", tier: 3, prerequisites: ["sb-redis", "sb-messaging"], cardSlugs: ["spring-resilience4j", "go-resilience-patterns"] },
+
+    // ── Tier 4: Produção Sênior & Segurança ──
+    { id: "sb-microservices", name: "Microsserviços Empresariais", description: "Bounded contexts, APIs internas, contratos, deploy independente, dados por serviço, Spring Cloud com parcimônia, modular monolith primeiro.", tier: 4, prerequisites: ["sb-ddd", "sb-messaging", "sb-grpc"], cardSlugs: ["spring-microservices-enterprise", "microservices-quando-usar", "modular-monolith"] },
+    { id: "sb-outbox", name: "Outbox & Consistência", description: "Outbox em Postgres + Debezium ou poller, exactly-once como ilusão, deduplicação, consistência eventual e Saga compensatória.", tier: 4, prerequisites: ["sb-messaging", "sb-transactions"], cardSlugs: ["spring-outbox-pattern", "outbox-pattern", "saga-pattern"] },
+    { id: "sb-observability", name: "Micrometer & OpenTelemetry", description: "Micrometer Tracing, Prometheus, OpenTelemetry, logs estruturados, MDC, RED/USE, SLOs e diagnóstico de incidentes.", tier: 4, prerequisites: ["sb-config-logs", "sb-microservices"], cardSlugs: ["spring-observability-micrometer-otel", "observability", "opentelemetry-observabilidade"] },
+    { id: "sb-performance", name: "Performance JVM", description: "GC tuning (G1, ZGC, Shenandoah), JFR, async-profiler, escape analysis, JIT, heap dump, connection pools (HikariCP), pgvector pool.", tier: 4, prerequisites: ["sb-observability", "sb-redis"], cardSlugs: ["spring-performance-jvm-tuning"] },
+    { id: "sb-security", name: "Segurança em Spring", description: "OWASP Top 10, SQL injection via JPQL/Native, SSRF, Spring Security headers, CSRF, supply chain (OWASP DC, gradle dep), secrets handling.", tier: 4, prerequisites: ["sb-microservices", "sb-resilience"], cardSlugs: ["spring-security-pratico", "owasp-top10", "secrets-management"] },
+    { id: "sb-auth", name: "Spring Security & OAuth2", description: "Spring Security 6, OAuth2 Resource Server (JWT/PASETO), OAuth2 Login com PKCE, OIDC, RBAC vs ABAC, refresh rotation, sessões.", tier: 4, prerequisites: ["sb-web", "sb-security"], cardSlugs: ["spring-security-oauth2-jwt", "session-cookie-vs-jwt", "oauth-2-1", "rbac-vs-abac"] },
+
+    // ── Tier 5: AI-Era, Carreira & Capstone ──
+    { id: "sb-docker", name: "Docker & GraalVM Native", description: "Multi-stage builds, JIB, Buildpacks, GraalVM native-image, AOT processing do Spring 3, imagens pequenas, healthchecks.", tier: 5, prerequisites: ["sb-microservices", "sb-testcontainers"], cardSlugs: ["spring-docker-graalvm-native", "docker-multistage", "docker-compose-dev"] },
+    { id: "sb-prod-checklist", name: "Checklist de Produção", description: "Critérios de aceite para serviço Spring de alto valor: segurança, dados, operação, rollback, runbooks e DR.", tier: 5, prerequisites: ["sb-docker", "sb-outbox", "sb-performance", "sb-auth"], cardSlugs: ["spring-microservice-production-checklist", "container-security", "secrets-management"] },
+    { id: "sb-ai-integration", name: "AI Integration (Spring AI)", description: "Spring AI 1.x, ChatClient, structured output, function calling, RAG com pgvector, streaming SSE, controle de custo e MCP server.", tier: 5, prerequisites: ["sb-resilience", "sb-jpa"], cardSlugs: ["spring-ai-integration", "mcp-protocol", "tool-use-function-calling"] },
+    { id: "sb-interview", name: "Entrevista Sênior", description: "JVM internals, GC, classpath, banco de respostas STAR, system design com Spring, perguntas de Kotlin idiomático, JPA pitfalls.", tier: 5, prerequisites: ["sb-performance", "sb-microservices"], cardSlugs: ["spring-entrevista-senior", "entrevista-algoritmos"] },
+    { id: "sb-capstone", name: "Capstone: 2 Microsserviços Spring", description: "Construir dois serviços empresariais integrados por Kafka+gRPC, OpenAPI, Postgres próprio, observabilidade completa, OAuth2 e suíte de testes.", tier: 5, prerequisites: ["sb-prod-checklist", "sb-ai-integration", "sb-interview"], cardSlugs: ["spring-microservices-enterprise", "spring-openapi-springdoc", "spring-outbox-pattern", "spring-microservice-production-checklist"] },
   ],
 };
 
@@ -534,6 +607,7 @@ export const SKILL_AREAS: SkillArea[] = [
   MATEMATICA,
   SOFTWARE,
   GO_ENTERPRISE,
+  SPRING_BOOT_KOTLIN,
   DATA_SCIENCE,
   IA_LLM,
   SECURITY,

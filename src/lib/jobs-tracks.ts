@@ -2105,4 +2105,436 @@ export const JOB_TRACKS: JobTrack[] = [
       ],
     },
   },
+
+  // ─── 12. Spring Boot + Kotlin (Backend Enterprise) ────────────────────────
+  {
+    slug: "spring-boot-kotlin",
+    titulo: "Backend Spring Boot + Kotlin — Sênior",
+    papel: "Backend Engineer (Spring + Kotlin)",
+    categoria: "engenharia",
+    nivelAlvo: "senior",
+    resumo:
+      "Trilha completa Kotlin + Spring Boot 3.x para vagas sênior em Big Tech e governo: linguagem, persistência JPA, arquitetura hexagonal/DDD, Kafka/RabbitMQ, Resilience4j, OAuth2, Spring AI e capstone com 2 microsserviços empresariais.",
+    preRequisitos: [
+      "Java básico ou outra linguagem orientada a objeto",
+      "HTTP, REST e JSON",
+      "SQL e modelagem relacional básica",
+      "Conceitos de containers e Docker básico",
+      "Git e fluxo de PR",
+    ],
+    marcos: [
+      {
+        id: "sbk-01",
+        titulo: "Kotlin: primeiros passos e toolchain",
+        tipo: "estudo",
+        descricao:
+          "JDK 21+, Gradle Kotlin DSL, IntelliJ, build/test/run. O vocabulário técnico que separa quem usa de quem entende.",
+        cardSlug: "kotlin-primeiros-passos",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-02",
+        titulo: "Linguagem Kotlin essencial",
+        tipo: "estudo",
+        descricao:
+          "val/var, null-safety, data classes, sealed classes, when exaustivo, scope functions, extensions e o type system que elimina classes inteiras de bug.",
+        cardSlug: "kotlin-linguagem-essencial",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-03",
+        titulo: "Gradle multi-module e layout enterprise",
+        tipo: "estudo",
+        descricao:
+          "Version catalog, convention plugins em buildSrc, multi-module por camada arquitetural. Compilador como linter de arquitetura.",
+        cardSlug: "kotlin-gradle-multi-module",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-04",
+        titulo: "Errors, Result e Either (Arrow)",
+        tipo: "estudo",
+        descricao:
+          "Quando lançar exception, quando retornar Result<T>, quando usar Either da Arrow. Modelagem de erros de domínio com sealed class.",
+        cardSlug: "kotlin-errors-result-arrow",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-05",
+        titulo: "Spring Boot Essentials",
+        tipo: "estudo",
+        descricao:
+          "Auto-configuration, ApplicationContext, beans, profiles, lifecycle, graceful shutdown e Actuator em produção.",
+        cardSlug: "spring-boot-essentials",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-06",
+        titulo: "Spring Web MVC e ProblemDetail",
+        tipo: "estudo",
+        descricao:
+          "Controllers tipados, ResponseEntity, @RestControllerAdvice global, ProblemDetail RFC 7807, status codes corretos e versionamento.",
+        cardSlug: "spring-web-controllers",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-07",
+        titulo: "Validation Jakarta Bean (com @field:)",
+        tipo: "estudo",
+        descricao:
+          "Bean Validation 3.0 em Kotlin sem armadilha: @field:, validadores customizados, grupos e cross-field validation.",
+        cardSlug: "spring-validation-bean",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-08",
+        titulo: "Kotlin Coroutines e Spring Async",
+        tipo: "estudo",
+        descricao:
+          "Structured concurrency, suspend, withContext, Flow, supervisorScope. Integração com Spring MVC + Virtual Threads.",
+        cardSlug: "kotlin-coroutines",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-09",
+        titulo: "Logging estruturado com MDC",
+        tipo: "estudo",
+        descricao:
+          "Logback JSON em prod, MDC com correlation ID via filter, level por package e o que NUNCA deve aparecer em log.",
+        cardSlug: "spring-logging-mdc",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-10",
+        titulo: "Testes: JUnit 5, Kotest, MockK",
+        tipo: "estudo",
+        descricao:
+          "Stack profissional de testes Kotlin: JUnit + Kotest StringSpec, MockK com coEvery, Spring slices @WebMvcTest/@DataJpaTest.",
+        cardSlug: "kotlin-testing-junit-kotest-mockk",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-11",
+        titulo: "Checkpoint Tier 1",
+        tipo: "pratica",
+        descricao:
+          "Antes de avançar: valide fundamentos Kotlin + Spring Web. Faça o exame Tier 1 (aprovação ≥ 70) com avaliação por IA.",
+        cardSlug: "spring-checkpoint-tier-1",
+        routeHref: "/skills/spring-boot-kotlin/exam/1",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-12",
+        titulo: "Spring Data JPA: N+1, EntityGraph, Projections",
+        tipo: "estudo",
+        descricao:
+          "JPA do jeito sênior: entidade vs domínio, EntityGraph contra N+1, projections para read, locks otimista vs pessimista.",
+        cardSlug: "spring-data-jpa",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-13",
+        titulo: "Flyway: migrations zero-downtime",
+        tipo: "estudo",
+        descricao:
+          "Versionamento de schema, baseline em legado, repeatable migrations e os 5 passos pra renomear coluna sem dor.",
+        cardSlug: "spring-flyway-migrations",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-14",
+        titulo: "@Transactional: isolation, propagation, pitfalls",
+        tipo: "estudo",
+        descricao:
+          "Self-invocation, REQUIRES_NEW para auditoria, isolation levels e os 5 bugs clássicos que pegam até pleno.",
+        cardSlug: "spring-transactions-isolation",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-15",
+        titulo: "Testcontainers: Postgres, Kafka, Redis reais",
+        tipo: "estudo",
+        descricao:
+          "@ServiceConnection, shared containers, withReuse local, Awaitility e setup no bootRun para dev.",
+        cardSlug: "spring-testcontainers",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-16",
+        titulo: "SDD com OpenAPI / springdoc",
+        tipo: "estudo",
+        descricao:
+          "Code-first vs contract-first, OpenAPI Generator + interfaces Kotlin, contract tests e design REST sênior.",
+        cardSlug: "spring-openapi-springdoc",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-17",
+        titulo: "Arquitetura Hexagonal em Kotlin",
+        tipo: "estudo",
+        descricao:
+          "Domínio puro sem Spring, ports/adapters, módulos Gradle por camada — compilador como linter de arquitetura.",
+        cardSlug: "spring-hexagonal-kotlin",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-18",
+        titulo: "DDD pragmático com sealed classes",
+        tipo: "estudo",
+        descricao:
+          "Aggregates com invariantes, value classes, máquina de estados via sealed, domain events e bounded contexts.",
+        cardSlug: "spring-ddd-aggregates-kotlin",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-19",
+        titulo: "Mensageria: Kafka & RabbitMQ",
+        tipo: "estudo",
+        descricao:
+          "Producer idempotente, consumer com manual ack, DLT/DLQ, exponential backoff, schema registry e idempotência.",
+        cardSlug: "spring-kafka-rabbitmq",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-20",
+        titulo: "Redis: cache, locks distribuídos, idempotency",
+        tipo: "estudo",
+        descricao:
+          "Cache-aside com TTL, idempotency keys via SETNX, Redisson com lease apropriado e rate limit.",
+        cardSlug: "spring-redis-cache-idempotencia",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-21",
+        titulo: "gRPC com Kotlin e Protobuf",
+        tipo: "estudo",
+        descricao:
+          "grpc-kotlin + suspend/Flow, interceptors, deadlines, status codes específicos e quando preferir REST.",
+        cardSlug: "spring-grpc-kotlin",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-22",
+        titulo: "Resilience4j: CB, retry, bulkhead",
+        tipo: "estudo",
+        descricao:
+          "Timeout em camadas, retry com jitter (NUNCA em operação não-idempotente), circuit breaker e fallback útil.",
+        cardSlug: "spring-resilience4j",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-23",
+        titulo: "Checkpoint Tier 3",
+        tipo: "pratica",
+        descricao:
+          "Antes do Tier 4: valide JPA, hexagonal/DDD, mensageria, gRPC e resiliência. Exame Tier 3 (aprovação ≥ 70).",
+        cardSlug: "spring-checkpoint-tier-3",
+        routeHref: "/skills/spring-boot-kotlin/exam/3",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-24",
+        titulo: "Microsserviços empresariais",
+        tipo: "estudo",
+        descricao:
+          "Monolito modular primeiro, bounded context, dados por serviço, Saga vs 2PC, K8s service discovery e Spring Cloud com parcimônia.",
+        cardSlug: "spring-microservices-enterprise",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-25",
+        titulo: "Outbox Pattern e consistência eventual",
+        tipo: "estudo",
+        descricao:
+          "Tabela outbox com FOR UPDATE SKIP LOCKED, poller vs Debezium CDC e consumer idempotente at-least-once.",
+        cardSlug: "spring-outbox-pattern",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-26",
+        titulo: "Observabilidade: Micrometer + OTel + Prometheus",
+        tipo: "estudo",
+        descricao:
+          "Os 3 pilares com traceId correlacionado, métricas low-cardinality, Observation API, SLOs e dashboards para incidente.",
+        cardSlug: "spring-observability-micrometer-otel",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-27",
+        titulo: "Performance JVM: GC, JFR, HikariCP",
+        tipo: "estudo",
+        descricao:
+          "GC G1/ZGC, JFR em prod, async-profiler, escape analysis, HikariCP dimensionamento e armadilhas JPA em batch.",
+        cardSlug: "spring-performance-jvm-tuning",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-28",
+        titulo: "Segurança: OWASP, supply chain, headers",
+        tipo: "estudo",
+        descricao:
+          "OWASP Top 10 em Kotlin/Spring, SSRF, SQL injection em JPQL nativa, OWASP DC, headers de segurança e secrets.",
+        cardSlug: "spring-security-pratico",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-29",
+        titulo: "Spring Security 6 + OAuth2 + OIDC",
+        tipo: "estudo",
+        descricao:
+          "Resource Server com JWT, PKCE em SPA, PASETO, refresh rotation, RBAC vs ABAC com bean customizado em SpEL.",
+        cardSlug: "spring-security-oauth2-jwt",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-30",
+        titulo: "Docker + GraalVM Native",
+        tipo: "estudo",
+        descricao:
+          "Multi-stage com layertools, Buildpacks/JIB, GraalVM native-image com AOT do Spring 3, distroless e securityContext.",
+        cardSlug: "spring-docker-graalvm-native",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-31",
+        titulo: "Spring AI: ChatClient, RAG, Function Calling, MCP",
+        tipo: "estudo",
+        descricao:
+          "Spring AI 1.x: ChatClient unificado, structured output, function calling com @Tool, RAG pgvector e MCP Server.",
+        cardSlug: "spring-ai-integration",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-32",
+        titulo: "Production Checklist completo",
+        tipo: "pratica",
+        descricao:
+          "Aplique o checklist sênior a um serviço real seu (ou audit da empresa). Marque cada item e abra backlog dos gaps.",
+        cardSlug: "spring-microservice-production-checklist",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-33",
+        titulo: "Sentinela revisão de código",
+        tipo: "pratica",
+        descricao:
+          "Passe pelo menos 3 sessões de Sentinela em código Kotlin/Spring que você escreveu. Vire revisor mais crítico que IA.",
+        routeHref: "/sentinela",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-34",
+        titulo: "System Design: 2 cenários enterprise",
+        tipo: "pratica",
+        descricao:
+          "Projete: (1) sistema de pagamentos com idempotência e Saga; (2) plataforma multi-tenant com isolamento por município (GovTech).",
+        routeHref: "/system-design",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-35",
+        titulo: "RFC: migração ou arquitetura nova",
+        tipo: "pratica",
+        descricao:
+          "Escreva uma RFC: 'migrar monolito legado X para microsserviços' OU 'adoção de Outbox + Kafka em workflow Y'.",
+        routeHref: "/rfc-writing",
+        estimateHours: 5,
+      },
+      {
+        id: "sbk-36",
+        titulo: "War Game: incidente em produção",
+        tipo: "pratica",
+        descricao:
+          "Simule incidente Spring real: connection pool exausto, Kafka consumer parado, OOM por memory leak. Pratique diagnóstico sob pressão.",
+        routeHref: "/war-game",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-37",
+        titulo: "Entrevista Sênior — preparação",
+        tipo: "entrevista",
+        descricao:
+          "Estude JVM internals, Spring deep, JPA pitfalls e prepare banco STAR de 7 histórias.",
+        cardSlug: "spring-entrevista-senior",
+        estimateHours: 6,
+      },
+      {
+        id: "sbk-38",
+        titulo: "Mock Interview técnica nível sênior",
+        tipo: "entrevista",
+        descricao:
+          "Pratique entrevista com foco em arquitetura Spring, JVM internals, decisões de design e trade-offs.",
+        routeHref: "/mock-interview",
+        estimateHours: 3,
+      },
+      {
+        id: "sbk-39",
+        titulo: "Banco STAR: liderança técnica e incidentes",
+        tipo: "entrevista",
+        descricao:
+          "Prepare 7 histórias STAR: incidente, decisão difícil, conflito, erro próprio, liderança, projeto de impacto, aprendizado rápido.",
+        routeHref: "/banco-star",
+        estimateHours: 4,
+      },
+      {
+        id: "sbk-40",
+        titulo: "Checkpoint Tier 5",
+        tipo: "pratica",
+        descricao:
+          "Validação final: segurança, observabilidade, performance, OAuth2, Spring AI, entrevista sênior. Exame Tier 5 (aprovação ≥ 75).",
+        cardSlug: "spring-checkpoint-tier-5",
+        routeHref: "/skills/spring-boot-kotlin/exam/5",
+        estimateHours: 6,
+      },
+    ],
+    projetoPortfolio: {
+      titulo: "Capstone: 2 Microsserviços Spring + Kotlin integrados",
+      descricao:
+        "Construa dois microsserviços empresariais (ex: 'billing-service' e 'notification-service') integrados via Kafka + gRPC. Cada um com seu Postgres, Flyway, OpenAPI, arquitetura hexagonal + DDD em Kotlin, Spring Security/OAuth2, observabilidade completa, outbox pattern e suíte de testes com Testcontainers. Deploy em Docker/K8s com GraalVM native opcional.",
+      entregaveis: [
+        "Repo GitHub público com 2 serviços, README, ADRs e runbook de incidente",
+        "OpenAPI 3.1 versionado em ambos; contract tests rodando em CI",
+        "Pipeline CI: testes (unit + integration com Testcontainers), OWASP DC, Trivy, build de imagem multi-arch",
+        "Outbox pattern entre billing → notification via Kafka, com DLT e idempotency",
+        "Spring Security: OAuth2 Resource Server em ambos, validação JWT entre serviços",
+        "Observability completa: Prometheus + Grafana + Tempo + Loki + dashboards para incidente",
+        "Postman / Insomnia collection demonstrando golden path + edge cases",
+        "Diagrama C4 da arquitetura + decisão de trade-offs explicada nas ADRs",
+        "1 vídeo (max 10min) demonstrando funcionalidade + decisões técnicas",
+      ],
+    },
+    preparacaoEntrevista: {
+      topicos: [
+        "Kotlin idiomático: null-safety, sealed classes, value classes, scope functions",
+        "JVM internals: GC G1/ZGC, escape analysis, JIT tiers, classpath",
+        "Spring deep: AOP, ApplicationContext lifecycle, transactions (self-invocation, propagation)",
+        "JPA pitfalls: N+1, lazy loading, EntityGraph, projections, locks",
+        "Arquitetura: hexagonal vs camadas, DDD aggregates, bounded contexts",
+        "Microsserviços: quando dividir, Saga vs 2PC, Outbox pattern, eventual consistency",
+        "Mensageria: Kafka vs RabbitMQ, idempotência, DLT, exactly-once como ilusão",
+        "Segurança: OAuth2 fluxos, JWT armadilhas, OWASP Top 10 com exemplos Spring",
+        "Observabilidade: cardinality, SLOs, traces correlacionados",
+        "Performance: HikariCP dimensionamento, GC tuning, JFR, profiling em prod",
+      ],
+      rotasMock: ["/mock-interview", "/system-design", "/rfc-writing", "/war-game", "/sentinela"],
+      perguntasComuns: [
+        "O que acontece quando você chama método @Transactional de outro método da mesma classe? Como contornar?",
+        "Você está em um sistema com 100k pedidos/dia. Como resolveria N+1 em listagem de 1000 pedidos com 5 itens cada?",
+        "Saga orquestrada vs coreografada — quando cada uma? Dê exemplo concreto.",
+        "Por que data class não é boa entidade JPA? O que usar?",
+        "Em Kotlin, qual a diferença entre @NotBlank no construtor e @field:NotBlank? Por que importa?",
+        "Como você implementaria Outbox Pattern com Kafka e Postgres? Por que não publicar direto?",
+        "Você tem 200 conexões no HikariCP e Postgres com 'too many connections'. O que fez de errado?",
+        "Explique virtual threads (JDK 21) vs corrotinas Kotlin. Quando usar cada uma?",
+        "JWT vs Session Cookie — onde cada um faz sentido? E PASETO?",
+        "Como você detectaria memory leak num serviço Spring em produção?",
+        "Por que GraalVM native faz sentido em Lambda e NÃO em monolito 24h up?",
+        "Você precisa migrar de monolito Spring para microsserviços. Como você começaria? O que NÃO faria?",
+        "Explique como funciona @PreAuthorize com SpEL e bean customizado. Quando faz sentido sobre RBAC simples?",
+        "Como você testaria que sua aplicação NÃO tem N+1 em CI?",
+        "Me fale de um incidente em produção que você liderou a solução. O que aprendeu?",
+        "Como você convence o time/diretoria a NÃO virar microsserviços agora?",
+      ],
+    },
+  },
 ];

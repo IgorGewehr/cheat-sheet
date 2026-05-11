@@ -57,7 +57,8 @@ type ColName =
   | "mockInterviews" | "rfcSessions" | "warGames" | "revisoesCodigo"
   | "trilhaProgresso" | "idleSessions" | "questSessions"
   | "integracoes"
-  | "goExamSessions";
+  | "goExamSessions"
+  | "springExamSessions";
 
 function col(name: ColName) {
   const { db } = getFirebase();
@@ -1283,6 +1284,56 @@ export async function getBestGoExamSessionsByTier(): Promise<Record<1 | 3 | 5, G
   const best: Record<1 | 3 | 5, GoExamSession | null> = { 1: null, 3: null, 5: null };
   snap.docs.forEach((d) => {
     const s = d.data() as GoExamSession;
+    const current = best[s.tier];
+    if (!current || s.finalScore > current.finalScore) best[s.tier] = s;
+  });
+  return best;
+}
+
+// ─── Spring Exam Sessions ────────────────────────────────────────────────────
+
+export interface SpringExamSession {
+  id: string;
+  tier: 1 | 3 | 5;
+  finalScore: number;
+  passed: boolean;
+  threshold: number;
+  recommendation: "aprovado" | "revisar-cards" | "refazer-tier";
+  feedbackGeral: string;
+  pontosFortes: string[];
+  areasDesenvolvimento: string[];
+  questoes: Array<{
+    questionId: string;
+    verdict: "PASS" | "REVIEW" | "FAIL";
+    score: number;
+    feedback: string;
+    expectedPoints: string[];
+  }>;
+  answers: Array<{ questionId: string; answer: string }>;
+  criadoEm: number;
+}
+
+export async function saveSpringExamSession(s: SpringExamSession): Promise<void> {
+  await ready();
+  await setDoc(docRef("springExamSessions", s.id), clean(s) as DocumentData);
+}
+
+export async function getLatestSpringExamSession(tier: 1 | 3 | 5): Promise<SpringExamSession | null> {
+  await ready();
+  const snap = await getDocs(query(col("springExamSessions"), orderBy("criadoEm", "desc")));
+  for (const d of snap.docs) {
+    const s = d.data() as SpringExamSession;
+    if (s.tier === tier) return s;
+  }
+  return null;
+}
+
+export async function getBestSpringExamSessionsByTier(): Promise<Record<1 | 3 | 5, SpringExamSession | null>> {
+  await ready();
+  const snap = await getDocs(query(col("springExamSessions"), orderBy("criadoEm", "desc")));
+  const best: Record<1 | 3 | 5, SpringExamSession | null> = { 1: null, 3: null, 5: null };
+  snap.docs.forEach((d) => {
+    const s = d.data() as SpringExamSession;
     const current = best[s.tier];
     if (!current || s.finalScore > current.finalScore) best[s.tier] = s;
   });

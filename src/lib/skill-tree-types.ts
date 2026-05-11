@@ -16,6 +16,7 @@ export type SkillAreaId =
   | "matematica"
   | "software"
   | "go-enterprise"
+  | "spring-boot-kotlin"
   | "data-science"
   | "ia-llm"
   | "security"
