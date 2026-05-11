@@ -1,0 +1,9 @@
+{
+  "name": "brain-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "brain-mcp": "./server.mjs" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  }
+}
